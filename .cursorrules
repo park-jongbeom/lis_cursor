@@ -1,0 +1,54 @@
+# Cursor AI 지시문 — IDR 시스템 데이터 분석 AI 백엔드
+
+## 필수 지시사항
+
+Cursor AI야, 이 프로젝트에서 코드를 작성하거나 아키텍처를 결정하기 전에
+반드시 아래 3개의 규칙 문서를 먼저 읽고 모든 내용을 반영해라.
+문서를 읽지 않고 코드를 작성하는 것은 금지한다.
+
+---
+
+## 규칙 문서 목록
+
+### 1. 프로젝트 컨텍스트
+`docs/rules/project_context.md`
+
+- 프로젝트 정체성, 비즈니스 목표(SCM/CRM/BI), 기술 스택 전체
+- 디렉토리 구조, 실행 환경(RHEL 8 + podman), 3단계 작업 프로토콜
+- **코드를 작성하기 전 반드시 이 문서를 먼저 읽어라**
+
+### 2. 백엔드 아키텍처 규칙
+`docs/rules/backend_architecture.md`
+
+- async/await 기반 API 작성 규칙 및 주의사항
+- 2-Tier 하이브리드 라우팅 패턴 (Pandas Tier 1 vs Dify Tier 2)
+- FastAPI Depends 기반 의존성 주입(DI) 패턴
+- Pandas 서비스 계층 분리 원칙
+- pre-commit / ruff / mypy 품질 게이트 규칙
+- **이전 프로젝트에서 실제로 발생한 오류 패턴과 재발 방지 규칙 포함**
+
+### 3. Dify 연동 규칙
+`docs/rules/dify_integration.md`
+
+- FastAPI ↔ Local Self-hosted Dify 역할 분리 원칙
+- `compact=true` 응답 포맷 표준 (LLM 컨텍스트 절약)
+- Dify HTTP Request Node에서 파싱하기 쉬운 JSON 구조 설계 가이드
+- Docker 네트워크 공유 및 포트 구성
+
+---
+
+## 핵심 원칙 요약 (빠른 참조용)
+
+1. **3단계 프로토콜 준수**: 계획 → 승인 → 구현 → 승인 → 테스트. 단계 생략 금지.
+2. **Dify는 데이터를 직접 처리하지 않는다**: 모든 수치 계산은 FastAPI에서.
+3. **endpoints/*.py에서 `from __future__ import annotations` 사용 금지**: 422 에러 원인.
+4. **`compact=true` 파라미터**: 모든 분석 엔드포인트에 필수 구현.
+5. **async/await 일관성**: 모든 엔드포인트와 서비스 메서드는 async.
+6. **Spring Boot 비유로 설명**: 개발자 백그라운드가 Spring Boot / Kotlin / JPA / Flyway.
+
+---
+
+## 참조 SDD
+
+전체 아키텍처 결정 근거와 API 명세는 아래 문서에 있다:
+`ref_files/IDR_Data_Analysis_SDD.md` (v1.1.0)
