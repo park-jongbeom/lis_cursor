@@ -36,3 +36,21 @@
 3. `docs/history/WORK_HISTORY.md` — 완료된 태스크 아카이브 (본 파일)
 
 **특이사항**: `CURRENT_WORK_SESSION.md`는 아직 생성되지 않음. 첫 번째 실제 개발 태스크(Phase 0 pre-flight) 시작 시 작성할 것.
+
+### [2026-03-26] Session 01 — Phase 0 + Phase 1 Scaffolding (plan.md Phase 0~1)
+
+**완료 내용**: Poetry 프로젝트·품질 게이트·환경 파일·`idr_analytics/` 스켈레톤·로컬/운영 Compose 분리·최소 FastAPI `/health`·로컬 Podman에서 PG/Redis 기동 검증.
+
+**변경 파일** (주요):
+- `pyproject.toml`, `poetry.lock` — 패키지 `app` (`idr_analytics/app`), Ruff/Mypy/Pytest 설정
+- `.pre-commit-config.yaml`, `.gitignore`
+- `.env.example`, `env.prod.example`, `.env.dev` (로컬 생성, Git 제외)
+- `docker-compose.dev.yml`, `docker-compose.prod.yml`, `Dockerfile`
+- `idr_analytics/app/main.py` 및 SDD §6 디렉토리·`__init__.py`
+
+**결정 사항**:
+1. 로컬은 `docker-compose.dev.yml` + **호스트** `PYTHONPATH=idr_analytics poetry run uvicorn app.main:app`; 운영은 `docker-compose.prod.yml` + `Dockerfile` (Python 3.12-slim, Phase 5에서 FastAPI 서비스 주석 해제 예정).
+2. 로컬 PostgreSQL 호스트 포트 **15432** (기존 5432 점유 회피); `.env.example` / `.env.dev` 의 `DATABASE_URL` 반영.
+3. RHEL rootless Podman에서 공식 Postgres/Redis 이미지가 `libc` RELRO 오류로 실패 → `postgres:15-bookworm` / `redis:7-bookworm` + `security_opt: seccomp=unconfined`, `label=disable` 적용 후 healthy 확인. (Ubuntu ga-server Docker는 동일 제약이 없을 수 있음.)
+
+**특이사항**: 호스트에 Poetry 미설치 → `install.python-poetry.org` 로 설치. pre-commit mypy는 디렉터리 인자 중복 시 `Duplicate module` 발생 → `files:` 패턴으로 파일 단위 검사. Step 1-10(ga-server nginx / certbot)은 서버 작업으로 본 세션에서 미실행 — 배포 시 `docs/CURRENT_WORK_SESSION.md` Session 01 보관본 또는 본 이력 참고.

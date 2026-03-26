@@ -1,0 +1,52 @@
+version: "3.9"
+
+networks:
+  idr-dev-net:
+    driver: bridge
+
+volumes:
+  pgdata-dev:
+
+services:
+  # Alpine(musl)은 일부 RHEL rootless Podman 환경에서 RELRO 오류로 기동 실패할 수 있어 Debian 기반 사용
+  idr-postgres:
+    image: postgres:15-bookworm
+    container_name: idr-postgres
+    env_file:
+      - .env.dev
+    environment:
+      POSTGRES_DB: idr_analytics
+      POSTGRES_USER: idr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # 호스트 5432 충돌 회피 (로컬에 기존 PostgreSQL이 있을 수 있음)
+      - "15432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idr -d idr_analytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - idr-dev-net
+    # RHEL rootless + SELinux: glibc RELRO / mmap 보호 오류 회피 시도
+    security_opt:
+      - seccomp=unconfined
+      - label=disable
+
+  idr-redis:
+    image: redis:7-bookworm
+    container_name: idr-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - idr-dev-net
+    security_opt:
+      - seccomp=unconfined
+      - label=disable
