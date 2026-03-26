@@ -121,10 +121,12 @@ idr_analytics/
 | 단계 | Gate |
 |------|------|
 | `plan`/참조 확인 후 **구현 상세 계획** CURRENT 작성·사용자 승인 (코딩 전) | A |
-| **구현** 후 구현 완료 요약·체크리스트·사용자 승인 | B |
+| **구현** 후 구현 완료 요약·체크리스트·**사용자 승인** | B |
 | **테스트 상세 계획** CURRENT·사용자 승인 (테스트 실행 전) | C |
 | 테스트 실행·검증 결과 기록 | D |
 | `WORK_HISTORY`·`plan.md` 체크·다음 세션 CURRENT | E |
+
+**승인 범위**: Gate A에 대한 동의(예: 「진행해라」)는 **코딩·구현 완료(Gate B 작성)까지만**. 구현 직후 테스트(`make test` 등)는 **Gate C·D이며 별도 승인**이 필요하다. 상세는 `workflow_gates.md` §승인 범위 해석.
 
 구현 시 관례: 소스에는 **클래스/함수 수준 Docstring만** (튜토리얼식 주석 금지). 설명은 Spring Boot / Kotlin / JPA / Flyway 비유를 사용한다. pytest 예시: `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/` (또는 `CURRENT`에 적힌 명령).
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import ForeignKey, String
@@ -24,7 +24,9 @@ class AnalysisResult(Base):
     result_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     complexity_score: Mapped[int | None] = mapped_column(nullable=True)
     processing_time_ms: Mapped[int | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC).replace(tzinfo=None),
+    )
 
 
 class InsightBlock(Base):
@@ -36,4 +38,6 @@ class InsightBlock(Base):
     content: Mapped[dict[str, Any]] = mapped_column(JSONB)
     source: Mapped[str] = mapped_column(String(50))
     confidence: Mapped[float | None] = mapped_column(nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC).replace(tzinfo=None),
+    )

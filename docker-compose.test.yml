@@ -1,8 +1,11 @@
 version: "3.9"
 
+# 프로젝트명을 디렉터리(lis_cursor)와 분리 — podman-compose가 dev pod와 같은 pod로 묶지 않도록 함
+name: idr-test
+
 # 테스트 전용 격리 스택 — dev/prod 네트워크·볼륨과 완전 분리
 # 실행: podman-compose -f docker-compose.test.yml up -d --wait
-# 종료: podman-compose -f docker-compose.test.yml down -v
+# 종료: Makefile 의 test-infra-down(컨테이너·네트워크·볼륨 명시 제거) 권장 — dev pod와 충돌 방지
 
 networks:
   idr-test-net:

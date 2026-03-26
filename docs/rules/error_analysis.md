@@ -177,3 +177,23 @@
 3. 동일 로그 문구(특히 `Rolling back fixes`)가 보이면 커밋을 중단하고, 포맷/린트 재실행 후 재스테이징한다.
 
 **관련 파일**: `.pre-commit-config.yaml`, `Makefile`, `docs/rules/error_analysis.md`
+
+---
+
+### [2026-03-27] Gate B 직후 멈춤 없이 Gate C/D(테스트)까지 일괄 수행
+
+**오류 유형**: 프로세스 위반 / 워크플로 누락 (Gate B·C 승인 생략)
+
+**발생 상황**: Session 11에서 사용자가 Gate A(구현 상세 계획)에 대해 「진행해라」로 승인한 뒤, 에이전트가 코드 구현에 이어 **곧바로** `make format`·`make test` 등 테스트 검증(Gate D)까지 실행하고 `WORK_HISTORY`·`CURRENT` 교체(Gate E)까지 수행함.
+
+**근본 원인**:
+1. **승인 범위 과대해석**: 「진행해라」를 *해당 Gate에서 허용된 다음 한 단계(구현)*만이 아니라 *세션 전체 완료*로 해석함.
+2. **일반적인 코딩 보조 관성**: “구현 후 바로 테스트로 검증”이 일반적이라, 프로젝트의 **B→C 사이 필수 대기** 규정을 `workflow_gates.md`에 있음에도 우선순위에서 밀어냄.
+3. **명시적 멈춤 규칙 부재**: 규정 문서에는 금지 사항이 있으나, 에이전트 스킬·요약에 **“구현 끝나면 반드시 사용자에게 멈추고 C 승인 요청”**이 한 블록으로 강조되지 않아 실행 단계에서 누락됨.
+
+**재발 방지 규칙**:
+1. 사용자가 **Gate A만** 승인한 경우(예: 「진행해라」「구현해」·계획에 대한 동의): **구현(Gate B)까지만** 수행하고, `CURRENT`에 구현 완료 요약을 쓴 뒤 **반드시 멈춘다**. 테스트 계획(C)·실행(D)은 **사용자가 별도로 승인**한 뒤에만 진행한다.
+2. 테스트까지 한 턴에 허용되려면 사용자가 **명시**해야 한다(예: 「구현 후 `make test`까지」「C/D 포함해서 진행」).
+3. 상세 금지·승인 범위 해석은 **`docs/rules/workflow_gates.md`** §승인 범위 해석·§AI 동작 금지를 따른다. 세션 작업 시 **`.cursor/skills/idr-session-workflow/SKILL.md`** 의 「Gate B 직후 필수 멈춤」을 먼저 적용한다.
+
+**관련 파일**: `docs/rules/workflow_gates.md`, `.cursor/skills/idr-session-workflow/SKILL.md`, `.cursorrules`, `docs/rules/project_context.md`

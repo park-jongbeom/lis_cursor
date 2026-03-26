@@ -1,10 +1,10 @@
-# 현재 작업 세션 — Session 11
+# 현재 작업 세션 — Session 12
 
 > **대상 Phase**: 운영 안정화/후속 개선(Phase 7 완료 이후)
 > **전체 계획 참조**: [`docs/plans/plan.md`](plans/plan.md) §Phase 6·§Phase 7
 > **워크플로 규칙**: [`docs/rules/workflow_gates.md`](docs/rules/workflow_gates.md)
 
-> **직전 세션**: Session 10 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 10 — 운영 안정화: 통합 환경 복구 및 Tier2 회귀 검증」.
+> **직전 세션**: Session 11 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 11 — 운영 안정화: 테스트 스택 Podman 분리 및 utcnow 제거」.
 
 ---
 
@@ -20,7 +20,7 @@
 
 | 게이트 | 완료 | 비고 |
 |--------|:----:|------|
-| A. 구현 상세 계획 | ⬜ | Session 11 범위 확정 전 |
+| A. 구현 상세 계획 | ⬜ | Session 12 범위 확정 전 |
 | B. 구현 완료 | ⬜ | A 승인 후 |
 | C. 테스트 상세 계획 | ⬜ | B 완료 후 |
 | D. 테스트 검증 | ⬜ | C 승인 후 |
@@ -32,16 +32,16 @@
 
 | 구간 | 한 줄 |
 |------|--------|
-| **Session 10 결과** | 테스트 인프라 복구 후 `make test` 통과(단위 134 / 통합 14), `/agent/query` 에러 매핑 회귀 검증 완료 |
-| **Session 11 후보 목표** | Podman test/dev 네트워크·볼륨 경고 정리 및 테스트 종료 단계 안정화 |
+| **Session 11 결과** | `name: idr-test` + `test-infra-down` 명시 제거로 `make test` 시 Podman `Error:` 제거; ORM·agent에서 `utcnow` 제거로 DeprecationWarning 제거 |
+| **Session 12 후보** | (미정 — Gate A에서 확정) |
 
-**바로 다음 액션**: Session 11 범위를 Gate A에 상세화하고 사용자 승인 후 진행한다.
+**바로 다음 액션**: Session 12 범위를 Gate A에 상세화하고 사용자 승인 후 진행한다.
 
 ---
 
 ## 완료 기준 (초안)
 
-- Session 11 대상 범위(기능/버그/운영 개선) 확정
+- Session 12 대상 범위 확정
 - Gate A~D 절차에 따라 구현·테스트·검증 기록 완료
 - Gate E에서 이력 및 `plan.md` 동기화 완료
 
@@ -49,7 +49,7 @@
 
 ## 구현 상세 계획 (Gate A)
 
-> Session 11 범위 확정 후 작성
+> Session 12 범위 확정 후 작성
 
 ---
 
@@ -71,6 +71,6 @@
 
 ---
 
-## 이전 세션 요약 (Session 10)
+## 이전 세션 요약 (Session 11)
 
-테스트 인프라 복구(`make test`)로 단위 134·통합 14를 통과했고, `/api/v1/agent/query`의 Tier2 성공 및 `DIFY_INPUT_ERROR`/`DIFY_AUTH_ERROR` 매핑 회귀를 검증했다. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 10 — 운영 안정화: 통합 환경 복구 및 Tier2 회귀 검증」.
+테스트 compose에 `name: idr-test`를 두어 dev pod와 분리했고, `test-infra-down`을 compose `down` 대신 테스트 전용 리소스 명시 제거로 바꿨다. `created_at`·CLUSTER `reference_date`는 `datetime.now(UTC).replace(tzinfo=None)`로 `utcnow` Deprecation을 없앴다. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 11 — 운영 안정화: 테스트 스택 Podman 분리 및 utcnow 제거」.

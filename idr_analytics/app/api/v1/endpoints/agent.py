@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import httpx
@@ -149,7 +149,7 @@ async def agent_query(
     elif df is not None and qt == QueryType.CLUSTER:
         pandas_context = CRMClusterContext(
             df=df,
-            reference_date=datetime.utcnow(),
+            reference_date=datetime.now(UTC).replace(tzinfo=None),
             n_clusters=body.n_clusters,
         )
     elif df is not None and qt == QueryType.TREND:

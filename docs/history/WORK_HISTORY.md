@@ -315,3 +315,24 @@
 **특이사항**:
 - `test-infra-down` 단계에서 dev pod/network와 연계된 Podman 경고가 출력되지만, 테스트 성공/실패 판정에는 영향이 없었다.
 
+### [2026-03-27] Session 11 — 운영 안정화: 테스트 스택 Podman 분리 및 utcnow 제거 (post-Phase 7)
+
+**완료 내용**: `make test` 중·후 Podman `Error:` 로그를 제거하고, 앱 코드의 `datetime.utcnow()` 사용을 없애 pytest DeprecationWarning을 없앴다.
+
+**변경 파일**:
+- `docker-compose.test.yml` — 최상위 `name: idr-test` 추가(테스트 compose를 `lis_cursor` 디렉터리 기본 프로젝트명·dev pod와 분리), 주석 갱신
+- `Makefile` — `test-infra-down`을 `podman rm -f idr-postgres-test idr-redis-test` + `idr-test_idr-test-net` / `idr-test_pgdata-test` 제거로 변경
+- `idr_analytics/app/models/user.py`, `dataset.py`, `analysis_result.py` — `created_at` 기본값을 `lambda: datetime.now(UTC).replace(tzinfo=None)` 로 변경
+- `idr_analytics/app/api/v1/endpoints/agent.py` — CLUSTER `reference_date`를 동일 패턴으로 변경
+- `docs/CURRENT_WORK_SESSION.md` — Gate B~D 기록 및 구현 보정 표
+
+**결정 사항**:
+1. `TIMESTAMP WITHOUT TIME ZONE` + asyncpg는 timezone-aware `datetime` 바인딩 시 오르므로, UTC 시각은 **naive**로 넣되 생성은 **`datetime.now(UTC).replace(tzinfo=None)`** 로 통일한다.
+2. podman-compose가 동일 디렉터리 프로젝트를 한 pod에 묶는 동작을 피하기 위해 테스트 compose에 **`name: idr-test`** 를 둔다.
+
+**테스트 결과**:
+- `make format && make lint && make typecheck` 통과
+- `unset ALLOWED_ORIGINS && make test` → exit 0, 단위 134·통합 14 passed, 로그에 `^Error:` 및 `DeprecationWarning` 없음
+
+**특이사항**: 기존 로컬에 남아 있던 `lis_cursor_*` 테스트 볼륨·네트워크는 수동 `podman volume rm` / `network rm`으로 정리할 수 있다.
+

@@ -21,8 +21,11 @@ test-infra-up:
 	@echo "idr-postgres-test is healthy."
 
 .PHONY: test-infra-down
+## podman-compose down 은 dev pod(pod_lis_cursor)와 충돌해 Error 로그가 남을 수 있어, 테스트 전용 리소스만 명시 제거
 test-infra-down:
-	$(COMPOSE_TEST) down -v
+	podman rm -f idr-postgres-test idr-redis-test 2>/dev/null || true
+	podman network rm idr-test_idr-test-net 2>/dev/null || true
+	podman volume rm idr-test_pgdata-test 2>/dev/null || true
 
 # ── 마이그레이션 ───────────────────────────────────────────────────────────────
 
