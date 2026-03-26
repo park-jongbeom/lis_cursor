@@ -88,7 +88,16 @@ def _build_dify_http_error_detail(exc: httpx.HTTPStatusError) -> dict[str, Any]:
     return detail
 
 
-@router.post("/query", response_model=AgentQueryResponse)
+@router.post(
+    "/query",
+    response_model=AgentQueryResponse,
+    summary="에이전트 질의",
+    description=(
+        "복잡도에 따라 Tier1(Pandas)·Tier2(Dify 워크플로)로 라우팅합니다. "
+        "FORECAST/CLUSTER/TREND/AGGREGATION은 `dataset_id` 및 컬럼 파라미터가 필요할 수 있습니다."
+    ),
+    response_description="답변·라우트·세션 ID(결과는 Redis에 24h 캐시)",
+)
 async def agent_query(
     body: AgentQueryRequest,
     request: Request,
@@ -238,7 +247,12 @@ async def agent_query(
     return response
 
 
-@router.get("/query/{session_id}")
+@router.get(
+    "/query/{session_id}",
+    summary="에이전트 세션 결과 조회",
+    description="`/agent/query` 직후 저장된 동일 세션 응답을 Redis에서 조회합니다.",
+    response_description="AgentQueryResponse JSON",
+)
 async def get_agent_query(
     session_id: uuid.UUID,
     request: Request,

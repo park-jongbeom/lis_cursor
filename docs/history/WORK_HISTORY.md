@@ -376,3 +376,26 @@
 
 **특이사항**: 없음.
 
+### [2026-03-27] Session 14 — 운영 안정화: OpenAPI 보강 + ARQ 잡 통합 테스트 (post-Phase 7)
+
+**완료 내용**: FastAPI OpenAPI 메타데이터(`openapi_tags`, 라우트 `summary`/`description`, `compact`용 `Query` 설명)를 보강하고, `forecast_job`·`cluster_job`·`trend_job`을 실 테스트 DB로 검증하는 통합 스위트(`test_arq_worker_integration_suite`, 단일 asyncio 테스트 내 T1~T6 순차 실행)를 추가했다. Gate A~E 및 `make test` 회귀를 완료했다.
+
+**변경 파일**:
+- `idr_analytics/app/main.py` — `IDR Analytics API`, `openapi_tags`, `/health` 문서 필드, `version=1.0.0`
+- `idr_analytics/app/api/v1/endpoints/auth.py`, `datasets.py`, `scm.py`, `crm.py`, `bi.py`, `agent.py` — OpenAPI 문구·`Query(description=...)` 등
+- `idr_analytics/tests/integration/helpers.py` — `write_bi_csv`, `insert_bi_dataset`
+- `idr_analytics/tests/integration/test_arq_worker_integration.py` — 통합 스위트(신규)
+- `docs/CURRENT_WORK_SESSION.md` — Gate A~D 기록(마감 시 Session 15 템플릿으로 교체)
+- `docs/plans/plan.md` — Session 14 완료·§Phase 8 체크 동기화
+
+**결정 사항**:
+1. Prophet `run_in_executor` 사용 후 pytest가 테스트마다 이벤트 루프를 바꾸면 전역 `async_engine`과 충돌하므로, ARQ 통합 6시나리오는 **하나의 `asyncio` 테스트 함수**에서만 순차 실행한다.
+2. `plan.md` §Phase 8 후보 중 TIMESTAMPTZ 마이그레이션·운영 체크리스트 문서는 Session 14 범위에서 제외(후속 세션).
+
+**테스트 결과 (Gate D)**:
+- `make format && make lint && make typecheck` 통과
+- `unset ALLOWED_ORIGINS && make test` → exit 0, 단위 **134 passed**, 통합 **15 passed**
+- OpenAPI 수동 스모크(선택 범위 E)는 생략
+
+**특이사항**: 없음.
+

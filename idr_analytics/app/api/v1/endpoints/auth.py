@@ -17,7 +17,12 @@ router = APIRouter()
 _bearer = HTTPBearer()
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="OAuth2 로그인",
+    description="사용자명·비밀번호로 액세스 토큰을 발급합니다. `application/x-www-form-urlencoded` 본문.",
+    response_description="access_token, token_type=bearer",
+)
 async def login(
     form: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
@@ -35,7 +40,12 @@ async def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/refresh")
+@router.post(
+    "/refresh",
+    summary="액세스 토큰 갱신",
+    description="만료 검증 없이 기존 Bearer 토큰의 sub(사용자 ID)로 새 토큰을 발급합니다.",
+    response_description="access_token, token_type=bearer",
+)
 async def refresh(
     creds: HTTPAuthorizationCredentials = Depends(_bearer),
     db: AsyncSession = Depends(get_db),

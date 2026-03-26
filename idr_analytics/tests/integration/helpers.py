@@ -81,3 +81,45 @@ def write_scm_csv(path: Path) -> int:
         lines.append(f"{d.isoformat()},T1,{10 + i}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return 65
+
+
+async def insert_bi_dataset(owner_id: uuid.UUID, csv_path_str: str, row_count: int) -> AnalysisDataset:
+    ds_id = uuid.uuid4()
+    columns_json: dict[str, object] = {
+        "columns": ["period", "region", "value", "test_code"],
+        "dtypes": {
+            "period": "object",
+            "region": "object",
+            "value": "int64",
+            "test_code": "object",
+        },
+        "null_counts": {"period": 0, "region": 0, "value": 0, "test_code": 0},
+    }
+    ds = AnalysisDataset(
+        id=ds_id,
+        name="integration_bi",
+        dataset_type="bi",
+        file_path=csv_path_str,
+        row_count=row_count,
+        columns_json=columns_json,
+        profile_json=None,
+        owner_id=owner_id,
+    )
+    async with async_session_factory() as db:
+        db.add(ds)
+        await db.commit()
+        await db.refresh(ds)
+    return ds
+
+
+def write_bi_csv(path: Path) -> int:
+    """지역·기간 트렌드용 최소 샘플(regional_trend 그룹별 2기간 이상)."""
+    lines = [
+        "period,region,value,test_code",
+        "2026-Q1,SEOUL,10,A",
+        "2026-Q2,SEOUL,12,A",
+        "2026-Q1,BUSAN,5,B",
+        "2026-Q2,BUSAN,6,B",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return len(lines) - 1

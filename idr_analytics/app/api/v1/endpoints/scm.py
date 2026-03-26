@@ -3,7 +3,7 @@
 import uuid
 from typing import Any, cast
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
@@ -36,7 +36,13 @@ async def _require_owner_dataset(
     return row
 
 
-@router.post("/forecast", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/forecast",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="수요 예측 잡 등록",
+    description="ARQ `forecast_job`을 큐에 넣고 `job_id`를 반환합니다. 결과는 폴링 엔드포인트로 조회합니다.",
+    response_description="job_id, status=pending",
+)
 async def enqueue_forecast(
     body: ForecastRequest,
     request: Request,
@@ -55,7 +61,12 @@ async def enqueue_forecast(
     return {"job_id": job.job_id, "status": "pending"}
 
 
-@router.get("/forecast/{job_id}")
+@router.get(
+    "/forecast/{job_id}",
+    summary="수요 예측 잡 폴링",
+    description="Redis에 저장된 ARQ 잡 상태·결과를 조회합니다.",
+    response_description="잡 상태 및 완료 시 예측 결과",
+)
 async def poll_forecast(
     job_id: str,
     request: Request,
@@ -65,7 +76,12 @@ async def poll_forecast(
     return await get_arq_job_view(request.app.state.arq_redis, job_id)
 
 
-@router.get("/restock-alert")
+@router.get(
+    "/restock-alert",
+    summary="재보추 알림",
+    description="예측 기반 재고·보추 검토 후보를 산출합니다.",
+    response_description="compact=false 전체 / compact=true 4KB 이하 요약",
+)
 async def restock_alert(
     dataset_id: uuid.UUID,
     target_column: str,
@@ -73,7 +89,10 @@ async def restock_alert(
     group_by: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
     test_codes: str | None = None,
     forecast_days: int = 30,
 ) -> dict[str, Any]:
@@ -118,7 +137,12 @@ async def restock_alert(
     ).model_dump()
 
 
-@router.get("/seasonal-pattern")
+@router.get(
+    "/seasonal-pattern",
+    summary="계절성 패턴",
+    description="검사항목별 주간 등 계절성 요약을 반환합니다.",
+    response_description="compact=false 상세 / compact=true 요약 카운트",
+)
 async def seasonal_pattern(
     dataset_id: uuid.UUID,
     target_column: str,
@@ -126,7 +150,10 @@ async def seasonal_pattern(
     group_by: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
     test_codes: str | None = None,
     forecast_days: int = 30,
 ) -> dict[str, Any]:

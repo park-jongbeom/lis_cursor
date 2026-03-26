@@ -4,7 +4,7 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -33,7 +33,13 @@ async def _require_owner_dataset(
     return row
 
 
-@router.post("/cluster", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/cluster",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="RFM 클러스터 잡 등록",
+    description="ARQ `cluster_job`을 큐에 넣습니다. 완료 후 폴링으로 샘플·세그먼트를 받습니다.",
+    response_description="job_id, status=pending",
+)
 async def enqueue_cluster(
     body: ClusterRequest,
     request: Request,
@@ -52,7 +58,12 @@ async def enqueue_cluster(
     return {"job_id": job.job_id, "status": "pending"}
 
 
-@router.get("/cluster/{job_id}")
+@router.get(
+    "/cluster/{job_id}",
+    summary="클러스터 잡 폴링",
+    description="ARQ 잡 상태 및 완료 시 클러스터 요약을 조회합니다.",
+    response_description="잡 상태·결과",
+)
 async def poll_cluster(
     job_id: str,
     request: Request,
@@ -62,13 +73,21 @@ async def poll_cluster(
     return await get_arq_job_view(request.app.state.arq_redis, job_id)
 
 
-@router.get("/churn-risk")
+@router.get(
+    "/churn-risk",
+    summary="이탈 위험 고객",
+    description="RFM·클러스터 기반 고위험 고객 목록을 반환합니다.",
+    response_description="compact=false 전체 / compact=true 상위 N 요약(4KB 이하 목표)",
+)
 async def churn_risk(
     dataset_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     top_n: int = 20,
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
 ) -> dict[str, Any]:
     await _require_owner_dataset(db, dataset_id, current_user)
     t0 = time.perf_counter()
@@ -95,12 +114,20 @@ async def churn_risk(
     return cr.model_dump()
 
 
-@router.get("/rfm-summary")
+@router.get(
+    "/rfm-summary",
+    summary="RFM 요약",
+    description="고객 수·세그먼트 분포 등 RFM 집계를 반환합니다.",
+    response_description="compact=false 전체 / compact=true 요약",
+)
 async def rfm_summary(
     dataset_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
 ) -> dict[str, Any]:
     await _require_owner_dataset(db, dataset_id, current_user)
     try:

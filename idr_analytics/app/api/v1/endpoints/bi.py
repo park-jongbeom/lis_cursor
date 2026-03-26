@@ -4,7 +4,7 @@ import json
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
@@ -39,7 +39,13 @@ async def _require_owner_dataset(
     return row
 
 
-@router.post("/trend", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/trend",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="지역 트렌드 잡 등록",
+    description="ARQ `trend_job`을 큐에 넣어 `regional_trend` 결과를 비동기 산출합니다.",
+    response_description="job_id, status=pending",
+)
 async def enqueue_trend(
     body: TrendRequest,
     request: Request,
@@ -60,7 +66,12 @@ async def enqueue_trend(
     return {"job_id": job.job_id, "status": "pending"}
 
 
-@router.get("/trend/{job_id}")
+@router.get(
+    "/trend/{job_id}",
+    summary="트렌드 잡 폴링",
+    description="ARQ 잡 상태 및 완료 시 지역별 트렌드 행을 조회합니다.",
+    response_description="잡 상태·결과",
+)
 async def poll_trend(
     job_id: str,
     request: Request,
@@ -70,7 +81,12 @@ async def poll_trend(
     return await get_arq_job_view(request.app.state.arq_redis, job_id)
 
 
-@router.get("/regional-heatmap")
+@router.get(
+    "/regional-heatmap",
+    summary="지역 히트맵",
+    description="특정 기간의 지역별 주문·YoY·상위 검사 코드를 집계합니다.",
+    response_description="compact=false 전체 / compact=true Dify용 요약",
+)
 async def regional_heatmap(
     dataset_id: uuid.UUID,
     period: str,
@@ -81,7 +97,10 @@ async def regional_heatmap(
     region_col: str = "region",
     value_col: str = "value",
     test_col: str = "test_code",
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
 ) -> dict[str, Any]:
     row = await _require_owner_dataset(db, dataset_id, current_user)
     df, _ = ingestion_service.read_csv_validated(row.file_path)
@@ -137,14 +156,22 @@ async def regional_heatmap(
     ).model_dump()
 
 
-@router.get("/yoy-comparison")
+@router.get(
+    "/yoy-comparison",
+    summary="전년 대비(YoY)",
+    description="연도 컬럼 기준 증감률을 계산합니다.",
+    response_description="연도별 YoY / compact 시 상위 연도 요약",
+)
 async def yoy_comparison(
     dataset_id: uuid.UUID,
     year_col: str,
     value_col: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
 ) -> dict[str, Any]:
     row = await _require_owner_dataset(db, dataset_id, current_user)
     df, _ = ingestion_service.read_csv_validated(row.file_path)
@@ -156,7 +183,12 @@ async def yoy_comparison(
     return {"top_years": keys, "summary": summary}
 
 
-@router.get("/top-tests")
+@router.get(
+    "/top-tests",
+    summary="기간별 상위 검사",
+    description="주어진 기간에서 검사 코드(또는 상품)별 집계 상위 N건을 반환합니다.",
+    response_description="순위 테이블 / compact 시 코드·요약",
+)
 async def top_tests(
     dataset_id: uuid.UUID,
     period: str,
@@ -166,7 +198,10 @@ async def top_tests(
     period_col: str = "period",
     test_col: str = "test_code",
     value_col: str = "value",
-    compact: bool = False,
+    compact: bool = Query(
+        False,
+        description="true면 Dify·LLM용 4KB 이하 요약만 반환합니다.",
+    ),
 ) -> dict[str, Any]:
     row = await _require_owner_dataset(db, dataset_id, current_user)
     df, _ = ingestion_service.read_csv_validated(row.file_path)
