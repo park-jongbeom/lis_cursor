@@ -26,10 +26,12 @@ migrate:
 	$(ALEMBIC) upgrade head
 
 .PHONY: migrate-test
+# 테스트 DB 마이그레이션 — 비밀값은 .env.test 또는 환경 변수에서 읽음
+# .env.test 예시: POSTGRES_PASSWORD=idr-test-pw (gitignore 처리됨)
 migrate-test:
-	DATABASE_URL=postgresql+asyncpg://idr:password@localhost:15433/idr_test \
+	DATABASE_URL=postgresql+asyncpg://idr:$${POSTGRES_PASSWORD:-idr-test-pw}@localhost:15433/idr_test \
 	REDIS_URL=redis://localhost:6380/1 \
-	SECRET_KEY=test-secret-key-32chars-minimum!! \
+	SECRET_KEY=$${SECRET_KEY:-test-secret-key-32chars-minimum!!} \
 	ANTHROPIC_API_KEY=sk-ant-test \
 	DIFY_API_KEY=app-test \
 	DIFY_WORKFLOW_ID=test-workflow \

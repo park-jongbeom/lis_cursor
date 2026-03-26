@@ -1,8 +1,13 @@
-# Secrets & local env
+# Secrets & local env — 이 파일들은 절대 커밋하지 않는다
 .env
 .env.dev
 .env.prod
 .env.test
+.env.local
+*.env.local
+# Docker compose override (로컬 전용 오버라이드 — 서비스별 패스워드 포함 가능)
+docker-compose.override.yml
+docker-compose.local.yml
 
 # Python
 __pycache__/
