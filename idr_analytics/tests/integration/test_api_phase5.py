@@ -301,6 +301,38 @@ async def test_agent_query_dify_http_error_mapped_to_502(
         )
     assert r.status_code == 502, r.text
     data = r.json()["detail"]
-    assert data["code"] == "DIFY_HTTP_ERROR"
+    assert data["code"] == "DIFY_INPUT_ERROR"
     assert data["status_code"] == 400
     assert data["upstream"]["code"] == "invalid_param"
+
+
+@pytest.mark.asyncio
+async def test_agent_query_dify_auth_error_mapped_to_auth_code(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_user: tuple[User, str, str],
+    tmp_path: Path,
+) -> None:
+    user = db_user[0]
+    p = tmp_path / "crm_agent_auth_err.csv"
+    write_crm_csv(p)
+    ds = await insert_crm_dataset(user.id, str(p.resolve()), 6)
+
+    req = httpx.Request("POST", "http://localhost:8080/v1/workflows/run")
+    resp = httpx.Response(
+        status_code=401,
+        json={"code": "unauthorized", "message": "invalid api key"},
+        request=req,
+    )
+    err = httpx.HTTPStatusError("unauthorized", request=req, response=resp)
+
+    with patch("app.api.v1.endpoints.agent.routing_service.route", new=AsyncMock(side_effect=err)):
+        r = await client.post(
+            "/api/v1/agent/query",
+            json={"query": "요약", "dataset_id": str(ds.id), "query_type": 80},
+            headers=auth_headers,
+        )
+    assert r.status_code == 502, r.text
+    data = r.json()["detail"]
+    assert data["code"] == "DIFY_AUTH_ERROR"
+    assert data["status_code"] == 401

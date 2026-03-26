@@ -160,3 +160,20 @@
 ---
 
 > 이후 AI 오판이 발생하면 위 형식으로 이어서 추가하세요.
+
+---
+
+### [2026-03-27] VSCode Git 커밋 시 pre-commit auto-fix 롤백(unstaged 충돌) 재발
+
+**오류 유형**: 개발 워크플로 / pre-commit 충돌 (기타)
+
+**발생 상황**: VSCode Git 커밋 로그에서 `Unstaged files detected` 후 `ruff`·`ruff-format`이 파일을 수정했지만, 곧바로 `Stashed changes conflicted with hook auto-fixes... Rolling back fixes...`가 발생해 자동 수정이 되돌아감.
+
+**근본 원인**: 커밋 시점에 staged/unstaged 변경이 섞여 있었고, pre-commit이 unstaged를 stash한 상태에서 훅 자동 수정 결과와 복원 패치가 충돌함. 결과적으로 훅이 고친 내용이 워킹트리에 남지 않아 같은 오류가 반복될 수 있음.
+
+**재발 방지 규칙**:
+1. 커밋 전에 반드시 `make format && make lint && make typecheck`를 먼저 실행해 로컬 상태를 정리한다.
+2. 커밋 직전에는 `git add -A`로 이번 변경을 전부 스테이징하고, staged/unstaged 혼재 상태에서 IDE 즉시 커밋을 피한다.
+3. 동일 로그 문구(특히 `Rolling back fixes`)가 보이면 커밋을 중단하고, 포맷/린트 재실행 후 재스테이징한다.
+
+**관련 파일**: `.pre-commit-config.yaml`, `Makefile`, `docs/rules/error_analysis.md`

@@ -264,3 +264,28 @@
 **특이사항**:
 - 로컬 쉘 환경에 설정된 `ALLOWED_ORIGINS` 값이 JSON 형식이 아니면 앱/테스트 초기화에서 SettingsError가 발생할 수 있어, 실행 시 `unset ALLOWED_ORIGINS`를 사용해 회피.
 
+### [2026-03-27] Session 09 — 운영 안정화: Tier2 에러 분류 보강 (post-Phase 7)
+
+**완료 내용**: `/api/v1/agent/query`의 Dify 업스트림 오류를 입력/인증/타임아웃/기타 HTTP로 세분화해 운영 트러블슈팅 가시성을 강화했다. Session 08 Tier2 성공 경로는 유지하면서 실패 응답 `detail.code`의 의미를 명확히 했다.
+
+**변경 파일**:
+- `idr_analytics/app/api/v1/endpoints/agent.py`
+  - `_build_dify_http_error_detail` 추가
+  - `HTTPStatusError` 매핑: `DIFY_INPUT_ERROR` / `DIFY_AUTH_ERROR` / `DIFY_HTTP_ERROR`
+  - `RequestError` 매핑: 타임아웃 `DIFY_TIMEOUT_ERROR`, 그 외 `DIFY_REQUEST_ERROR`
+- `idr_analytics/tests/integration/test_api_phase5.py`
+  - 400 에러 기대값을 `DIFY_INPUT_ERROR`로 조정
+  - 401 인증 실패 통합 케이스 추가
+- `idr_analytics/tests/unit/test_agent_endpoint_error_mapping.py` (신규)
+  - 400/401 에러 분류 헬퍼 단위 테스트 추가
+
+**결정 사항**:
+1. 클라이언트 HTTP status는 기존과 동일하게 502를 유지하고, 원인 식별은 `detail.code`로 수행한다.
+2. Session 09 범위는 구조 변경 없이 에러 매핑 계층 최소 수정으로 제한한다.
+
+**테스트 결과**:
+- 단위: `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/test_agent_endpoint_error_mapping.py idr_analytics/tests/unit/test_agent_service.py` → 11 passed
+- 통합(선별): `test_api_phase5.py -k ...agent_query...`는 테스트 DB `localhost:15433` 미기동으로 fixture 단계에서 연결 실패
+
+**특이사항**: 통합 실패 원인은 로직 결함이 아니라 환경 선행조건 미충족(DB/Redis 미기동)이며, Gate C 명령 재실행으로 후속 확인 가능.
+

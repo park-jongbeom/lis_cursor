@@ -53,6 +53,41 @@ def _pandas_answer(body: AgentQueryRequest, obj: object) -> str:
     return str(obj)[:50000]
 
 
+def _build_dify_http_error_detail(exc: httpx.HTTPStatusError) -> dict[str, Any]:
+    status_code = exc.response.status_code if exc.response is not None else 502
+    detail: dict[str, Any] = {
+        "code": "DIFY_HTTP_ERROR",
+        "message": "Dify workflow request failed",
+        "status_code": status_code,
+    }
+
+    upstream_json: dict[str, Any] | None = None
+    if exc.response is not None:
+        try:
+            parsed = exc.response.json()
+            if isinstance(parsed, dict):
+                upstream_json = parsed
+                detail["upstream"] = parsed
+            else:
+                detail["upstream"] = exc.response.text
+        except Exception:
+            detail["upstream"] = exc.response.text
+
+    if status_code in (401, 403):
+        detail["code"] = "DIFY_AUTH_ERROR"
+        detail["message"] = "Dify authentication/authorization failed"
+        return detail
+
+    if status_code == 400 and upstream_json is not None:
+        up_code = str(upstream_json.get("code", "")).lower()
+        up_msg = str(upstream_json.get("message", "")).lower()
+        if up_code == "invalid_param" or "required" in up_msg:
+            detail["code"] = "DIFY_INPUT_ERROR"
+            detail["message"] = "Dify workflow input validation failed"
+
+    return detail
+
+
 @router.post("/query", response_model=AgentQueryResponse)
 async def agent_query(
     body: AgentQueryRequest,
@@ -165,21 +200,13 @@ async def agent_query(
             detail=str(exc),
         ) from exc
     except httpx.HTTPStatusError as exc:
-        detail: dict[str, Any] = {
-            "code": "DIFY_HTTP_ERROR",
-            "message": "Dify workflow request failed",
-            "status_code": exc.response.status_code if exc.response is not None else 502,
-        }
-        if exc.response is not None:
-            try:
-                detail["upstream"] = exc.response.json()
-            except Exception:
-                detail["upstream"] = exc.response.text
+        detail = _build_dify_http_error_detail(exc)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail) from exc
     except httpx.RequestError as exc:
+        code = "DIFY_TIMEOUT_ERROR" if isinstance(exc, httpx.TimeoutException) else "DIFY_REQUEST_ERROR"
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"code": "DIFY_REQUEST_ERROR", "message": str(exc)},
+            detail={"code": code, "message": str(exc)},
         ) from exc
 
     out_sid = body.session_id or uuid.uuid4()

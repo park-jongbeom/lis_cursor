@@ -24,7 +24,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 — Session 08에서 Dify 실연동(`workflows/run`, Tier2 `/agent/query`) 및 통합 테스트 확장(§7-3) 검증 완료 |
+| **현재 상태** | Phase 7 완료 + Session 09 운영 안정화(Agent Tier2 에러 분류 보강, 단위 검증 완료·통합은 테스트 DB 선행조건 필요) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
