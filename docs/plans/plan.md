@@ -14,8 +14,8 @@
 | 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` |
 | 4 서비스 | **완료** | Session 04 — 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 |
 | 5 API 라우터 | **완료** | Session 05 — v1 엔드포인트·ARQ 워커·통합 테스트 11건 |
-| 6 Dify 인프라·연동 | 완료 | 스택(`infra/dify` 1.13.2)·워크플로 Publish·Session 06 Gate A~D; **실연동(`DIFY_*`·workflows/run·Tier2)** 는 §Phase 6 검증 시점 → Phase 7-3 이연 |
-| 7 테스트·검증 | 진행 중 | Session 07 — §7-4 커버리지·pre-commit 완료; §7-3 Phase 6 이연·`DIFY_*` 실연동은 Session 08 |
+| 6 Dify 인프라·연동 | 완료 | Session 08에서 `DIFY_*` 실값 반영, `workflows/run`·Tier2 `/agent/query` 실연동 검증 완료 |
+| 7 테스트·검증 | 완료 | Session 08 — §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 |
 
 ---
 
@@ -24,7 +24,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 진행 중 — Session 07에서 §7-4(전체 pytest `--cov`·`pre-commit --all-files`) 완료. Dify 실호출·§7-3 이연 항목은 Session 08 |
+| **현재 상태** | Phase 7 완료 — Session 08에서 Dify 실연동(`workflows/run`, Tier2 `/agent/query`) 및 통합 테스트 확장(§7-3) 검증 완료 |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -300,7 +300,7 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 - [x] `make dify-up` / `podman-compose` 로 기동 (`infra/dify/README.md`)
 - [x] Dify 콘솔 접속 → **관리자 계정 생성·로그인**
 - [x] Settings → **Model Provider** 설정 (예: Ollama)
-- [ ] Studio → **API Key** 발급 → 루트 `.env`: `DIFY_API_KEY`, `DIFY_WORKFLOW_ID` (실값 반영 — Tier2·통합 검증 전 필수)
+- [x] Studio → **API Key** 발급 → 루트 `.env`: `DIFY_API_KEY`, `DIFY_WORKFLOW_ID` (실값 반영 — Tier2·통합 검증 전 필수)
 - [x] Dify Workflow 구성·DSL 가져오기 (참조: **`dify_integration.md` §3** — 동기 호출)
   ```
   Start → GET /crm/churn-risk?compact=true
@@ -363,7 +363,7 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
   - `GET /crm/churn-risk?compact=true` → `high_risk_count`, `top_customers`, `summary` 키
   - `GET /crm/churn-risk?compact=false` → `high_risk_customers` 등 전체 응답
   - 로그인·리프레시·소유권 403·미인증 401 등 포함 (`make test` / `POSTGRES_PASSWORD=idr-test-pw` + `migrate-test` 전제)
-- [ ] **Phase 6 연동(이연)**: Dify `workflows/run` 또는 Tier2 `/agent/query` — Phase 6 계획에 따라 로그인·시드 등 전제 완비 후 본 통합 스위트 또는 별도 시나리오에서 재검 (Mock 우선 가능 시 `test_agent_service` 단위로 선행)
+- [x] **Phase 6 연동(이연)**: Dify `workflows/run` 및 Tier2 `/agent/query` 실연동 검증 + 통합 테스트 확장 반영 (Session 08)
 
 ### 7-4. 최종 실행
 

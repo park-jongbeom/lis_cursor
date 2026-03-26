@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any, cast
 
+import httpx
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -162,6 +163,23 @@ async def agent_query(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
+        ) from exc
+    except httpx.HTTPStatusError as exc:
+        detail: dict[str, Any] = {
+            "code": "DIFY_HTTP_ERROR",
+            "message": "Dify workflow request failed",
+            "status_code": exc.response.status_code if exc.response is not None else 502,
+        }
+        if exc.response is not None:
+            try:
+                detail["upstream"] = exc.response.json()
+            except Exception:
+                detail["upstream"] = exc.response.text
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail) from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={"code": "DIFY_REQUEST_ERROR", "message": str(exc)},
         ) from exc
 
     out_sid = body.session_id or uuid.uuid4()

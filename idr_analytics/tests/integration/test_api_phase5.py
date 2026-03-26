@@ -5,12 +5,16 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 from app.core.security import hash_password
 from app.db.session import async_session_factory
 from app.models.dataset import AnalysisDataset
 from app.models.user import User
+from app.schemas.agent import AgentQueryResponse
+from app.services.analytics.routing_service import RoutingExecutionResult
 from httpx import AsyncClient
 
 from .helpers import insert_crm_dataset, insert_scm_dataset, write_crm_csv, write_scm_csv
@@ -233,3 +237,70 @@ async def test_forecast_forbidden_for_other_owner(
             if urow is not None:
                 await db.delete(urow)
             await db.commit()
+
+
+@pytest.mark.asyncio
+async def test_agent_query_tier2_success_with_output_answer(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_user: tuple[User, str, str],
+    tmp_path: Path,
+) -> None:
+    user = db_user[0]
+    p = tmp_path / "crm_agent.csv"
+    write_crm_csv(p)
+    ds = await insert_crm_dataset(user.id, str(p.resolve()), 6)
+    sid = uuid.uuid4()
+    fake = AgentQueryResponse(
+        session_id=sid,
+        query="요약",
+        answer="tier2 응답",
+        supporting_data={"workflow_run_id": "wf-1", "outputs": {"output": "tier2 응답"}},
+        route_used="ai_tier2",
+        llm_model="claude-sonnet-4-6",
+        processing_time_ms=100,
+    )
+    routing_res = RoutingExecutionResult(complexity=MagicMock(), agent_response=fake, pandas_result=None)
+    with patch("app.api.v1.endpoints.agent.routing_service.route", new=AsyncMock(return_value=routing_res)):
+        r = await client.post(
+            "/api/v1/agent/query",
+            json={"query": "요약", "dataset_id": str(ds.id), "query_type": 80},
+            headers=auth_headers,
+        )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["route_used"] == "ai_tier2"
+    assert body["answer"] == "tier2 응답"
+
+
+@pytest.mark.asyncio
+async def test_agent_query_dify_http_error_mapped_to_502(
+    client: AsyncClient,
+    auth_headers: dict[str, str],
+    db_user: tuple[User, str, str],
+    tmp_path: Path,
+) -> None:
+    user = db_user[0]
+    p = tmp_path / "crm_agent_err.csv"
+    write_crm_csv(p)
+    ds = await insert_crm_dataset(user.id, str(p.resolve()), 6)
+
+    req = httpx.Request("POST", "http://localhost:8080/v1/workflows/run")
+    resp = httpx.Response(
+        status_code=400,
+        json={"code": "invalid_param", "message": "period is required"},
+        request=req,
+    )
+    err = httpx.HTTPStatusError("bad request", request=req, response=resp)
+
+    with patch("app.api.v1.endpoints.agent.routing_service.route", new=AsyncMock(side_effect=err)):
+        r = await client.post(
+            "/api/v1/agent/query",
+            json={"query": "요약", "dataset_id": str(ds.id), "query_type": 80},
+            headers=auth_headers,
+        )
+    assert r.status_code == 502, r.text
+    data = r.json()["detail"]
+    assert data["code"] == "DIFY_HTTP_ERROR"
+    assert data["status_code"] == 400
+    assert data["upstream"]["code"] == "invalid_param"

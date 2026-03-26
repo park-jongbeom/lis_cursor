@@ -234,3 +234,33 @@
 
 **특이사항**: `podman-compose test-infra-up` 시 기존 pod/네트워크와 충돌 경고가 있을 수 있으나 최종적으로 `idr-postgres-test` healthy 확인.
 
+### [2026-03-27] Session 08 — Phase 6 실연동 마무리 + Phase 7 §7-3 확장 검증 (plan.md Phase 6/7)
+
+**완료 내용**: Dify 실연동 블로커 해소(운영 토큰/워크플로 모델 설정/게시 반영) 후 `workflows/run` 및 `POST /api/v1/agent/query` Tier2 성공 확인. 내부 검증용 shared bearer 인증 경로를 development 한정으로 도입하고, Agent Tier2 입력/응답 매핑 보강(`user`, `period`, `output→answer`). 통합 테스트에 Tier2 성공/실패 케이스를 추가하고 Gate D 품질 게이트까지 통과.
+
+**변경 파일**:
+- `idr_analytics/app/core/config.py` — `INTERNAL_BYPASS_ENABLED`, `INTERNAL_BYPASS_BEARER_TOKEN`, `INTERNAL_BYPASS_USERNAME`
+- `idr_analytics/app/core/dependencies.py` — development+플래그 기반 내부 bearer 우회 인증(사용자 매핑)
+- `idr_analytics/app/services/ai/agent_service.py` — `extra_inputs` 지원, Dify payload `user` 추가, `outputs.output` 폴백 매핑
+- `idr_analytics/app/services/analytics/routing_service.py` — AI 분기 추가 입력 전달(`ai_inputs`)
+- `idr_analytics/app/api/v1/endpoints/agent.py` — `period` 자동 추론 보강, Dify HTTP/요청 예외를 502 표준 detail로 변환
+- `idr_analytics/tests/unit/test_dependencies.py` — 내부 우회 인증 경계 테스트 추가
+- `idr_analytics/tests/unit/test_agent_service.py` — `output→answer`, `user`/`period` payload 테스트 추가
+- `idr_analytics/tests/integration/test_api_phase5.py` — Tier2 성공/실패 통합 테스트 2건 추가
+- `env.example` — 내부 우회 토큰 관련 템플릿 변수 추가
+- `docs/CURRENT_WORK_SESSION.md` — Session 08 Gate A~D 진행/검증 기록
+
+**결정 사항**:
+1. 내부 우회 인증은 **`APP_ENV=development` + `INTERNAL_BYPASS_ENABLED=true`** 조건에서만 활성화한다(운영 오용 방지).
+2. Dify 워크플로가 `period` 입력을 요구하므로 `/agent/query`는 `aggregation_period` 우선, 미입력 시 데이터셋 `period` 컬럼에서 추론해 전달한다.
+3. Dify 업스트림 오류(4xx/5xx)는 FastAPI에서 그대로 500 누출하지 않고 502 + 구조화 detail(`code`, `message`, `status_code`, `upstream`)로 반환한다.
+
+**테스트 결과 (Gate D)**:
+- `pytest idr_analytics/tests/unit/test_dependencies.py -q` → 10 passed
+- `pytest idr_analytics/tests/unit/test_agent_service.py -q` → 9 passed
+- `pytest idr_analytics/tests/integration/test_api_phase5.py -q` → 13 passed
+- `make format && make lint && make typecheck` 및 `pre-commit run --all-files` 통과
+
+**특이사항**:
+- 로컬 쉘 환경에 설정된 `ALLOWED_ORIGINS` 값이 JSON 형식이 아니면 앱/테스트 초기화에서 SettingsError가 발생할 수 있어, 실행 시 `unset ALLOWED_ORIGINS`를 사용해 회피.
+
