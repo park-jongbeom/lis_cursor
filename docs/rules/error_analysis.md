@@ -21,4 +21,21 @@
 
 ## 기록된 오류
 
-> 아직 기록된 오류가 없습니다. 프로젝트 진행 중 AI 오판이 발생하면 위 형식으로 추가하세요.
+### [2026-03-26] 구현 직후 세션 문서 전환 및 테스트 게이트 생략
+
+**오류 유형**: 프로세스 위반 / 워크플로 누락 (기타)
+
+**발생 상황**: Session 01(Phase 0~1 스캐폴딩) 코드 구현이 끝난 뒤, `docs/CURRENT_WORK_SESSION.md`를 사용자 검토·테스트 계획·테스트 검증 없이 곧바로 Session 02(Phase 2) 내용으로 교체하고 `WORK_HISTORY.md`만 갱신함.
+
+**근본 원인**: `.cursorrules`와 `project_context.md`에 "계획 → 승인 → 구현 → 승인 → 테스트" 원칙은 있었으나, **구현 완료를 `CURRENT_WORK_SESSION.md`에 남기는 단계**와 **사용자 확인 후 테스트 계획·실행**을 문서·게이트로 강제하는 규정이 없어 AI가 한 턴에 마감 처리함.
+
+**재발 방지 규칙**:
+1. 구현 종료 직후 **`CURRENT_WORK_SESSION.md`에 「구현 완료 요약」**을 쓰고 상태를 **사용자 확인 대기**로 둔다. 사용자 명시 승인 전에는 테스트 계획으로 넘어가지 않는다.
+2. 테스트는 **계획을 문서에 기록**한 뒤 승인받고, 실행 결과를 **「테스트 검증 결과」**에 남긴다.
+3. 위 순서는 **`docs/rules/workflow_gates.md`** 및 갱신된 `.cursorrules` / `project_context.md` §3단계를 따른다.
+
+**관련 파일**: `docs/rules/workflow_gates.md`, `.cursorrules`, `docs/rules/project_context.md`, `docs/CURRENT_WORK_SESSION.md`
+
+---
+
+> 이후 AI 오판이 발생하면 위 형식으로 이어서 추가하세요.

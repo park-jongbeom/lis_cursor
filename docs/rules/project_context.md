@@ -107,7 +107,7 @@ idr_analytics/
 | **컨테이너 관리** | `podman-compose` | docker-compose 호환 |
 | **SELinux** | Enabled | `podman build` 중 apt-get 단계에서 메모리 보호 충돌 |
 | **Python (호스트)** | 3.13.2 (`/home/lukus/miniconda3/bin/python`) | 프로젝트 타겟은 3.12 |
-| **pytest 실행** | 호스트 miniconda에서 `PYTHONPATH=. pytest tests/` | 컨테이너 빌드 불가로 호스트 직접 실행 |
+| **pytest 실행** | 호스트 miniconda에서 `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/` | 컨테이너 빌드 불가로 호스트 직접 실행 |
 
 > **컨테이너 빌드 실패 원인**: RHEL 8 + rootless podman + SELinux → glibc RELRO 메모리 보호 충돌.
 > ruff, mypy, pre-commit, pytest는 호스트 miniconda에서 직접 실행한다. 이는 Docker First 원칙의 예외가 아닌, 개발 워크플로 도구이기 때문이다.
@@ -116,7 +116,8 @@ idr_analytics/
 
 ## 3단계 작업 프로토콜 (반드시 준수)
 
-어떤 태스크를 받더라도 아래 순서를 지키고, **각 단계 후 반드시 멈추고 개발자 승인을 기다린다.**
+어떤 태스크를 받더라도 아래 순서를 지키고, **각 단계 후 반드시 멈추고 개발자 승인을 기다린다.**  
+문서 기준 게이트·표준 섹션은 **`docs/rules/workflow_gates.md`** 와 **`docs/CURRENT_WORK_SESSION.md`** 에 맞춘다.
 
 ### Step 1: 계획 문서화
 - 코딩 전에 변경할 파일, 사용할 로직, 예상 사이드 이펙트를 먼저 설명한다.
@@ -126,9 +127,16 @@ idr_analytics/
 - 개발자 승인 후 구현한다.
 - 소스코드 내에는 **클래스/함수 레벨 Docstring만** 작성 (튜토리얼식 주석 금지).
 - 개발자 백그라운드(Spring Boot / Kotlin / JPA / Flyway)와 1:1 비유로 설명한다.
-- 완료 후: "코드 구현이 완료되었습니다. 검토 후 테스트 계획(Step 3)을 시작할까요?" 라고 묻고 대기.
+- **구현 종료 직후**: `docs/CURRENT_WORK_SESSION.md`에 **구현 완료 요약**을 작성하고, 진행 상태를 **사용자 확인 대기**로 표시한다. 체크리스트 `- [x]` 반영.
+- **금지**: 사용자 검토 없이 `CURRENT_WORK_SESSION.md`를 다음 세션 과제만 담은 문서로 통째로 교체하는 것.
+- 완료 후: "구현 내용을 `CURRENT_WORK_SESSION.md`에 기록했습니다. 검토해 주시면 테스트 계획(Step 3a)을 작성하겠습니다." 라고 하고 **대기**.
 
-### Step 3: 테스트 검증
-- 테스트 코드 작성 전 **테스트 계획을 먼저 브리핑**하고 승인 대기.
-- pytest 실행: `PYTHONPATH=. pytest tests/`
-- 성공 후 다음 태스크 요청 대기.
+### Step 3a: 테스트 계획 (사용자 구현 확인 후)
+- 사용자가 Step 2를 확인한 뒤에만, 동일 세션 문서의 **「테스트 계획」**에 범위·명령·우선순위를 적는다.
+- 브리핑 후 승인 대기.
+
+### Step 3b: 테스트 검증
+- 승인 후 테스트 코드 작성 및 실행.
+- 이 프로젝트 레이아웃: `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/` (또는 세션 문서에 적힌 명령).
+- 결과를 **「테스트 검증 결과」**에 기록한다.
+- 성공 및 사용자 최종 확인 후 `docs/history/WORK_HISTORY.md`에 이전하고, `CURRENT_WORK_SESSION.md`를 다음 과제 중심으로 갱신한다.

@@ -54,3 +54,5 @@
 3. RHEL rootless Podman에서 공식 Postgres/Redis 이미지가 `libc` RELRO 오류로 실패 → `postgres:15-bookworm` / `redis:7-bookworm` + `security_opt: seccomp=unconfined`, `label=disable` 적용 후 healthy 확인. (Ubuntu ga-server Docker는 동일 제약이 없을 수 있음.)
 
 **특이사항**: 호스트에 Poetry 미설치 → `install.python-poetry.org` 로 설치. pre-commit mypy는 디렉터리 인자 중복 시 `Duplicate module` 발생 → `files:` 패턴으로 파일 단위 검사. Step 1-10(ga-server nginx / certbot)은 서버 작업으로 본 세션에서 미실행 — 배포 시 `docs/CURRENT_WORK_SESSION.md` Session 01 보관본 또는 본 이력 참고.
+
+**프로세스 보완 (2026-03-26)**: 당시 구현 직후 사용자 확인·테스트 계획·검증 게이트 없이 `CURRENT_WORK_SESSION.md`를 Session 02로 교체한 절차는 이후 **`docs/rules/workflow_gates.md`** 및 `.cursorrules` / `project_context.md` §3단계로 보완됨. 상세는 `docs/rules/error_analysis.md` 동일 날짜 기록 참고.
