@@ -50,11 +50,17 @@ select = ["E", "F", "I", "B", "UP"]
 "idr_analytics/app/schemas/*.py" = ["TCH003"]
 "idr_analytics/alembic/*.py" = ["E501", "TCH"]
 "idr_analytics/alembic/versions/*.py" = ["E501", "TCH"]
+"idr_analytics/app/core/dependencies.py" = ["B008"]
 
 [tool.mypy]
 strict = true
 plugins = ["pydantic.mypy"]
 explicit_package_bases = true
+mypy_path = "idr_analytics"
+
+[[tool.mypy.overrides]]
+module = "jose.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

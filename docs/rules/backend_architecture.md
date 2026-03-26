@@ -50,6 +50,31 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 ```
 
+### CPU-bound 동기 라이브러리와 `async def` 서비스 (Prophet, scikit-learn 등)
+
+서비스 메서드는 **`async def`** 로 유지하되, **Prophet `fit`/`predict`**, **KMeans `fit`**, **대용량 Pandas 순회** 등 순수 CPU-bound 동기 호출을 `async def` 본문에서 **직접** 호출하면 이벤트 루프가 차단된다.
+
+**권장 패턴** — 전용 스레드 풀에서 실행:
+
+```python
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+_executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="analytics")
+
+def _sync_prophet_forecast(df: pd.DataFrame, periods: int) -> pd.DataFrame:
+    ...
+
+async def forecast(self, df: pd.DataFrame, periods: int) -> pd.DataFrame:
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        _executor,
+        lambda: _sync_prophet_forecast(df, periods),
+    )
+```
+
+**대안**: 장시간 분석은 **ARQ 백그라운드 잡**으로만 실행하고, HTTP 핸들러는 job_id 반환·폴링만 담당한다 (`plan.md` Phase 5 ARQ 항목).
+
 ---
 
 ## 2. 하이브리드 라우팅 패턴 (핵심 아키텍처)
@@ -201,6 +226,22 @@ class PreprocessingService:
     # 규칙: df를 in-place로 수정하지 말 것 — df.copy() 후 반환
 ```
 
+### HTTP/API 에러 응답 표준 (클라이언트·Dify 공통)
+
+FastAPI 기본 `HTTPException(detail=...)`는 JSON으로 `{"detail": ...}` 형태가 된다. **Dify HTTP Request Node**가 파싱하기 쉽게 하려면 다음을 권장한다.
+
+1. **422/401/403**: FastAPI 기본 유지 가능 (`detail` 문자열 또는 검증 오류 배열).
+2. **404/409 등 도메인 오류**: `detail`에 **문자열**만 두지 말고, 가능하면 **일관된 dict**를 둔다.
+   ```python
+   raise HTTPException(
+       status_code=404,
+       detail={"code": "DATASET_NOT_FOUND", "message": "dataset not found", "dataset_id": str(dataset_id)},
+   )
+   ```
+3. **5xx**: 내부 메시지는 로그에만 남기고, 응답 `detail`은 짧은 공개 메시지로 제한한다.
+
+프로젝트 전역으로 커스텀 예외 클래스를 도입할 경우, **단일 `exception_handler`** 에서 위 형태로 직렬화하는 것이 유지보수에 유리하다. 상세는 Phase 5 구현 시 `main.py`에 합의 후 반영한다.
+
 ---
 
 ## 5. 코드 품질 게이트 (pre-commit 통과 필수)
@@ -258,7 +299,7 @@ PYTHONPATH=. pytest tests/ --cov=app --cov-report=term-missing
 # tests/unit/conftest.py — 파일 최상단에서 env var 사전 설정 필수
 # module-level에서 settings.X를 참조하는 코드의 pytest collection 오류 방지
 import os
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5433/idr_test")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:15432/idr_test")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 ```

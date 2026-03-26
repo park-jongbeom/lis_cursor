@@ -9,6 +9,6 @@ app = FastAPI(
 )
 
 
-@app.get("/health")  # type: ignore[misc]
+@app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}

@@ -11,7 +11,10 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          - pydantic
+          - pydantic>=2
+          - pydantic-settings>=2
+          - sqlalchemy[asyncio]>=2
+          - fastapi>=0.115
           - types-passlib
           - types-python-jose
         args:

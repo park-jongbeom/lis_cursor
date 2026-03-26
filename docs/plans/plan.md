@@ -4,6 +4,17 @@
 > **아키텍처 규칙**: `docs/rules/project_context.md`, `docs/rules/backend_architecture.md`, `docs/rules/dify_integration.md`
 > **작성일**: 2026-03-25
 
+### 진행 현황 (Gate E 시 본 표·아래 Phase 체크박스 동기화)
+
+| Phase | 상태 | 비고 |
+|-------|:----:|------|
+| 0 Pre-flight | 완료 | 도구 확인 |
+| 1 Scaffolding | 완료 | `docker-compose.dev.yml` / `prod` 분리 등 Session 01 |
+| 2 코어/DB | 완료 | ORM, Alembic, routing, dependencies |
+| 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` |
+| 4 서비스 | 진행 예정 | Session 04 CURRENT |
+| 5~7 | 미착수 | — |
+
 ---
 
 ## 프로젝트 개요
@@ -11,7 +22,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | 그린필드. `.cursorrules`, `docs/rules/`, `ref_files/` 만 존재. 코드 없음 |
+| **현재 상태** | Phase 3까지 완료. Phase 4 서비스 계층 진행 예정 (`docs/CURRENT_WORK_SESSION.md` 참조) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -35,7 +46,7 @@ FastAPI :8000   (CSV 수신 + Pandas 전처리 + SCM/CRM/BI 분석)
 SCMService / CRMService / BIService    Dify :80 → LLM Node (Claude/Ollama)
     │                                      │ HTTP Request Node → FastAPI (compact=true)
     ▼                              ▼
-PostgreSQL :5432 / Redis :6379
+PostgreSQL(호스트 매핑 예: 15432) / Redis :6379
 ```
 
 ---
@@ -44,10 +55,10 @@ PostgreSQL :5432 / Redis :6379
 
 > 참조: `docs/rules/project_context.md §실행환경`
 
-- [ ] 호스트 Python 버전 확인 (`/home/lukus/miniconda3/bin/python --version` → 3.13.x)
-- [ ] Poetry 설치 여부 확인 (`poetry --version`)
-- [ ] podman-compose 설치 여부 확인 (`podman-compose --version`)
-- [ ] pre-commit 설치 여부 확인 (`pre-commit --version`)
+- [x] 호스트 Python 버전 확인 (`/home/lukus/miniconda3/bin/python --version` → 3.13.x)
+- [x] Poetry 설치 여부 확인 (`poetry --version`)
+- [x] podman-compose 설치 여부 확인 (`podman-compose --version`)
+- [x] pre-commit 설치 여부 확인 (`pre-commit --version`)
 
 ---
 
@@ -57,25 +68,25 @@ PostgreSQL :5432 / Redis :6379
 
 ### 1-1. 의존성 및 품질 게이트
 
-- [ ] `pyproject.toml` 작성 (참조: SDD §10.3)
+- [x] `pyproject.toml` 작성 (참조: SDD §10.3)
   - `[tool.poetry.dependencies]`: `fastapi ^0.115`, `sqlalchemy[asyncio] ^2.0`, `alembic ^1.14`, `asyncpg ^0.30`, `pydantic-settings ^2.0`, `arq ^0.26`, `pandas ^2.2`, `numpy ^1.26`, `prophet ^1.1`, `statsmodels ^0.14`, `scikit-learn ^1.5`, `langchain ^0.3`, `langchain-anthropic ^0.3`, `anthropic ^0.40`, `httpx ^0.27`, `redis ^5.0`, `python-multipart`, `python-jose[cryptography]`, `passlib[bcrypt]`
   - `[tool.poetry.group.dev.dependencies]`: `pytest ^8.0`, `pytest-asyncio ^0.24`, `ruff ^0.6`, `mypy ^1.11`
   - `[tool.ruff]`: `line-length = 120` (참조: `backend_architecture.md §5`)
   - `[tool.ruff.lint.per-file-ignores]`: `app/models/**` + `app/schemas/**` → `TCH003` 무시, `alembic/**` → `E501`, `TCH` 무시
   - `[tool.mypy]`: `strict = true`
 
-- [ ] `.pre-commit-config.yaml` 작성 (`ruff`, `mypy` 훅 등록)
-- [ ] `poetry install` 실행
+- [x] `.pre-commit-config.yaml` 작성 (`ruff`, `mypy` 훅 등록)
+- [x] `poetry install` 실행
 
 ### 1-2. 환경 변수
 
-- [ ] `.env.example` 작성 (참조: SDD §10.1, `dify_integration.md §5`)
+- [x] `.env.example` 작성 (참조: SDD §10.1, `dify_integration.md §5`)
   - 필수 항목: `DATABASE_URL`, `REDIS_URL`, `SECRET_KEY`, `AI_ESCALATION_THRESHOLD=70`, `PANDAS_MAX_ROWS=2000000`, `ANTHROPIC_API_KEY`, `LLM_MODEL=claude-sonnet-4-6`, `DIFY_API_BASE_URL`, `DIFY_API_KEY`, `DIFY_WORKFLOW_ID`, `PROPHET_CHANGEPOINT_SCALE=0.05`, `KMEANS_DEFAULT_CLUSTERS=4`, `CHURN_RECENCY_THRESHOLD_DAYS=90`
-- [ ] `.env` 작성 (`.env.example` 기반, 실제 값 채우기)
+- [x] `.env` 작성 (`.env.example` 기반, 실제 값 채우기) — 로컬 전용, Git 제외
 
 ### 1-3. 디렉토리 구조 생성
 
-- [ ] SDD §6 구조대로 `idr_analytics/` 전체 디렉토리 트리 및 `__init__.py` 생성
+- [x] SDD §6 구조대로 `idr_analytics/` 전체 디렉토리 트리 및 `__init__.py` 생성
   ```
   idr_analytics/
   ├── app/
@@ -97,11 +108,10 @@ PostgreSQL :5432 / Redis :6379
 
 ### 1-4. 인프라 컨테이너
 
-- [ ] `docker-compose.yml` 작성 (참조: SDD §10.2, `dify_integration.md §5`)
-  - 서비스: `fastapi :8000`, `postgres:15-alpine :5432`, `redis:7-alpine :6379`
-  - 네트워크: `idr-net` (bridge, named — Dify가 external로 참조)
-  - postgres healthcheck: `pg_isready -U idr`
-- [ ] `podman-compose -f docker-compose.yml up -d` 실행 및 healthcheck 확인
+- [x] 인프라 Compose 작성 (참조: SDD §10.2, `dify_integration.md §5`) — `docker-compose.dev.yml` / `docker-compose.prod.yml` 등 Session 01 구성
+  - 로컬 Postgres 호스트 포트 **15432** 매핑(기존 5432 점유 회피), Redis 6379, 네트워크 `idr-net`
+  - postgres healthcheck: `pg_isready` 등
+- [x] 로컬에서 PG/Redis 기동·healthy 확인 (Session 01)
 
 ---
 
@@ -111,40 +121,40 @@ PostgreSQL :5432 / Redis :6379
 
 ### 2-1. Config & Settings
 
-- [ ] `app/core/config.py` — `Pydantic BaseSettings` (참조: `backend_architecture.md §1`)
+- [x] `app/core/config.py` — `Pydantic BaseSettings` (참조: `backend_architecture.md §1`)
   - 모든 env var 필드 정의 (Phase 1-2 항목 전체)
   - `model_config = SettingsConfigDict(env_file=".env")`
 
 ### 2-2. DB 세션
 
-- [ ] `app/db/base.py` — `DeclarativeBase`
-- [ ] `app/db/session.py` — `create_async_engine` + `async_session_factory` + `get_db()`
+- [x] `app/db/base.py` — `DeclarativeBase`
+- [x] `app/db/session.py` — `create_async_engine` + `async_session_factory` + `get_db()`
   - 반환 타입 `AsyncGenerator[AsyncSession, None]` 명시 필수 (참조: `backend_architecture.md §1`)
 
 ### 2-3. ORM 모델
 
-- [ ] `app/models/user.py` — `User` (`user_id`, `username`, `dept_code`, `role`, `is_active`)
-- [ ] `app/models/dataset.py` — `AnalysisDataset` (참조: SDD §9.1)
+- [x] `app/models/user.py` — `User` (구현 필드: `id`, `username`, `hashed_password`, `role`, `is_active` 등 — SDD와 명칭 일부 상이 가능)
+- [x] `app/models/dataset.py` — `AnalysisDataset` (참조: SDD §9.1)
   - `id: Mapped[uuid.UUID]`, `name`, `dataset_type`, `file_path`, `row_count`, `columns_json: JSONB`, `profile_json: JSONB`, `owner_id: FK(users.id)`
-- [ ] `app/models/analysis_result.py` — `AnalysisResult` + `InsightBlock` (참조: SDD §9.2)
+- [x] `app/models/analysis_result.py` — `AnalysisResult` + `InsightBlock` (참조: SDD §9.2)
   - `AnalysisResult`: `dataset_id`, `analysis_type`, `route_used`, `status`, `result_json: JSONB`, `complexity_score`, `processing_time_ms`
   - `InsightBlock`: `result_id`, `block_type`, `content: JSONB`, `source`, `confidence`
 
 ### 2-4. Alembic 마이그레이션
 
-- [ ] `alembic init alembic` 실행 + `alembic/env.py` async 설정
+- [x] `alembic init` + `idr_analytics/alembic/env.py` async 설정
   - `run_migrations_online()` → `AsyncEngine` + `async_engine_from_config` 패턴
-- [ ] `alembic/versions/0001_initial_schema.py` — `users`, `analysis_datasets` 테이블
-- [ ] `alembic/versions/0002_analysis_results.py` — `analysis_results`, `insight_blocks` 테이블
+- [x] `alembic/versions/0001_initial_schema.py` — `users`, `analysis_datasets` 테이블
+- [x] `alembic/versions/0002_analysis_results.py` — `analysis_results`, `insight_blocks` 테이블
   - Alembic downgrade에서 f-string SQL 절대 금지 → `sa.table().delete().where()` 패턴 (참조: `backend_architecture.md §5`)
-- [ ] `alembic upgrade head` 실행 확인
+- [x] `alembic upgrade head` 실행 확인 (환경별)
 
 ### 2-5. 의존성 주입 & 라우팅 코어
 
-- [ ] `app/core/dependencies.py` — `get_current_user`, `require_admin` (참조: `backend_architecture.md §3`)
+- [x] `app/core/dependencies.py` — `get_current_user`, `require_admin` (참조: `backend_architecture.md §3`)
   - `oauth2_scheme` → JWT 검증 → `User` 반환
   - SQLAlchemy WHERE 절: `true()` 사용 (`bool` 리터럴 금지, 참조: `backend_architecture.md §5`)
-- [ ] `app/core/routing.py` — `ComplexityScorer` (참조: SDD §5.2, `backend_architecture.md §2`)
+- [x] `app/core/routing.py` — `ComplexityScorer` (참조: SDD §5.2, `backend_architecture.md §2`)
   - `QueryType` enum: `AGGREGATION(10)`, `FORECAST(30)`, `CLUSTER(35)`, `TREND(25)`, `NATURAL_LANGUAGE(80)`, `ANOMALY_EXPLAIN(75)`
   - `DATA_SIZE_PENALTY`: `1_000_000 → +20`, `500_000 → +10`
   - `CROSS_TABLE_BONUS = 15`
@@ -157,16 +167,16 @@ PostgreSQL :5432 / Redis :6379
 > 참조: SDD §7 (Request/Response 명세 전체)
 > `app/schemas/**` → `from __future__ import annotations` 사용 가능
 
-- [ ] `app/schemas/dataset.py` — `DatasetUploadRequest`, `DatasetProfileResponse`
+- [x] `app/schemas/dataset.py` — `DatasetUploadRequest`, `DatasetProfileResponse`
   - Response 필드: `dataset_id`, `dataset_name`, `row_count`, `columns`, `dtypes`, `null_counts`, `created_at`
-- [ ] `app/schemas/scm.py` — `ForecastRequest`, `ForecastResponse`
+- [x] `app/schemas/scm.py` — `ForecastRequest`, `ForecastResponse` 및 compact DTO
   - Request: `dataset_id`, `target_column`, `date_column`, `group_by`, `test_codes`, `forecast_days`, `model`
   - Response: `job_id`, `status`, `model_used`, `forecasts[{test_code, predictions[{ds, yhat, yhat_lower, yhat_upper}], trend_direction, seasonality}]`
-- [ ] `app/schemas/crm.py` — `ClusterRequest`, `ClusterResponse`, `ChurnRiskItem`
+- [x] `app/schemas/crm.py` — `ClusterRequest`, `ClusterResponse`, `ChurnRiskItem` 및 compact DTO
   - `ChurnRiskItem` 필드: `customer_code`, `customer_name`, `last_order_days_ago`, `churn_risk_score`, `rfm_segment`, `recommended_action`
-- [ ] `app/schemas/bi.py` — `TrendRequest`, `TrendResponse`, `HeatmapResponse`
+- [x] `app/schemas/bi.py` — `TrendRequest`, `TrendResponse`, `HeatmapResponse` 및 compact DTO
   - `HeatmapResponse`: `period`, `test_category`, `heatmap[{region, order_count, yoy_growth, top_test}]`, `insight`
-- [ ] `app/schemas/agent.py` — `AgentQueryRequest`, `AgentQueryResponse`
+- [x] `app/schemas/agent.py` — `AgentQueryRequest`, `AgentQueryResponse`
   - Response: `session_id`, `query`, `answer`, `supporting_data`, `route_used`, `llm_model`, `processing_time_ms`
 
 ---
@@ -175,11 +185,21 @@ PostgreSQL :5432 / Redis :6379
 
 > 참조: `docs/rules/backend_architecture.md §4 (Pandas 계층 분리)`, SDD §8
 
+### 4-0. CRUD 계층 (서비스·엔드포인트보다 먼저)
+
+Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하므로, **서비스 구현 전**에 다음을 둔다.
+
+- [ ] `app/crud/base.py` — Generic CRUD (`get`, `get_multi`, `create`, `update`, `delete`) — async SQLAlchemy 2.0 패턴
+- [ ] `app/crud/crud_user.py` — `User` 조회 등 (`dependencies`는 현재 직접 `select` 사용 가능하나, 재사용·테스트를 위해 CRUD 권장)
+- [ ] `app/crud/crud_dataset.py` — `AnalysisDataset` get/list/create/update/delete
+- [ ] `app/crud/__init__.py` — 필요 시 re-export
+
 ### 4-1. 데이터 계층
 
 - [ ] `app/services/data/ingestion_service.py` — CSV → validated `DataFrame`
   - `read_csv_validated()`: 컬럼 존재 여부, dtype 캐스팅, `row_count` 반환
   - `df.copy()` 불변성 원칙 준수 (참조: `backend_architecture.md §4`)
+  - DB 저장 시 `columns_json` 권장 구조: `{"columns": [str, ...], "dtypes": {col: str}, "null_counts": {col: int}}` — `DatasetProfileResponse`와 매핑 시 서비스에서 `profile_json` 병합 또는 `model_validate`용 dict 조립
 - [ ] `app/services/data/preprocessing_service.py` (참조: SDD §4.1 Preprocessing Layer)
   - `build_time_index(df, date_col)`: `pd.to_datetime` → `set_index` → `sort_index` → `ffill()`
   - `fill_missing(df)`: 도메인별 결측치 전략 (수치 → ffill, 범주 → 최빈값)
@@ -222,6 +242,14 @@ PostgreSQL :5432 / Redis :6379
 > FastAPI Depends가 런타임 타입 resolve 실패 → 422 에러 발생 (참조: `backend_architecture.md §1`)
 > 서비스 주입: 모듈 레벨 인스턴스 + `Depends(lambda: svc)` 패턴 (참조: `backend_architecture.md §3`)
 
+### ARQ 잡 결과·폴링 전략 (필수 결정)
+
+`GET /scm/forecast/{job_id}`, `GET /crm/cluster/{job_id}` 등은 잡 상태(`pending` / `running` / `completed` / `failed`)와 결과를 반환해야 한다.
+
+- **기본 권장**: ARQ가 **Redis**에 job 결과를 저장 — 폴링 엔드포인트는 ARQ API(또는 래퍼)로 `job_id` 조회.
+- **장기 보관·감사**: 완료 시 `analysis_results`(및 `result_json`)에 스냅샷 저장을 **선택**으로 추가할 수 있다.
+- 구현 시 `app/workers/arq_worker.py`와 엔드포인트가 동일한 직렬화 규칙을 쓰도록 문서화한다.
+
 - [ ] `app/main.py` — `FastAPI(lifespan=...)` + CORS + `api_router` 마운트
   - lifespan: DB 연결 풀 생성 / 종료
 - [ ] `app/api/v1/api.py` — `include_router` × 5 (`auth`, `datasets`, `scm`, `crm`, `bi`, `agent`)
@@ -254,11 +282,9 @@ PostgreSQL :5432 / Redis :6379
   - `GET /bi/top-tests?period=&top_n=10&compact=false`
   - **compact=true 응답**: `period`, `top_regions`, `trending_tests`, `heatmap_highlights`, `summary` (4KB 이하)
 - [ ] `app/api/v1/endpoints/agent.py` (참조: SDD §7.6)
-  - `POST /agent/query` → `AnalysisRoutingService.score()` → `AgentService.analyze()` (Dify 프록시)
+  - `POST /agent/query` — body `AgentQueryRequest` → **`RoutingRequest`(또는 `ComplexityScorer` 입력)** 로 변환하는 어댑터(필드 매핑·기본 `query_type` 등) 후 `AnalysisRoutingService` / `ComplexityScorer.score()` → Tier 2 시 `AgentService.analyze()`
   - `GET /agent/query/{session_id}`
-- [ ] `app/crud/base.py` — Generic CRUD (`get`, `get_multi`, `create`, `update`, `delete`)
-- [ ] `app/crud/crud_dataset.py` — `AnalysisDataset` CRUD
-- [ ] `app/workers/arq_worker.py` — ARQ `WorkerSettings` + `forecast_job`, `cluster_job` 태스크 정의
+- [ ] `app/workers/arq_worker.py` — ARQ `WorkerSettings` + `forecast_job`, `cluster_job` 태스크 정의 (위 ARQ 결과 전략과 일치)
 
 ---
 
@@ -291,15 +317,8 @@ PostgreSQL :5432 / Redis :6379
 
 ### 7-1. 테스트 기반 설정
 
-- [ ] `tests/conftest.py` — **파일 최상단에서 `os.environ.setdefault` 필수** (참조: `backend_architecture.md §6`)
-  ```python
-  import os
-  os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5433/idr_test")
-  os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
-  os.environ.setdefault("SECRET_KEY", "test-secret-key")
-  os.environ.setdefault("AI_ESCALATION_THRESHOLD", "70")
-  # 위 설정 이후 app.* import
-  ```
+- [x] `idr_analytics/tests/conftest.py` — **파일 최상단에서 `os.environ.setdefault` 필수** (Phase 2에서 완료, 참조: `backend_architecture.md §6`)
+  - 실제 프로젝트 URL은 **호스트 Postgres 포트 15432** 등 환경에 맞게 유지한다. Phase 7 예시의 `5433`은 참고용이며 복제 시 현재 `conftest.py`와 충돌하지 않도록 할 것.
 
 ### 7-2. 단위 테스트
 
@@ -334,7 +353,7 @@ PostgreSQL :5432 / Redis :6379
 
 ### 7-4. 최종 실행
 
-- [ ] `PYTHONPATH=. pytest tests/ --cov=app --cov-report=term-missing` 전체 통과 확인
+- [ ] `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/ --cov=app --cov-report=term-missing` 전체 통과 확인
 - [ ] `pre-commit run --all-files` (ruff + mypy) 통과 확인
 
 ---
@@ -345,6 +364,8 @@ PostgreSQL :5432 / Redis :6379
 |------|------|------|
 | `from __future__ import annotations` 금지 | `backend_architecture.md §1` | `endpoints/*.py` 파일 전체 적용. Depends 422 에러 원인 |
 | `async/await` 일관성 | `backend_architecture.md §1` | 모든 엔드포인트/서비스 메서드는 `async def` |
+| CPU-bound 동기 라이브러리 | `backend_architecture.md §1` | Prophet/sklearn 등은 `run_in_executor` 또는 ARQ 잡 |
+| HTTP 에러 JSON | `backend_architecture.md §4` | Dify 파싱 가능한 `detail` 구조 권장 |
 | `compact=true` 필수 | `dify_integration.md §2` | 모든 분석 엔드포인트. 응답 4KB 이하 |
 | `df.copy()` 불변성 | `backend_architecture.md §4` | Pandas 계층. in-place 수정 금지 |
 | conftest env var 선언 위치 | `backend_architecture.md §6` | `import os; os.environ.setdefault(...)` 파일 최상단 |
@@ -354,14 +375,17 @@ PostgreSQL :5432 / Redis :6379
 
 ## 부록 B. 포트 구성 요약
 
-| 서비스 | 포트 | compose 파일 |
-|--------|------|-------------|
-| FastAPI | 8000 | `docker-compose.yml` |
-| PostgreSQL (idr) | 5432 | `docker-compose.yml` |
-| Redis | 6379 | `docker-compose.yml` |
-| Dify Web UI + API | 80 | `docker-compose.dify.yml` |
-| PostgreSQL (Dify) | 5433 | `docker-compose.dify.yml` |
+| 서비스 | 포트 | 비고 |
+|--------|------|------|
+| FastAPI (호스트 실행) | 8000 | uvicorn |
+| PostgreSQL (idr) 컨테이너 내부 | 5432 | 표준 |
+| PostgreSQL (idr) **호스트 매핑** | **15432** | 로컬 dev(`docker-compose.dev.yml` 등) — 기존 5432 점유 회피 |
+| Redis | 6379 | idr 스택 |
+| Dify Web UI + API | 80 | `docker-compose.dify.yml` (Phase 6) |
+| PostgreSQL (Dify 전용) | 5433 | Dify DB — idr DB와 분리 |
 | Ollama (선택) | 11434 | 호스트 직접 실행 |
+
+> 아키텍처 다이어그램의 `5432`는 **컨테이너 내부** 관점이다. 개발 PC에서 `psql`/pytest 연결 시에는 **호스트 포트(15432)** 를 사용한다.
 
 ## 부록 C. Kaggle 대체 데이터셋
 
