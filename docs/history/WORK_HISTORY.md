@@ -216,3 +216,21 @@
 
 **특이사항**: `plan.md` Phase 6의 **API Key → `.env` 실값** 체크박스(`Studio → API Key…`)는 운영자 `.env` 반영 여부에 따라 별도 완료 처리. 미반영 시 Tier2·C-1/C-2는 계속 블로커.
 
+### [2026-03-27] Session 07 — Phase 7 §7-4 커버리지·pre-commit (plan.md Phase 7)
+
+**완료 내용**: Gate A 계획 실행. `pytest --cov=app`가 `pytest-cov` 미설치로 실패하여 dev 의존성 추가 후 **단위 123·통합 11·합계 134** 전부 PASSED, **전체 `app` 커버리지 74%**, `htmlcov/` 생성(Git 무시). `pre-commit run --all-files`(ruff·ruff-format·mypy) 통과. `plan.md` §7-4 체크 완료 반영.
+
+**변경 파일**:
+- `pyproject.toml` — `[tool.poetry.group.dev.dependencies]` 에 `pytest-cov ^6.0`
+- `poetry.lock` — `coverage`, `pytest-cov` 해상
+- `docs/plans/plan.md` — §7-4 `[x]`, 진행 표·프로젝트 개요 문구
+- `docs/CURRENT_WORK_SESSION.md` — Gate E: Session 08 템플릿으로 전환
+
+**결정 사항**:
+1. **§7-3 Phase 6 이연**(Dify `workflows/run`, Tier2 `/agent/query`)은 Gate A 범위에서 제외 유지 — 루트 `.env` `DIFY_*` 실값 전제 시 Session 08에서 재검.
+2. 커버리지 합격선 수치는 미설정; 현황(74%)만 기록.
+
+**테스트 결과 (Gate D, 2026-03-27)**: `make test-infra-up` → `make migrate-test` → `pytest idr_analytics/tests/unit/`·`integration/`·전체(위 명령) 통과. `datetime.utcnow()` DeprecationWarning 다수(기존 코드 경로). `arq_worker.py`는 통합에서 미실행으로 0% 커버(잔여).
+
+**특이사항**: `podman-compose test-infra-up` 시 기존 pod/네트워크와 충돌 경고가 있을 수 있으나 최종적으로 `idr-postgres-test` healthy 확인.
+

@@ -15,7 +15,7 @@
 | 4 서비스 | **완료** | Session 04 — 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 |
 | 5 API 라우터 | **완료** | Session 05 — v1 엔드포인트·ARQ 워커·통합 테스트 11건 |
 | 6 Dify 인프라·연동 | 완료 | 스택(`infra/dify` 1.13.2)·워크플로 Publish·Session 06 Gate A~D; **실연동(`DIFY_*`·workflows/run·Tier2)** 는 §Phase 6 검증 시점 → Phase 7-3 이연 |
-| 7 테스트·검증 | 진행 중 | Session 07 — 커버리지·pre-commit 전체·Phase 6 이연 시나리오 확정 (`CURRENT_WORK_SESSION.md`) |
+| 7 테스트·검증 | 진행 중 | Session 07 — §7-4 커버리지·pre-commit 완료; §7-3 Phase 6 이연·`DIFY_*` 실연동은 Session 08 |
 
 ---
 
@@ -24,7 +24,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 진행 중 — Session 06 마감(Gate E). 회귀·품질(`make test`·lint·mypy) 검증 완료; Dify 실호출·커버리지 풀 스위트·`pre-commit --all-files` 는 Session 07에서 추적 |
+| **현재 상태** | Phase 7 진행 중 — Session 07에서 §7-4(전체 pytest `--cov`·`pre-commit --all-files`) 완료. Dify 실호출·§7-3 이연 항목은 Session 08 |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -367,8 +367,10 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 ### 7-4. 최종 실행
 
-- [ ] `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/ --cov=app --cov-report=term-missing` 전체 통과 확인
-- [ ] `pre-commit run --all-files` (ruff + mypy) 통과 확인
+> **Session 07 (2026-03-27)**: `--cov` 실행을 위해 dev 의존성 `pytest-cov` 추가(`pyproject.toml` / `poetry.lock`). HTML 리포트는 `htmlcov/`(Git 무시).
+
+- [x] `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/ --cov=app --cov-report=term-missing` 전체 통과 확인
+- [x] `pre-commit run --all-files` (ruff + mypy) 통과 확인
 
 ---
 
