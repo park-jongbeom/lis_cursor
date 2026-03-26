@@ -289,3 +289,29 @@
 
 **특이사항**: 통합 실패 원인은 로직 결함이 아니라 환경 선행조건 미충족(DB/Redis 미기동)이며, Gate C 명령 재실행으로 후속 확인 가능.
 
+### [2026-03-27] Session 10 — 운영 안정화: 통합 환경 복구 및 Tier2 회귀 검증 (post-Phase 7)
+
+**완료 내용**: Session 09에서 환경 선행조건 미충족으로 막혔던 통합 검증을 재수행했다. 테스트 전용 인프라(DB 15433/Redis 6380) 기동·마이그레이션 후 `make test` 전체를 실행해 `/api/v1/agent/query` Tier2 경로와 Dify 에러 코드 매핑(`DIFY_INPUT_ERROR`, `DIFY_AUTH_ERROR`)이 통합 테스트에서 정상 유지됨을 확인했다.
+
+**변경 파일**:
+- `docs/CURRENT_WORK_SESSION.md`
+  - Gate A 상세 계획 작성
+  - Gate B/C/D 실행·검증 결과 기록
+
+**결정 사항**:
+1. Session 10 범위는 **코드 변경 없이 회귀 검증 우선**으로 유지한다.
+2. `/agent/query` 통합 회귀의 합격 기준은 기존 HTTP 502 유지 + `detail.code` 정확성(`DIFY_INPUT_ERROR`, `DIFY_AUTH_ERROR`)으로 둔다.
+3. `ALLOWED_ORIGINS` 환경 오염 가능성을 고려해 테스트 실행 시 `unset ALLOWED_ORIGINS`를 기본 절차로 유지한다.
+
+**테스트 결과**:
+- `unset ALLOWED_ORIGINS && make test` -> exit code 0
+- 단위: `134 passed`
+- 통합: `14 passed`
+- 핵심 통합:
+  - `test_agent_query_tier2_success_with_output_answer` passed
+  - `test_agent_query_dify_http_error_mapped_to_502` passed (`DIFY_INPUT_ERROR`)
+  - `test_agent_query_dify_auth_error_mapped_to_auth_code` passed (`DIFY_AUTH_ERROR`)
+
+**특이사항**:
+- `test-infra-down` 단계에서 dev pod/network와 연계된 Podman 경고가 출력되지만, 테스트 성공/실패 판정에는 영향이 없었다.
+
