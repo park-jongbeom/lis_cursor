@@ -2,7 +2,7 @@
 
 > LIS(유전자 검사 의뢰 관리) 정형 데이터를 AI로 분석해 비즈니스 의사결정을 자동화하는 FastAPI 백엔드
 >  
-> **현재 상태**: Phase 7 완료, Session 10 운영 안정화 단계
+> **현재 상태**: Phase 7 완료. Session 11에서 테스트 compose 프로젝트 분리(`name: idr-test`)·`make test` Podman 로그 정리·`utcnow` 제거 반영.
 
 ---
 
@@ -56,8 +56,7 @@ PostgreSQL / Redis           HTTP Request -> FastAPI ?compact=true
 - Dify 인프라 연동(`infra/dify` 스택, `workflows/run` 연동 검증)
 - 테스트/검증(단위·통합·커버리지·pre-commit 통과)
 
-현재 작업(Session 10):
-- 운영 안정화 후속 개선 및 통합 테스트 환경 복구 범위 정리
+세부 진행 과제는 [`docs/CURRENT_WORK_SESSION.md`](docs/CURRENT_WORK_SESSION.md) 및 [`docs/plans/plan.md`](docs/plans/plan.md) 를 참고한다.
 
 ---
 
@@ -120,9 +119,12 @@ Swagger: `http://localhost:8000/docs`
 # 단위 테스트
 PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/ -v
 
-# 전체(권장)
-make test
+# 전체(권장) — 쉘에 ALLOWED_ORIGINS가 잘못 설정되어 있으면 앱 Settings 로딩이 실패할 수 있어 unset 권장
+unset ALLOWED_ORIGINS && make test
 ```
+
+- **Podman**: `docker-compose.test.yml`에 compose 프로젝트명 **`idr-test`** 가 지정되어 있다. `make test`가 끝나면 `test-infra-down`이 컨테이너와 함께 **`idr-test_pgdata-test`** 볼륨·**`idr-test_idr-test-net`** 네트워크를 제거한다.
+- **레거시**: Session 11 이전 스택에서 남은 **`lis_cursor_pgdata-test`** / **`lis_cursor_idr-test-net`** 은 `make test-infra-clean-legacy` 또는 수동 `podman volume rm` / `podman network rm` 으로 정리한다.
 
 ```bash
 # 커버리지 리포트
@@ -143,6 +145,7 @@ make typecheck
 make test-unit
 make test-unit-cov
 make test
+make test-infra-clean-legacy   # (선택) 구 테스트 볼륨/네트워크 lis_cursor_* 정리
 
 # 인프라
 make dev-up

@@ -336,3 +336,23 @@
 
 **특이사항**: 기존 로컬에 남아 있던 `lis_cursor_*` 테스트 볼륨·네트워크는 수동 `podman volume rm` / `network rm`으로 정리할 수 있다.
 
+### [2026-03-27] Session 12 — 운영 안정화: README·Makefile 테스트 가이드 정합성 (post-Phase 7)
+
+**완료 내용**: Session 11 이후 절차(`name: idr-test`, `unset ALLOWED_ORIGINS`, 레거시 `lis_cursor_*`)를 루트 README에 반영하고, 구 테스트 볼륨·네트워크 정리용 `make test-infra-clean-legacy` 타깃을 추가했다. Gate C/D로 전체 테스트 회귀를 실행해 합격 기준을 확인했다.
+
+**변경 파일**:
+- `README.md` — 현재 상태 문구, §테스트·§주요 Make 명령 갱신
+- `Makefile` — `test-infra-clean-legacy` 타깃
+- `docs/CURRENT_WORK_SESSION.md` — Gate A~D 기록(마감 시 Session 13용으로 교체)
+
+**결정 사항**:
+1. 본 세션은 앱·테스트 소스 변경 없이 문서·Makefile만 다룬다.
+2. 회귀 검증은 `unset ALLOWED_ORIGINS && make test` 단일 경로로 충분하다.
+
+**테스트 결과 (Gate D)**:
+- `unset ALLOWED_ORIGINS && make test` → exit 0, 단위 134 passed, 통합 14 passed
+- 로그에 `^Error:` 없음, `DeprecationWarning` 출력 없음
+- `make test-infra-clean-legacy` → exit 0
+
+**특이사항**: 없음.
+

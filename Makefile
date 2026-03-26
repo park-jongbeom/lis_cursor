@@ -27,6 +27,12 @@ test-infra-down:
 	podman network rm idr-test_idr-test-net 2>/dev/null || true
 	podman volume rm idr-test_pgdata-test 2>/dev/null || true
 
+.PHONY: test-infra-clean-legacy
+## Session 11 이전(compose 프로젝트명이 디렉터리 기본값이던 시기)에 남은 테스트 볼륨·네트워크만 제거 시도 — idr-test 도입 후에는 보통 불필요
+test-infra-clean-legacy:
+	podman volume rm lis_cursor_pgdata-test 2>/dev/null || true
+	podman network rm lis_cursor_idr-test-net 2>/dev/null || true
+
 # ── 마이그레이션 ───────────────────────────────────────────────────────────────
 
 .PHONY: migrate

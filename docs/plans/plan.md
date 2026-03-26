@@ -24,7 +24,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Session 11 운영 안정화(테스트 compose 프로젝트 분리·`utcnow` 제거로 `make test` 로그 정리) |
+| **현재 상태** | Phase 7 완료 + Session 12 운영 안정화(README·Makefile 테스트 가이드·`test-infra-clean-legacy`) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
