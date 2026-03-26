@@ -6,7 +6,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,5 +25,6 @@ class AnalysisDataset(Base):
     profile_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(UTC).replace(tzinfo=None),
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
     )

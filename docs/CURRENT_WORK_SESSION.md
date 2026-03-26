@@ -1,10 +1,10 @@
-# 현재 작업 세션 — Session 15
+# 현재 작업 세션 — Session 16
 
 > **대상 Phase**: 운영 안정화/후속 개선(Phase 7 완료 이후)
 > **전체 계획 참조**: [`docs/plans/plan.md`](plans/plan.md) §Session 번호 정의·§Phase 8 운영 안정화
 > **워크플로 규칙**: [`docs/rules/workflow_gates.md`](rules/workflow_gates.md)
 
-> **직전 세션**: Session 14 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 14 — 운영 안정화: OpenAPI 보강 + ARQ 잡 통합 테스트」.
+> **직전 세션**: Session 15 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 15 — 운영 안정화: `TIMESTAMPTZ` 마이그레이션 + 운영 점검 체크리스트」.
 
 ---
 
@@ -20,7 +20,7 @@
 
 | 게이트 | 완료 | 비고 |
 |--------|:----:|------|
-| A. 구현 상세 계획 | ⬜ | Session 15 범위 확정 전 |
+| A. 구현 상세 계획 | ⬜ | Session 16 범위 확정 전 |
 | B. 구현 완료 | ⬜ | A 승인 후 |
 | C. 테스트 상세 계획 | ⬜ | B 완료 후 |
 | D. 테스트 검증 | ⬜ | C 승인 후 |
@@ -32,16 +32,16 @@
 
 | 구간 | 한 줄 |
 |------|--------|
-| **Session 14 결과** | OpenAPI 보강·ARQ 통합 `test_arq_worker_integration_suite`; `make test` **134+15** 통과 |
-| **Session 15 후보** | `plan.md` §Phase 8 후보: `TIMESTAMPTZ` 마이그레이션(선택), 운영(`APP_ENV=production`) 점검 체크리스트 문서화 — Gate A에서 확정 |
+| **Session 15 결과** | `0003_timestamptz`·ORM aware `created_at`·`production_checklist.md`; `make test` **134+15** 통과 |
+| **Session 16 후보** | `plan.md` §Phase 8 「후보 항목 (Session 16+)」— 운영 중 과제를 Gate A에서 추가 |
 
-**바로 다음 액션**: Session 15 범위를 Gate A에 상세화하고 사용자 승인 후 진행한다.
+**바로 다음 액션**: Session 16 범위를 Gate A에 상세화하고 사용자 승인 후 진행한다.
 
 ---
 
 ## 완료 기준 (초안)
 
-- Session 15 대상 범위 확정
+- Session 16 대상 범위 확정
 - Gate A~D 절차에 따라 구현·테스트·검증 기록 완료
 - Gate E에서 이력 및 `plan.md` 동기화 완료
 
@@ -49,7 +49,7 @@
 
 ## 구현 상세 계획 (Gate A)
 
-> Session 15 범위 확정 후 작성
+> Session 16 범위 확정 후 작성
 
 ---
 
@@ -71,6 +71,6 @@
 
 ---
 
-## 이전 세션 요약 (Session 14)
+## 이전 세션 요약 (Session 15)
 
-OpenAPI(`openapi_tags`, 엔드포인트 `summary`/`description`, `compact`용 `Query` 설명) 보강 및 `tests/integration/test_arq_worker_integration.py`의 단일 스위트로 ARQ 잡 3종·6시나리오 통합 검증. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 동일 제목 항목.
+`TIMESTAMPTZ` 마이그레이션·모델 정합·`agent.py` CLUSTER `reference_date`, 운영 점검 문서 `docs/rules/production_checklist.md`. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 동일 제목 항목.

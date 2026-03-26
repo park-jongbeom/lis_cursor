@@ -158,7 +158,7 @@ async def agent_query(
     elif df is not None and qt == QueryType.CLUSTER:
         pandas_context = CRMClusterContext(
             df=df,
-            reference_date=datetime.now(UTC).replace(tzinfo=None),
+            reference_date=datetime.now(UTC),
             n_clusters=body.n_clusters,
         )
     elif df is not None and qt == QueryType.TREND:

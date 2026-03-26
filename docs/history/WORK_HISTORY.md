@@ -399,3 +399,24 @@
 
 **특이사항**: 없음.
 
+### [2026-03-27] Session 15 — 운영 안정화: `TIMESTAMPTZ` 마이그레이션 + 운영 점검 체크리스트 (post-Phase 7)
+
+**완료 내용**: 네 테이블 `created_at`을 `TIMESTAMP WITH TIME ZONE`으로 전환하는 Alembic `0003_timestamptz`를 추가하고, ORM `DateTime(timezone=True)`·기본값 `datetime.now(UTC)`(aware)로 맞췄다. `APP_ENV=production` 배포 점검용 `docs/rules/production_checklist.md`를 신규 작성했다. Gate A~E 및 `make test` 회귀를 완료했다.
+
+**변경 파일**:
+- `idr_analytics/alembic/versions/0003_timestamptz.py` — 신규
+- `idr_analytics/app/models/user.py`, `dataset.py`, `analysis_result.py` — `created_at` 컬럼 타입·기본값
+- `idr_analytics/app/api/v1/endpoints/agent.py` — `QueryType.CLUSTER`의 `reference_date`
+- `docs/rules/production_checklist.md` — 신규
+- `docs/CURRENT_WORK_SESSION.md` — Gate A~D 기록(마감 시 Session 16 템플릿으로 교체)
+- `docs/plans/plan.md` — Session 15 완료·§Phase 8 동기화
+
+**결정 사항**:
+1. 마이그레이션은 `op.execute(sa.text(...))`로 테이블별 `ALTER`, `USING created_at AT TIME ZONE 'UTC'`로 기존 naive 값을 UTC로 해석해 변환한다.
+2. `Mapped[datetime]` 타입 힌트는 유지하고, 컬럼만 `DateTime(timezone=True)`로 DB와 정합한다.
+
+**테스트 결과 (Gate D)**:
+- `make format && make lint && make typecheck && make test` → exit 0, 단위 **134 passed**, 통합 **15 passed**, Alembic 로그에 `0003_timestamptz` 적용 확인
+
+**특이사항**: 없음.
+

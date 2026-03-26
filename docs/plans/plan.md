@@ -25,7 +25,8 @@
 | 12 | 2026-03-27 | 운영 안정화: README·Makefile 테스트 가이드 정합성 | post-7 |
 | 13 | 2026-03-27 | 운영 안정화: `env.example`·README `ALLOWED_ORIGINS` 형식·쉘 오염 주의 명시 | post-7 |
 | 14 | 2026-03-27 | 운영 안정화: OpenAPI 보강·ARQ 잡 통합 테스트(`test_arq_worker_integration_suite`) | post-7 |
-| **15** | — | **진행 예정** — 범위는 `CURRENT_WORK_SESSION.md` Gate A·§Phase 8 후보에서 확정 | post-7 |
+| 15 | 2026-03-27 | 운영 안정화: `0003_timestamptz`·운영 점검 `production_checklist.md` | post-7 |
+| **16** | — | **진행 예정** — 범위는 `CURRENT_WORK_SESSION.md` Gate A에서 확정 | post-7 |
 
 ---
 
@@ -41,7 +42,7 @@
 | 5 API 라우터 | **완료** | v1 엔드포인트·ARQ 워커·통합 테스트 11건 (Session 05) |
 | 6 Dify 인프라·연동 | 완료 | `DIFY_*` 실값 반영, `workflows/run`·Tier2 실연동 검증 완료 (Session 06·08) |
 | 7 테스트·검증 | 완료 | §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 (Session 07·08) |
-| **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~14 완료, 이후는 Session 15+ (`plan.md` §Phase 8) |
+| **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~15 완료, 이후는 Session 16+ (`plan.md` §Phase 8) |
 
 ---
 
@@ -50,7 +51,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Session 14 운영 안정화(OpenAPI 보강·ARQ 통합 테스트·`make test` 134+15) |
+| **현재 상태** | Phase 7 완료 + Session 15 운영 안정화(`TIMESTAMPTZ`·`production_checklist.md`·`make test` 134+15) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -405,7 +406,7 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 > **목적**: Phase 0~7 개발 완료 후 발생하는 운영·품질 개선 과제를 관리한다.  
 > **참조**: 각 Session 이력은 `docs/history/WORK_HISTORY.md`, 현재 진행 계획은 `docs/CURRENT_WORK_SESSION.md`.
 
-### 완료 항목 (Session 09~14)
+### 완료 항목 (Session 09~15)
 
 - [x] Dify 업스트림 에러 코드 세분화 (`DIFY_INPUT_ERROR` / `DIFY_AUTH_ERROR` / `DIFY_TIMEOUT_ERROR`) — Session 09
 - [x] `make test` 통합 환경 복구 및 Tier2 회귀 검증 완료 — Session 10
@@ -416,13 +417,12 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 - [x] `env.example` · `README.md`: `ALLOWED_ORIGINS` 형식(JSON 배열 문자열) 및 쉘 오염 주의 명시 — Session 13
 - [x] Swagger/OpenAPI 태그·설명 보강 — Session 14
 - [x] `arq_worker` 잡(`forecast`/`cluster`/`trend`) 통합 테스트 — Session 14 (`test_arq_worker_integration_suite`)
+- [x] `created_at` 컬럼 `TIMESTAMP WITH TIME ZONE` 마이그레이션 (`0003_timestamptz`) — Session 15
+- [x] 운영 환경(`APP_ENV=production`) 점검 체크리스트 — Session 15 (`docs/rules/production_checklist.md`)
 
-### 후보 항목 (미착수 · Session 15+)
+### 후보 항목 (미착수 · Session 16+)
 
-> Gate A에서 범위 확정 후 아래 목록에서 선택·추가한다.
-
-- [ ] `Mapped[datetime]` 컬럼을 `TIMESTAMP WITH TIME ZONE`으로 마이그레이션(선택)
-- [ ] 운영 환경(`APP_ENV=production`) 점검 체크리스트 문서화
+> 운영 중 발견되는 과제를 Gate A에서 목록에 추가·선택한다. (현재 `plan.md`에 고정 후보 없음.)
 
 ---
 
