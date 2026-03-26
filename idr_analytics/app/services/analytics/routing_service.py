@@ -78,11 +78,12 @@ class AnalysisRoutingService:
         nl_query: str = "",
         dataset_id: uuid.UUID | None = None,
         session_id: uuid.UUID | None = None,
+        ai_inputs: dict[str, str] | None = None,
     ) -> RoutingExecutionResult:
         _ = db  # Phase 5에서 churn 등 DB 연동 시 사용
         score = ComplexityScorer.score(request)
         if score.route == Route.AI:
-            agent = await agent_service.analyze(nl_query, dataset_id, session_id)
+            agent = await agent_service.analyze(nl_query, dataset_id, session_id, extra_inputs=ai_inputs)
             return RoutingExecutionResult(complexity=score, agent_response=agent, pandas_result=None)
 
         if request.query_type == QueryType.FORECAST:

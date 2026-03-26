@@ -18,6 +18,7 @@ class AgentService:
         query: str,
         dataset_id: uuid.UUID | None,
         session_id: uuid.UUID | None,
+        extra_inputs: dict[str, str] | None = None,
     ) -> AgentQueryResponse:
         t0 = time.perf_counter()
         base = settings.DIFY_API_BASE_URL.rstrip("/")
@@ -27,9 +28,12 @@ class AgentService:
             inputs["dataset_id"] = str(dataset_id)
         if session_id is not None:
             inputs["session_id"] = str(session_id)
+        if extra_inputs:
+            inputs.update(extra_inputs)
         payload: dict[str, Any] = {
             "inputs": inputs,
             "response_mode": "blocking",
+            "user": str(session_id) if session_id is not None else "internal-agent",
         }
         if settings.DIFY_WORKFLOW_ID:
             payload["workflow_id"] = settings.DIFY_WORKFLOW_ID
@@ -49,6 +53,8 @@ class AgentService:
         answer = ""
         if isinstance(outputs, dict):
             raw = outputs.get("answer")
+            if raw is None:
+                raw = outputs.get("output")
             answer = raw if isinstance(raw, str) else str(raw or "")
 
         out_sid = session_id or uuid.uuid4()

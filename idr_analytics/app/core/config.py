@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     SECRET_KEY: str
     ALLOWED_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    INTERNAL_BYPASS_ENABLED: bool = False
+    INTERNAL_BYPASS_BEARER_TOKEN: str = ""
+    INTERNAL_BYPASS_USERNAME: str = "admin"
 
     # Database
     DATABASE_URL: str

@@ -29,6 +29,15 @@ router = APIRouter()
 _AGENT_KEY_PREFIX = "idr:agent:session:"
 
 
+def _infer_period(df: pd.DataFrame) -> str | None:
+    if "period" not in df.columns:
+        return None
+    vals = df["period"].dropna().astype(str)
+    if vals.empty:
+        return None
+    return vals.max()
+
+
 def _pandas_answer(body: AgentQueryRequest, obj: object) -> str:
     if isinstance(obj, list):
         dumped: list[dict[str, Any]] = []
@@ -130,6 +139,15 @@ async def agent_query(
             value_col=body.value_column or "value",
         )
 
+    ai_inputs: dict[str, str] | None = None
+    period = (body.aggregation_period or "").strip()
+    if not period and df is not None:
+        inferred = _infer_period(df)
+        if inferred:
+            period = inferred
+    if period:
+        ai_inputs = {"period": period}
+
     try:
         exec_result = await routing_service.route(
             routing_req,
@@ -138,6 +156,7 @@ async def agent_query(
             nl_query=body.query,
             dataset_id=body.dataset_id,
             session_id=body.session_id,
+            ai_inputs=ai_inputs,
         )
     except ValueError as exc:
         raise HTTPException(

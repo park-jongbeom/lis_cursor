@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 import uuid
 
 from fastapi import Depends, HTTPException, status
@@ -26,6 +27,24 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    # Internal-only bypass: allow a shared bearer token in non-production environments.
+    if (
+        settings.APP_ENV.lower() == "development"
+        and settings.INTERNAL_BYPASS_ENABLED
+        and settings.INTERNAL_BYPASS_BEARER_TOKEN
+        and secrets.compare_digest(token, settings.INTERNAL_BYPASS_BEARER_TOKEN)
+    ):
+        result = await db.execute(
+            select(User).where(
+                User.username == settings.INTERNAL_BYPASS_USERNAME,
+                User.is_active == true(),
+            )
+        )
+        bypass_user = result.scalar_one_or_none()
+        if bypass_user is None:
+            raise credentials_exc
+        return bypass_user
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         sub = payload.get("sub")

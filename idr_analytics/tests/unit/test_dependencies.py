@@ -99,6 +99,63 @@ async def test_get_current_user_invalid_uuid_raises_401() -> None:
     assert exc_info.value.status_code == 401
 
 
+@pytest.mark.asyncio
+async def test_get_current_user_internal_bypass_success_in_development() -> None:
+    """개발환경 + 내부 우회 활성화 + 토큰 일치 시 admin 사용자 반환."""
+    user = _make_user(role="admin")
+    user.username = "admin"
+    db = _make_mock_db(user)
+
+    with (
+        patch("app.core.dependencies.settings.APP_ENV", "development"),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_ENABLED", True),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_BEARER_TOKEN", "shared-token"),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_USERNAME", "admin"),
+        patch("app.core.dependencies.jwt.decode") as mock_decode,
+    ):
+        result = await get_current_user(token="shared-token", db=db)
+
+    assert result is user
+    mock_decode.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_internal_bypass_user_missing_raises_401() -> None:
+    """우회 토큰이 맞아도 매핑 사용자 미존재면 401."""
+    db = _make_mock_db(None)
+
+    with (
+        patch("app.core.dependencies.settings.APP_ENV", "development"),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_ENABLED", True),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_BEARER_TOKEN", "shared-token"),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_USERNAME", "admin"),
+        patch("app.core.dependencies.jwt.decode") as mock_decode,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="shared-token", db=db)
+
+    assert exc_info.value.status_code == 401
+    mock_decode.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_internal_bypass_disabled_outside_development() -> None:
+    """development 외 환경에서는 동일 토큰도 우회하지 않고 JWT 검증으로 진행."""
+    db = _make_mock_db(None)
+
+    with (
+        patch("app.core.dependencies.settings.APP_ENV", "production"),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_ENABLED", True),
+        patch("app.core.dependencies.settings.INTERNAL_BYPASS_BEARER_TOKEN", "shared-token"),
+        patch("app.core.dependencies.jwt.decode", side_effect=JWTError("bad token")) as mock_decode,
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token="shared-token", db=db)
+
+    assert exc_info.value.status_code == 401
+    mock_decode.assert_called_once()
+
+
 # ────────────────────────────────────────────────────────────────
 # require_admin
 # ────────────────────────────────────────────────────────────────

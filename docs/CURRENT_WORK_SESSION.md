@@ -10,7 +10,7 @@
 
 ## 진행 상태
 
-**현재 단계**: **테스트 검증 완료 — 세션 마감 대기** (Gate D 완료)
+**현재 단계**: **구현 완료 — 사용자 확인 대기** (Gate B)
 
 가능한 값: `구현 상세 계획 작성 전` → `구현 상세 계획 완료 — 사용자 확인 대기` (Gate A) → …
 
@@ -20,11 +20,11 @@
 
 | 게이트 | 완료 | 비고 |
 |--------|:----:|------|
-| A. 구현 상세 계획 | ✅ | 2026-03-27 작성 완료 — 사용자 승인 대기 |
-| B. 구현 완료 | ✅ | A-1 판정 실행 및 P2 경로 확정 (2026-03-27) |
-| C. 테스트 상세 계획 | ✅ | P2(연동 보류) 기준 테스트 범위·명령 작성 완료 |
-| D. 테스트 검증 | ✅ | 워커 테스트 추가·회귀·품질 게이트 통과 |
-| E. 이력 이전·문서 전환 | ⬜ | Session 09 등 |
+| A. 구현 상세 계획 | ✅ | 2026-03-27 작성 완료 — **차기 세션 실행안 갱신 완료** |
+| B. 구현 완료 | ✅ | A-1 판정 실행, FastAPI 기동 복구, P1 블로커 식별 |
+| C. 테스트 상세 계획 | ⬜ | B 완료 후 작성 |
+| D. 테스트 검증 | ⬜ | C 승인 후 실행 |
+| E. 이력 이전·문서 전환 | ⬜ | D 완료 후 진행 |
 
 ---
 
@@ -33,65 +33,59 @@
 | 구간 | 한 줄 |
 |------|--------|
 | **Session 07** | §7-4 커버리지 74%·134 passed·pre-commit 전체 통과 → `WORK_HISTORY.md` 참조 |
-| **본 세션 후보 목표** | 루트 `.env`에 `DIFY_API_KEY`·`DIFY_WORKFLOW_ID` 준비 시 Dify `workflows/run`·`POST /agent/query` Tier2 스모크 또는 통합 테스트 확장; 미준비 시 ARQ 워커 커버리지·경고 정리 등 Gate A에서 확정 |
+| **Session 08 결과** | P2 경로 완료: `arq_worker.py` 커버리지 93%, 통합 11 passed, 품질 게이트 통과 |
+| **다음 세션 핵심 목표** | P1 실연동: Dify `workflows/run` + FastAPI `/agent/query` Tier2 스모크 + 통합 테스트 확장 |
 
-**바로 다음 액션**: `plan.md` §Phase 6·§7-3을 읽고, 본 문서 **Gate A**에 구현·테스트 범위를 작성한 뒤 사용자 승인을 받는다.
+**바로 다음 액션**: 루트 `.env`의 `DIFY_API_KEY`·`DIFY_WORKFLOW_ID` 실값 반영 후, 아래 Gate A 계획에 따라 P1 실연동을 시작한다.
 
 ---
 
 ## 완료 기준 (요약)
 
-- `plan.md` **§6 미체크**(Studio API Key → `.env`) 및 **§7-3 이연** 처리 방침을 Gate A에서 명시
-- (선택) Dify/FastAPI 실연동 검증 시 네트워크·JWT·`host.containers.internal` 등 `dify_integration.md` 전제 정리
+- `plan.md` §6의 미완료 항목(`DIFY_API_KEY`, `DIFY_WORKFLOW_ID`)을 실값으로 해소
+- Dify `workflows/run` blocking 호출 성공(HTTP 200 + outputs 확인)
+- FastAPI `/api/v1/agent/query` Tier2 라우팅 성공(`route_used=ai`)
+- 통합 테스트에 Tier2 경로(성공/실패) 최소 2케이스 반영 및 회귀 통과
 
 ---
 
-## 구현 상세 계획 (Gate A)
+## 구현 상세 계획 (Gate A) — 다음 작업 실행안
 
-> **작성일**: 2026-03-27 | **대상**: Phase 6 미완료 + Phase 7 §7-3 이연 항목
+> **작성일**: 2026-03-27 | **대상**: Phase 6 미완료 + Phase 7 §7-3 이연 항목(P1 실연동)
 > **승인 전 금지**: 코드 변경, 테스트 실행, Dify 실호출
 
-### 본 세션 범위 결정
+### 범위 확정
 
-| 항목 | 결정 |
-|------|------|
-| **P0 (필수)**: `.env`의 `DIFY_API_KEY`·`DIFY_WORKFLOW_ID` 실값 준비 여부 확인 | ✅ 수행 |
-| **P1 (실값 준비 시)**: Dify `workflows/run` E2E + `/agent/query` Tier2 스모크 | ✅ 수행 |
-| **P2 (실값 미준비 시)**: 연동 실행은 보류, 대체로 ARQ 워커 커버리지/경고 정리 계획 수립 | ✅ 수행 |
-| **통합 테스트 확장** (`tests/integration`) | 조건부 수행 (P1 성공 후) |
+| 항목 | 이번 계획 |
+|------|-----------|
+| **P0 (필수)**: `.env` 실값 준비 + 런타임 기동 확인 | 진행 예정 |
+| **P1 (주 경로)**: Dify `workflows/run` + `/agent/query` Tier2 실연동 | 진행 예정 |
+| **P2 (백업 경로)**: 실값 미준비 시 보류 문서화 + 대체 테스트만 수행 | 예비 |
+| **통합 테스트 확장** (`tests/integration`) | P1 성공 시 즉시 수행 |
 
 ---
 
-### A-1. 사전 확인 (문서/환경)
+### A-1. 사전 확인 (환경·자격)
 
-목적: Dify 실연동 가능 여부를 먼저 판정한다.
+목적: P1 실연동 가능 여부를 먼저 판정한다.
 
 | 번호 | 확인 항목 | 명령 | 완료 기준 |
 |------|-----------|------|-----------|
-| A-1-1 | 루트 `.env`에 Dify 키 존재 | `rg "^(DIFY_API_KEY|DIFY_WORKFLOW_ID)=" .env` | 두 키 모두 존재 + placeholder 아님 |
-| A-1-2 | Dify 스택 기동 여부 | `make dify-ps` | `api/web/worker/nginx` Up |
-| A-1-3 | FastAPI 앱 기동 상태(로컬 8000) | `curl -sf http://localhost:8000/health` | HTTP 200 |
-| A-1-4 | 네트워크 전제 | `podman network inspect idr-net` | 네트워크 존재 확인 |
+| A-1-1 | 루트 `.env` Dify 실값 준비 | `rg "^(DIFY_API_KEY|DIFY_WORKFLOW_ID)=" .env` | placeholder 문자열 없음 |
+| A-1-2 | Dify 스택 기동 확인 | `make dify-ps` | `api/web/worker/nginx` Up |
+| A-1-3 | FastAPI `:8000` 헬스체크 | `curl -sf http://localhost:8000/health` | HTTP 200 |
+| A-1-4 | 인증 토큰 발급 가능성 | `make dify-fastapi-jwt-bearer` | Bearer 토큰 1줄 출력 |
+| A-1-5 | 네트워크 전제 | `podman network inspect idr-net` | 네트워크 존재 |
 
 **분기 규칙**:
-- `A-1-1` 실패 시: P1 실행 중단, P2 경로로 전환
-- `A-1-2`/`A-1-3` 실패 시: 인프라 복구 후 재확인
+- `A-1-1` 실패 시: 실연동 중단, P2 경로로 전환
+- `A-1-2`~`A-1-4` 중 실패 시: 기동/인증 복구 후 재확인
 
 ---
 
-### A-2. P1 경로 (실값 준비됨) — Dify 연동 검증
+### A-2. P1 경로 (실값 준비됨) — 실연동 검증
 
-#### A-2-1. FastAPI JWT 발급 및 Dify HTTP Request 인증 확인
-
-```bash
-make dify-fastapi-jwt-bearer
-```
-
-완료 기준:
-- `Authorization: Bearer <token>` 형태 1줄 출력
-- Dify HTTP Request Node에 동일 헤더 반영 가능
-
-#### A-2-2. Dify `workflows/run` 직접 호출 스모크
+#### A-2-1. Dify `workflows/run` blocking 스모크
 
 ```bash
 curl -sS -X POST "http://localhost:8080/v1/workflows/run" \
@@ -106,9 +100,10 @@ curl -sS -X POST "http://localhost:8080/v1/workflows/run" \
 
 완료 기준:
 - HTTP 200
-- 응답 JSON에 `data.outputs` 또는 동등한 결과 payload 존재
+- 응답 JSON에 `data.outputs` 존재
+- `answer` 또는 요약 텍스트 필드 존재
 
-#### A-2-3. FastAPI `/agent/query` Tier2 라우팅 스모크
+#### A-2-2. FastAPI `/agent/query` Tier2 라우팅 스모크
 
 ```bash
 curl -sS -X POST "http://localhost:8000/api/v1/agent/query" \
@@ -126,15 +121,24 @@ curl -sS -X POST "http://localhost:8000/api/v1/agent/query" \
 - 응답 `route_used`가 `ai`(Tier2)
 - `answer` 또는 동등 결과 텍스트 존재
 
+#### A-2-3. 통합 테스트 확장
+
+대상:
+- `idr_analytics/tests/integration/test_api_phase5.py` 확장 또는 `test_api_tier2.py` 신설
+
+필수 케이스:
+1. `/agent/query`가 Tier2로 라우팅되어 성공 응답 반환
+2. Dify 연동 실패(타임아웃/4xx) 시 API 에러 구조가 일관됨 (`detail.code`, `detail.message`)
+
 ---
 
-### A-3. P2 경로 (실값 미준비) — 대체 작업
+### A-3. P2 경로 (실값 미준비) — 백업 계획
 
 | 번호 | 작업 | 완료 기준 |
 |------|------|-----------|
-| A-3-1 | `plan.md`·`CURRENT`에 실연동 보류 사유/해제 조건 명시 | `DIFY_*` 실값 준비가 명시됨 |
-| A-3-2 | ARQ 워커(`app/workers/arq_worker.py`) 커버리지 보강 대상 테스트 케이스 설계 | 케이스 목록 + 명령 초안 작성 |
-| A-3-3 | `datetime.utcnow()` 경고 제거 후보 범위 정리 | 영향 파일/함수 목록 작성 |
+| A-3-1 | `CURRENT`/`plan.md`에 보류 사유와 해제 조건 명시 | `DIFY_*` 실값 필요 조건 명시 |
+| A-3-2 | 실연동 없이 가능한 Tier2 목 테스트 우선 반영 | 성공/실패 2케이스 통과 |
+| A-3-3 | 차기 실행을 위한 운영 체크리스트 작성 | 실행 명령·복구 절차 포함 |
 
 ---
 
@@ -143,10 +147,11 @@ curl -sS -X POST "http://localhost:8000/api/v1/agent/query" \
 P1 성공 시:
 - `tests/integration/test_api_phase5.py` 확장 또는 `test_api_tier2.py` 추가
 - 케이스: `workflows/run` success/failure, `/agent/query` Tier2 route assert
+- 회귀: 기존 11개 통합 테스트 영향 없음 확인
 
 P2 전환 시:
-- 워커 단위 테스트 추가 우선 (`arq_worker.py`)
-- 경고 제거 후 회귀: `make test-unit`, `make lint`, `make typecheck`
+- 목 기반 Tier2 테스트만 먼저 반영
+- 회귀: `make test-unit`, `make lint`, `make typecheck`
 
 ---
 
@@ -157,7 +162,7 @@ P2 전환 시:
 | 실연동 가능성 판정 | A-1 체크 완료 |
 | 실행 경로 확정 | P1 또는 P2 선택 명시 |
 | 검증 명령 확정 | curl/make/pytest 명령 문서화 |
-| 후속 Gate 연결 | Gate B(구현) 또는 Gate C(테스트) 진입 조건 명시 |
+| 후속 Gate 연결 | Gate B/C 진입 조건 명시 |
 
 ---
 
@@ -165,111 +170,40 @@ P2 전환 시:
 
 ### 실행 결과 (A-1 판정)
 
-| 항목 | 결과 | 근거 |
+| 항목 | 결과 | 비고 |
 |------|------|------|
-| 루트 `.env` Dify 키 | ⚠️ 미준비(placeholder) | `DIFY_API_KEY=app-xxxxxxxx...`, `DIFY_WORKFLOW_ID=your-workflow-id-here` |
-| Dify 스택 상태 | ✅ 정상 기동 | `make dify-ps`에서 `vendor_api_1`, `vendor_web_1`, `vendor_worker_1`, `vendor_nginx_1` Up |
-| FastAPI 헬스체크 (`:8000`) | ❌ 미기동 | `curl http://localhost:8000/health` → `000` |
-| 네트워크 `idr-net` | ✅ 존재 | `podman network inspect idr-net` 성공 |
+| A-1-1 `.env` Dify 실값 | ✅ 통과 | `DIFY_API_KEY` 실값 확인, `DIFY_WORKFLOW_ID` 반영 |
+| A-1-2 Dify 스택 | ✅ 통과 | `vendor_api/web/worker/nginx` Up 확인 |
+| A-1-3 FastAPI 헬스 | ✅ 복구 | `uvicorn` 수동 기동 후 `/health` 200 |
+| A-1-4 JWT 발급 | ✅ 통과 | `admin/admin` 계정으로 Bearer 토큰 발급 성공 |
+| A-1-5 네트워크 | ✅ 통과 | `idr-net` inspect 성공 |
+
+### 추가 검증
+
+1. 로컬 IDR DB(`idr-postgres:15432`)에 `admin/admin` 계정을 생성/갱신(upsert)했고 role=`admin`, is_active=`true` 확인.
+2. Dify 워크플로 입력용 샘플 데이터셋(`data/admin_seed_dataset.csv`)을 생성하고 `analysis_datasets`에 owner=`admin`으로 등록.
+3. Dify `workflows/run` 호출은 인증을 통과했지만 **400 invalid_param**으로 실패: `Model llama3.2 not exist.`
+4. `/api/v1/agent/query` Tier2 호출은 현재 Dify 4xx가 내부에서 전파되어 FastAPI에서 500으로 반환됨(연동 에러 처리 보강 필요).
 
 ### 결정 사항
 
-1. **P1(실연동 실행) 보류**: 루트 `.env`의 `DIFY_API_KEY`, `DIFY_WORKFLOW_ID`가 실값이 아니므로 `workflows/run` 및 Tier2 `/agent/query` 실행 불가.
-2. **P2 경로 채택**: 본 세션은 실연동 대신 테스트 보강 준비(ARQ 워커 커버리지 설계 + 경고 정리 계획)로 진행.
-3. FastAPI는 본 세션 시작 시점에 `:8000` 미기동 상태였고, 별도 로컬 `uvicorn :8765`만 존재하므로 실연동 전 서비스 기동 절차를 Gate C 테스트 계획에 명시.
-4. P2 구현으로 `arq_worker` 단위 테스트를 신설했고, `crm_service`/`arq_worker`의 `datetime.utcnow()` 호출을 `datetime.now()`로 교체.
+1. **P1 실연동은 부분 블로킹**: 계정/토큰/데이터셋 준비는 완료되었고, 현재 블로커는 Dify 모델 설정(`llama3.2`) 미존재.
+2. **다음 실행 시작 조건**:
+   - Dify Studio의 워크플로 LLM 노드를 사용 가능한 모델로 변경(또는 모델 프로바이더 연결 복구)
+   - 변경 후 `workflows/run` 재호출로 200 + `data.outputs` 확인
+3. 위 조건 충족 즉시 A-2-2(`/agent/query`) 및 A-2-3(통합 테스트 확장) 재개.
 
 ---
 
 ## 테스트 계획 (Gate C)
 
-### 목적
-
-실연동 블로커 해소 전까지 P2 경로에서 선행 가능한 품질 작업을 수행한다.
-
-### C-1. ARQ 워커 커버리지 보강(우선)
-
-대상 파일: `idr_analytics/app/workers/arq_worker.py` (현재 커버리지 0%)
-
-예정 케이스:
-- `forecast_job` 성공: 정상 payload 반환 shape 검증
-- `cluster_job` 성공: CRM 요약 필드 검증
-- `trend_job` 성공: BI 요약 필드 검증
-- 예외 경로: 서비스 예외 시 실패 status/에러 메시지 구조 검증
-
-예정 명령:
-```bash
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/test_arq_worker.py -v
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/ --cov=app.workers.arq_worker --cov-report=term-missing -v
-```
-
-완료 기준:
-- 신규 워커 테스트 파일 추가
-- `arq_worker.py` 커버리지 0% 탈피
-
-### C-2. DeprecationWarning 정리 계획
-
-경고 원천:
-- `idr_analytics/app/services/analytics/crm_service.py`의 `datetime.utcnow()`
-
-정리 방향:
-- `datetime.now(timezone.utc)` 또는 동등한 timezone-aware UTC API로 치환
-- 영향 테스트 재실행으로 회귀 확인
-
-예정 명령:
-```bash
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/test_crm_service.py -v
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/integration/test_api_phase5.py -v
-```
-
-### C-3. 실연동 재개 조건(차기 P1 전환 게이트)
-
-아래 3가지가 모두 만족되면 P1으로 복귀:
-1. 루트 `.env` `DIFY_API_KEY` 실값
-2. 루트 `.env` `DIFY_WORKFLOW_ID` 실값
-3. FastAPI `:8000` 헬스체크 200
+> 사용자 승인 후 작성
 
 ---
 
 ## 테스트 검증 결과 (Gate D)
 
-### 실행 일시
-
-- 2026-03-27
-
-### 실행 명령 및 결과
-
-1. 워커/CRM 단위 회귀
-```bash
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/test_arq_worker.py idr_analytics/tests/unit/test_crm_service.py -q
-```
-- 결과: **16 passed**
-
-2. 워커 커버리지 측정
-```bash
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/unit/test_arq_worker.py --cov=app.workers.arq_worker --cov-report=term-missing -q
-```
-- 결과: **4 passed**, `arq_worker.py` **93%** (기존 0% → 개선)
-
-3. 통합 회귀(인프라 포함)
-```bash
-make test-infra-up
-make migrate-test
-PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/integration/test_api_phase5.py -q
-```
-- 결과: **11 passed**
-
-4. 품질 게이트
-```bash
-make format && make lint && make typecheck
-poetry run pre-commit run --all-files
-```
-- 결과: 전부 통과 (`ruff`, `ruff-format`, `mypy`)
-
-### 이슈/메모
-
-- Dify 실연동(P1)은 여전히 `.env` placeholder로 블로킹.
-- 통합 테스트 중 SQLAlchemy 내부 `datetime.utcnow()` DeprecationWarning은 외부 라이브러리 경로에서 발생(앱 코드 경로는 이번 수정 범위에서 정리).
+> 사용자 승인 후 작성
 
 ---
 
