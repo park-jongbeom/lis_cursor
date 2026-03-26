@@ -356,3 +356,23 @@
 
 **특이사항**: 없음.
 
+### [2026-03-27] Session 13 — 운영 안정화: `ALLOWED_ORIGINS` 문서화 (post-Phase 7)
+
+**완료 내용**: `env.example`과 루트 `README.md`에 CORS용 `ALLOWED_ORIGINS`가 **JSON 배열 문자열**이어야 함을 명시하고, 쉘 환경 오염 시 `SettingsError` 및 테스트 시 `unset ALLOWED_ORIGINS` 권장을 안내했다. Gate C/D로 `make test` 회귀를 실행했다.
+
+**변경 파일**:
+- `env.example` — `ALLOWED_ORIGINS` 상단 주석
+- `README.md` — §환경 변수 `ALLOWED_ORIGINS` 불릿
+- `docs/CURRENT_WORK_SESSION.md` — Gate D·E 반영 전 기록(이후 Session 14 템플릿으로 교체)
+- `docs/plans/plan.md` — Session 13 완료·§Phase 8 체크 동기화
+
+**결정 사항**:
+1. 앱·테스트 소스는 변경하지 않는다.
+2. 회귀는 `unset ALLOWED_ORIGINS && make test`로 확인한다.
+
+**테스트 결과 (Gate D)**:
+- `unset ALLOWED_ORIGINS && make test` → exit 0, 단위 134 passed, 통합 14 passed
+- 로그에 `^Error:` 없음, `DeprecationWarning` 0건
+
+**특이사항**: 없음.
+

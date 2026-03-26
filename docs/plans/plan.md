@@ -4,18 +4,43 @@
 > **아키텍처 규칙**: `docs/rules/project_context.md`, `docs/rules/backend_architecture.md`, `docs/rules/dify_integration.md`
 > **작성일**: 2026-03-25
 
+### Session 번호 정의
+
+> **Session** = `CURRENT_WORK_SESSION.md` 단위로 진행되는 작업 묶음. Phase와 1:1이 아니며, 한 Phase에 여러 Session이 걸리거나 Phase 완료 후에도 운영 안정화 목적으로 계속될 수 있다.  
+> 상세 이력은 `docs/history/WORK_HISTORY.md` 참조. 현재 세션 계획은 `docs/CURRENT_WORK_SESSION.md` 참조.
+
+| Session | 날짜 | 주요 내용 | 연계 Phase |
+|---------|------|----------|-----------|
+| 01 | 2026-03-26 | Phase 0+1 스캐폴딩, 환경 분리, 최소 FastAPI | 0, 1 |
+| 02 | 2026-03-26 | Phase 2 코어/DB (Config, ORM, Alembic, DI, Routing) | 2 |
+| 03 | 2026-03-26 | Phase 3 Pydantic 스키마 DTO | 3 |
+| 04 | 2026-03-26 | Phase 4 서비스·CRUD·단위 테스트 123건·테스트 DB | 4 |
+| 05 | 2026-03-26 | Phase 5 API 라우터·ARQ 워커·통합 테스트 11건 | 5 |
+| 06 | 2026-03-26 | Phase 6 Dify 인프라·워크플로 DSL·`make dify-*` | 6 |
+| 07 | 2026-03-27 | Phase 7 커버리지·pre-commit (`pytest-cov` 추가) | 7 |
+| 08 | 2026-03-27 | Phase 6/7 실연동 마무리(내부 우회 인증·Tier2 매핑·통합 13건) | 6, 7 |
+| 09 | 2026-03-27 | 운영 안정화: Tier2 에러 분류 보강(`DIFY_INPUT_ERROR` 등) | post-7 |
+| 10 | 2026-03-27 | 운영 안정화: 통합 환경 복구·`make test` 회귀 검증 | post-7 |
+| 11 | 2026-03-27 | 운영 안정화: 테스트 compose `name: idr-test` 분리·`utcnow` 제거 | post-7 |
+| 12 | 2026-03-27 | 운영 안정화: README·Makefile 테스트 가이드 정합성 | post-7 |
+| 13 | 2026-03-27 | 운영 안정화: `env.example`·README `ALLOWED_ORIGINS` 형식·쉘 오염 주의 명시 | post-7 |
+| **14** | — | **진행 예정** — 범위는 `CURRENT_WORK_SESSION.md` Gate A·§Phase 8 후보에서 확정 | post-7 |
+
+---
+
 ### 진행 현황 (Gate E 시 본 표·아래 Phase 체크박스 동기화)
 
 | Phase | 상태 | 비고 |
 |-------|:----:|------|
-| 0 Pre-flight | 완료 | 도구 확인 |
-| 1 Scaffolding | 완료 | `docker-compose.dev.yml` / `prod` 분리 등 Session 01 |
-| 2 코어/DB | 완료 | ORM, Alembic, routing, dependencies |
-| 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` |
-| 4 서비스 | **완료** | Session 04 — 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 |
-| 5 API 라우터 | **완료** | Session 05 — v1 엔드포인트·ARQ 워커·통합 테스트 11건 |
-| 6 Dify 인프라·연동 | 완료 | Session 08에서 `DIFY_*` 실값 반영, `workflows/run`·Tier2 `/agent/query` 실연동 검증 완료 |
-| 7 테스트·검증 | 완료 | Session 08 — §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 |
+| 0 Pre-flight | 완료 | 도구 확인 (Session 01) |
+| 1 Scaffolding | 완료 | `docker-compose.dev.yml` / `prod` 분리 등 (Session 01) |
+| 2 코어/DB | 완료 | ORM, Alembic, routing, dependencies (Session 02) |
+| 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` (Session 03) |
+| 4 서비스 | **완료** | 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 (Session 04) |
+| 5 API 라우터 | **완료** | v1 엔드포인트·ARQ 워커·통합 테스트 11건 (Session 05) |
+| 6 Dify 인프라·연동 | 완료 | `DIFY_*` 실값 반영, `workflows/run`·Tier2 실연동 검증 완료 (Session 06·08) |
+| 7 테스트·검증 | 완료 | §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 (Session 07·08) |
+| **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~13 완료, 이후는 Session 14+ (`plan.md` §Phase 8) |
 
 ---
 
@@ -24,7 +49,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Session 12 운영 안정화(README·Makefile 테스트 가이드·`test-infra-clean-legacy`) |
+| **현재 상태** | Phase 7 완료 + Session 13 운영 안정화(`ALLOWED_ORIGINS` 문서화·회귀 검증) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -371,6 +396,32 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 - [x] `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/ --cov=app --cov-report=term-missing` 전체 통과 확인
 - [x] `pre-commit run --all-files` (ruff + mypy) 통과 확인
+
+---
+
+## Phase 8 — 운영 안정화 (post-Phase 7, 진행 중)
+
+> **목적**: Phase 0~7 개발 완료 후 발생하는 운영·품질 개선 과제를 관리한다.  
+> **참조**: 각 Session 이력은 `docs/history/WORK_HISTORY.md`, 현재 진행 계획은 `docs/CURRENT_WORK_SESSION.md`.
+
+### 완료 항목 (Session 09~13)
+
+- [x] Dify 업스트림 에러 코드 세분화 (`DIFY_INPUT_ERROR` / `DIFY_AUTH_ERROR` / `DIFY_TIMEOUT_ERROR`) — Session 09
+- [x] `make test` 통합 환경 복구 및 Tier2 회귀 검증 완료 — Session 10
+- [x] 테스트 compose `name: idr-test` 도입 — dev pod와 격리, Podman `Error:` 로그 제거 — Session 11
+- [x] `datetime.utcnow()` 전면 제거 → `datetime.now(UTC).replace(tzinfo=None)` — Session 11
+- [x] `README.md` 테스트 절차 갱신(`unset ALLOWED_ORIGINS`, `idr-test` 리소스, 레거시 정리) — Session 12
+- [x] `Makefile` `test-infra-clean-legacy` 타깃 추가 — Session 12
+- [x] `env.example` · `README.md`: `ALLOWED_ORIGINS` 형식(JSON 배열 문자열) 및 쉘 오염 주의 명시 — Session 13
+
+### 후보 항목 (미착수 · Session 14+)
+
+> Gate A에서 범위 확정 후 아래 목록에서 선택·추가한다.
+
+- [ ] `arq_worker.py` 통합 테스트 커버리지 추가(현재 0%)
+- [ ] `Mapped[datetime]` 컬럼을 `TIMESTAMP WITH TIME ZONE`으로 마이그레이션(선택)
+- [ ] 운영 환경(`APP_ENV=production`) 점검 체크리스트 문서화
+- [ ] Swagger/OpenAPI 태그·설명 보강
 
 ---
 

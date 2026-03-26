@@ -165,6 +165,7 @@ make migrate-test
 - `DATABASE_URL`
 - `REDIS_URL`
 - `SECRET_KEY`
+- `ALLOWED_ORIGINS` — CORS용 **JSON 배열 문자열**(예: `["http://localhost:3000"]`). 쉘 환경 값이 잘못되면 Settings 오류가 날 수 있어, 전체 테스트 시 §테스트의 `unset ALLOWED_ORIGINS` 권장.
 - `ANTHROPIC_API_KEY`
 - `DIFY_API_BASE_URL`
 - `DIFY_API_KEY`
