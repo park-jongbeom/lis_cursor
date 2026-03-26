@@ -1,3 +1,6 @@
+# 내부 참조 문서 — 외부 공개 금지
+ref_files/
+
 # Secrets & local env — 이 파일들은 절대 커밋하지 않는다
 .env
 .env.dev
