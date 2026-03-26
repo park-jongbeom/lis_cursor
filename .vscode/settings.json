@@ -1,4 +1,7 @@
 {
+  // Cursor SCM의 "커밋 메시지 생성"은 GitHub Copilot 전용 설정을 쓰지 않는 경우가 많다.
+  // 한국어 강제는 `.cursor/rules/git-commit-korean.mdc`(alwaysApply) + 위 Copilot 지시를 함께 둔다.
+  // 여전히 영어면: Cursor 설정 → Rules에서 동일 한국어 커밋 문구를 사용자 규칙 최상단에 추가.
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "text": "커밋 메시지는 반드시 한국어로 작성하고, 아래의 Conventional Commits 형식을 엄격하게 따를 것.\n\n형식:\n<type>(<scope>): <제목>\n\n<본문 (선택)>\n\n타입 목록:\n- feat: 새로운 기능 추가\n- fix: 버그 수정\n- refactor: 기능 변경 없는 코드 개선\n- test: 테스트 코드 추가 또는 수정\n- docs: 문서 작성 또는 수정\n- chore: 빌드, 설정, 의존성 등 기타 변경\n- ci: CI/CD 파이프라인 변경\n- perf: 성능 개선\n- style: 코드 포맷, 세미콜론 등 스타일만 변경\n\n규칙:\n1. 제목은 50자 이내, 동사 원형으로 시작 (예: '추가', '수정', '제거')\n2. 제목 끝에 마침표 금지\n3. 본문은 '무엇을' 이 아닌 '왜' 변경했는지를 설명\n4. scope는 변경 대상 모듈/영역 (예: auth, datasets, scm, crm, bi, agent, config, migration)\n\n예시:\nfeat(datasets): CSV 업로드 엔드포인트 추가\n\nfix(crm): compact=true 응답에서 risk_score 누락 버그 수정\n\ndocs(plans): 전체 개발 계획서(plan.md) 작성"

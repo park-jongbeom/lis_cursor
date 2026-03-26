@@ -7,7 +7,7 @@ autouse fixture는 collection 이후 실행되므로 이 파일 최상단에서�
 
 import os
 
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:15432/idr_test")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://idr:password@localhost:15433/idr_test")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-32chars-minimum!!")
 os.environ.setdefault("AI_ESCALATION_THRESHOLD", "70")

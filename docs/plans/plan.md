@@ -12,7 +12,7 @@
 | 1 Scaffolding | 완료 | `docker-compose.dev.yml` / `prod` 분리 등 Session 01 |
 | 2 코어/DB | 완료 | ORM, Alembic, routing, dependencies |
 | 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` |
-| 4 서비스 | 진행 예정 | Session 04 CURRENT |
+| 4 서비스 | **완료** | Session 04 — 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 |
 | 5~7 | 미착수 | — |
 
 ---
@@ -22,7 +22,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 3까지 완료. Phase 4 서비스 계층 진행 예정 (`docs/CURRENT_WORK_SESSION.md` 참조) |
+| **현재 상태** | Phase 4까지 완료. Phase 5 API 라우터 계층 진행 예정 (`docs/CURRENT_WORK_SESSION.md` 참조) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -189,18 +189,18 @@ PostgreSQL(호스트 매핑 예: 15432) / Redis :6379
 
 Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하므로, **서비스 구현 전**에 다음을 둔다.
 
-- [ ] `app/crud/base.py` — Generic CRUD (`get`, `get_multi`, `create`, `update`, `delete`) — async SQLAlchemy 2.0 패턴
-- [ ] `app/crud/crud_user.py` — `User` 조회 등 (`dependencies`는 현재 직접 `select` 사용 가능하나, 재사용·테스트를 위해 CRUD 권장)
-- [ ] `app/crud/crud_dataset.py` — `AnalysisDataset` get/list/create/update/delete
-- [ ] `app/crud/__init__.py` — 필요 시 re-export
+- [x] `app/crud/base.py` — Generic CRUD (`get`, `get_multi`, `create`, `update`, `delete`) — async SQLAlchemy 2.0 패턴
+- [x] `app/crud/crud_user.py` — `User` 조회 등 (`dependencies`는 현재 직접 `select` 사용 가능하나, 재사용·테스트를 위해 CRUD 권장)
+- [x] `app/crud/crud_dataset.py` — `AnalysisDataset` get/list/create/update/delete
+- [x] `app/crud/__init__.py` — 필요 시 re-export
 
 ### 4-1. 데이터 계층
 
-- [ ] `app/services/data/ingestion_service.py` — CSV → validated `DataFrame`
+- [x] `app/services/data/ingestion_service.py` — CSV → validated `DataFrame`
   - `read_csv_validated()`: 컬럼 존재 여부, dtype 캐스팅, `row_count` 반환
   - `df.copy()` 불변성 원칙 준수 (참조: `backend_architecture.md §4`)
   - DB 저장 시 `columns_json` 권장 구조: `{"columns": [str, ...], "dtypes": {col: str}, "null_counts": {col: int}}` — `DatasetProfileResponse`와 매핑 시 서비스에서 `profile_json` 병합 또는 `model_validate`용 dict 조립
-- [ ] `app/services/data/preprocessing_service.py` (참조: SDD §4.1 Preprocessing Layer)
+- [x] `app/services/data/preprocessing_service.py` (참조: SDD §4.1 Preprocessing Layer)
   - `build_time_index(df, date_col)`: `pd.to_datetime` → `set_index` → `sort_index` → `ffill()`
   - `fill_missing(df)`: 도메인별 결측치 전략 (수치 → ffill, 범주 → 최빈값)
   - `add_lag_features(df, col, lags)`: lag 1/7/30 rolling window
@@ -209,26 +209,26 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 ### 4-2. 분석 계층
 
-- [ ] `app/services/analytics/scm_service.py` — `SCMService` (참조: SDD §8.1)
+- [x] `app/services/analytics/scm_service.py` — `SCMService` (참조: SDD §8.1)
   - `async forecast(df, target_col, date_col, group_col, periods)` → `ForecastResult`
   - Prophet 입력: `ds`, `y` 컬럼 rename → `model.fit()` → `make_future_dataframe()` → `predict()`
   - ARIMA 폴백: 데이터 행 < 60 또는 Prophet 예외 발생 시 `statsmodels ARIMA(1,1,1)` 자동 전환
-- [ ] `app/services/analytics/crm_service.py` — `CRMService` (참조: SDD §8.2)
+- [x] `app/services/analytics/crm_service.py` — `CRMService` (참조: SDD §8.2)
   - `build_rfm_features(df, reference_date)`: `groupby("customer_code").agg(recency, frequency, monetary)` → `pd.qcut` 1~5 점수
   - `cluster(rfm, n_clusters=4)`: `StandardScaler` → `KMeans(random_state=42, n_init="auto")` → 세그먼트 레이블 매핑
   - `compute_churn_risk(dataset_id, db)`: RFM 빌드 → 클러스터 → `at_risk` 필터 (recency > `CHURN_RECENCY_THRESHOLD_DAYS`)
-- [ ] `app/services/analytics/bi_service.py` — `BIService` (참조: SDD §8.3)
+- [x] `app/services/analytics/bi_service.py` — `BIService` (참조: SDD §8.3)
   - `regional_trend(df, period_col, region_col, value_col)`: `pivot_table` → YoY 성장률 계산
   - `yoy_comparison(df, year_col, value_col)`: 전년 대비 증감률
   - `top_tests(df, period, top_n)`: `groupby("test_code").sum().nlargest(top_n)`
-- [ ] `app/services/analytics/routing_service.py` — `AnalysisRoutingService` (참조: `backend_architecture.md §2`, SDD §5)
+- [x] `app/services/analytics/routing_service.py` — `AnalysisRoutingService` (참조: `backend_architecture.md §2`, SDD §5)
   - `ComplexityScorer.score(request)` → `Route.PANDAS` or `Route.AI`
   - Pandas 분기: `SCMService / CRMService / BIService` 직접 호출
   - AI 분기: `AgentService.analyze()` 위임
 
 ### 4-3. AI 오케스트레이션 계층
 
-- [ ] `app/services/ai/agent_service.py` — `AgentService` (참조: SDD §8.4 방식 A, `dify_integration.md §4`)
+- [x] `app/services/ai/agent_service.py` — `AgentService` (참조: SDD §8.4 방식 A, `dify_integration.md §4`)
   - `async analyze(query, dataset_id)` → `httpx.AsyncClient.post(f"{DIFY_API_BASE_URL}/workflows/run")`
   - `headers: {"Authorization": f"Bearer {DIFY_API_KEY}"}`
   - `response_mode: "blocking"`, `timeout=120.0`

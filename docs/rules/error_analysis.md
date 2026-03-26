@@ -55,4 +55,39 @@
 
 ---
 
+### [2026-03-26] pre-commit: 테스트 한 줄 초과(E501) 및 BIService `prev` 삼항 연산 mypy 오류
+
+**오류 유형**: 정적 분석 / 품질 게이트 (ruff E501, mypy `operator`)
+
+**발생 상황**: Git 커밋 시 `pre-commit`이 `ruff`, `ruff-format`, `mypy`에서 실패. `test_crud_base.py`·`test_scm_service.py`에서 한 줄이 120자 초과(E501). `bi_service.py`의 `regional_trend`에서 `growth = ... if prev is None ... else (cur - prev) / prev` 형태로 인해 mypy가 `else` 가지에서도 `prev`에 `None` 가능성을 남겨 `float`와 `None` 간 `-`, `/` 연산 오류를 냄.
+
+**근본 원인**: (1) 테스트에서 `create(..., {"key": ...})` 호출을 한 줄에 나열. (2) 삼항 연산자만으로는 일부 mypy 설정에서 `prev`의 좁히기(narrowing)가 불충분함. (3) unstaged 파일이 있을 때 pre-commit이 stash 후 훅이 파일을 고치면 롤백되어 사용자가 “고쳤는데도 실패”처럼 보일 수 있음.
+
+**재발 방지 규칙**:
+1. **ruff line-length 120**: 긴 함수 호출·dict 리터럴은 여러 줄로 나누거나 `poetry run ruff format`으로 맞춘 뒤 커밋한다. 커밋 전 `poetry run ruff check idr_analytics`로 확인.
+2. **mypy + Optional 누적 변수**: `prev`처럼 `None`으로 시작해 루프에서 갱신하는 값은 `prev: float | None = None`으로 표기하고, `yoy_comparison`과 같이 **`if prev is None or prev == 0: ... else: (cur - prev) / prev`** 형태의 명시 분기를 쓴다. 성장률 계산은 삼항 한 줄에 `None` 가능 변수와 산술을 섞지 않는다.
+3. **pre-commit stash 충돌**: 커밋 전에 스테이징과 맞추려면 `git add -A` 후 커밋하거나, unstaged 변경을 정리해 훅 자동 수정과 stash 복원이 충돌하지 않게 한다.
+
+**관련 파일**: `idr_analytics/tests/unit/test_crud_base.py`, `idr_analytics/tests/unit/test_scm_service.py`, `idr_analytics/app/services/analytics/bi_service.py`, `.pre-commit-config.yaml`
+
+---
+
+### [2026-03-26] (재발) 동일 Git 로그(E501·bi_service 33행 mypy) — stash 롤백·미스테이징
+
+**오류 유형**: 정적 분석 / pre-commit 동작 (환경·워크플로)
+
+**발생 상황**: 이전에 기록한 것과 **동일한** `vscode.git.Git` 로그가 다시 나옴: `test_crud_base.py:78`·`test_scm_service.py:78`이 **한 줄짜리** 긴 코드로 보이고, `bi_service.py:33`에서 삼항 연산 기반 `(cur - prev) / prev` mypy 오류. 그러나 저장소의 올바른 수정본은 이미 **여러 줄 dict / DataFrame**, `bi_service`는 **`prev: float | None` + if/else** 형태이다.
+
+**근본 원인**: (1) 커밋 시 **Unstaged files detected** → pre-commit이 unstaged를 stash한 뒤 훅이 스테이징된 스냅샷만 고침. (2) **Stashed changes conflicted with hook auto-fixes... Rolling back fixes** → 훅이 적용한 ruff-format·ruff --fix 결과가 **폐기**되고, 워킹 트리는 긴 줄·구버전 코드로 남음. (3) 수정이 **커밋/스테이징에 포함되지 않은** 채 IDE만 갱신된 것으로 착각하기 쉬움.
+
+**재발 방지 규칙** (커밋 전 **순서 고정**):
+1. 터미널에서 `make format && make lint && make typecheck` (또는 동일하게 `poetry run ruff format idr_analytics/`, `ruff check`, `mypy idr_analytics/app`)를 실행해 **로컬에서 먼저** 통과시킨다.
+2. 그다음 **`git add -u`** 또는 **`git add -A`** 로 이번 변경 파일을 **전부 스테이징**한다. 일부만 stage하고 나머지를 unstaged로 둔 채 커밋하지 않는다.
+3. 로그에 **한 줄짜리** `create(db, {"name": ...})`가 보이면 워킹 트리가 구버전이거나 롤백된 것이므로, 1~2를 반드시 다시 수행한다.
+4. `bi_service.regional_trend`에는 **삼항 연산으로 `(cur - prev) / prev`를 쓰지 않는다** (mypy `operator` 재발 방지).
+
+**관련 파일**: `Makefile` (`format` 타깃), `idr_analytics/tests/unit/test_crud_base.py`, `idr_analytics/tests/unit/test_scm_service.py`, `idr_analytics/app/services/analytics/bi_service.py`, `.pre-commit-config.yaml`
+
+---
+
 > 이후 AI 오판이 발생하면 위 형식으로 이어서 추가하세요.

@@ -112,3 +112,64 @@
 **테스트 결과**: `pytest idr_analytics/tests/unit/test_schemas.py` 20 passed; `pytest idr_analytics/tests/unit/` 44 passed. `ruff` / `mypy` (`app/schemas/`, `test_schemas.py`) 통과.
 
 **특이사항**: 다음 세션은 Phase 4 서비스 계층 (`docs/plans/plan.md` §Phase 4). Gate E로 본 이력 반영 및 `CURRENT_WORK_SESSION.md` → Session 04 전환.
+
+### [2026-03-26] Session 04 — Phase 4 서비스 계층 + 테스트 전용 DB 환경 구축 (plan.md Phase 4)
+
+**완료 내용**: CRUD 기반(Generic) + 도메인별 CRUD, 데이터·분석·AI 서비스 계층 전체 구현. Phase 4 단위 테스트 10파일 123케이스 작성·검증. 테스트 전용 docker 격리 환경(PG 15433, Redis 6380) 구축 및 마이그레이션 완료.
+
+**변경·신규 파일**:
+
+*CRUD 계층*
+- `idr_analytics/app/crud/base.py` — `CRUDBase[ModelT]`: `get`, `get_multi`, `create`, `update`, `delete` (commit+refresh 정책 통일, `delete` 미존재 시 `ValueError`)
+- `idr_analytics/app/crud/crud_user.py` — `CRUDUser` + `get_by_username`, `user_crud` 싱글턴
+- `idr_analytics/app/crud/crud_dataset.py` — `CRUDDataset` + `get_multi_by_owner`, `dataset_crud` 싱글턴
+- `idr_analytics/app/crud/__init__.py` — `user_crud`, `dataset_crud` re-export
+
+*데이터 계층*
+- `idr_analytics/app/services/data/ingestion_service.py` — `read_csv_validated`, `build_columns_profile`, `IngestionService`, `ingestion_service`
+- `idr_analytics/app/services/data/preprocessing_service.py` — `build_time_index`, `fill_missing`, `add_lag_features`, `normalize` (전부 `df.copy()` 후 반환), `preprocessing_service`
+- `idr_analytics/app/services/data/__init__.py`
+
+*분석 계층*
+- `idr_analytics/app/services/analytics/scm_service.py` — `SCMService.forecast`: 그룹별 Prophet(행 60 이상) → ARIMA(1,1,1) 폴백, `ThreadPoolExecutor`, `_trend_from_yhat`, `scm_service`
+- `idr_analytics/app/services/analytics/crm_service.py` — `build_rfm_features`(백분위 점수), `cluster`(K-Means), `CRMService.compute_churn_risk`, `crm_service`. CSV 컬럼 가정: `customer_code`, `order_date`, `order_amount`(필수), `customer_name`(선택)
+- `idr_analytics/app/services/analytics/bi_service.py` — `regional_trend`, `yoy_comparison`, `top_tests`, `bi_service`
+- `idr_analytics/app/services/analytics/routing_service.py` — `AnalysisRoutingService.route`(컨텍스트 dataclass + `ComplexityScorer` 분기), `routing_service`
+- `idr_analytics/app/services/analytics/__init__.py`
+
+*AI 계층*
+- `idr_analytics/app/services/ai/agent_service.py` — `AgentService.analyze`: `POST .../workflows/run`, `workflow_id`·`inputs`·`blocking`·timeout 120s, 응답 `data.outputs.answer` 매핑, `agent_service`
+- `idr_analytics/app/services/ai/__init__.py`
+- `idr_analytics/app/services/__init__.py`
+
+*테스트*
+- `idr_analytics/tests/unit/test_crud_base.py`, `test_crud_user.py`, `test_crud_dataset.py`
+- `idr_analytics/tests/unit/test_ingestion_service.py`, `test_preprocessing_service.py`
+- `idr_analytics/tests/unit/test_scm_service.py`, `test_crm_service.py`, `test_bi_service.py`
+- `idr_analytics/tests/unit/test_routing_service.py`, `test_agent_service.py`
+- `idr_analytics/tests/conftest.py` — DB URL `localhost:15433/idr_test`로 수정
+
+*테스트 인프라*
+- `docker-compose.test.yml` — PG 포트 15433, Redis 6380, `idr-test-net` 격리
+- `.env.test` — 테스트 전용 환경 변수 (`.gitignore` 등록)
+- `Makefile` — `test-infra-up/down`, `migrate-test`, `test-unit`, `test-unit-cov`, `check` 타겟
+- `.gitignore` — `.env.test` 추가
+
+*품질 게이트*
+- `pyproject.toml` — dev `pandas-stubs`, mypy override (`prophet`, `sklearn.*`, `statsmodels.tsa.arima.model`)
+- `poetry.lock` — 재생성
+
+**결정 사항**:
+1. **CRM CSV 컬럼(가정)**: `customer_code`, `order_date`, `order_amount` 필수. `customer_name`은 선택(존재 시 RFM 집계 후 merge). Phase 5에서 실제 CSV에 맞게 상수 조정.
+2. **전처리 `normalize`**: 원본 유지, `{col}_scaled` 컬럼 추가. in-place 덮어쓰기 없음.
+3. **SCM 폴백 정책**: 그룹 행 수 60 미만 또는 Prophet 예외 시 ARIMA(1,1,1); ARIMA도 실패 시 해당 그룹 스킵(warning 로그), 나머지 그룹은 정상 반환.
+4. **Dify 응답 매핑**: `data.outputs.answer` 경로 기준. self-hosted 버전에 따라 다를 수 있으므로 `agent_service.py` 매핑부만 조정하면 전체 변경 최소화 가능.
+5. **`routing_service.route`의 `db` 인자**: Phase 5 연동 전까지 `_` 처리. Phase 5 DB-연동 경로(예: `compute_churn_risk`) 추가 시 직접 사용.
+6. **docker-compose 3원 분리**: dev(15432/6379) · test(15433/6380) · prod(내부 포트). Dify prod(5433)와도 충돌 없음.
+
+**테스트 결과**: `pytest idr_analytics/tests/unit/` → **123 passed, 0 failed** (2026-03-26). `ruff` / `mypy --strict` (39 source files) 통과.
+
+**특이사항**:
+- `crm_service._sync_churn_pipeline` 내부 `datetime.utcnow()` DeprecationWarning 2건 — 기능 영향 없음. Phase 5 이전에 `datetime.now(UTC)`로 교체 예정.
+- `routing_service.route` TREND/AGGREGATION 분기에서 `asyncio.to_thread` 사용(lambda 래핑) — `bi_service`의 동기 메서드를 이벤트 루프 블로킹 없이 호출.
+- 다음 세션: Phase 5 API 라우터 계층 (`auth`, `datasets`, `scm`, `crm`, `bi`, `agent`). **엔드포인트 파일에서 `from __future__ import annotations` 금지** (backend_architecture.md §1).
