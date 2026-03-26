@@ -130,8 +130,8 @@ poetry install
 # 2. 개발 인프라 기동 (PostgreSQL + Redis)
 make dev-up
 
-# 3. 환경 변수 설정
-cp idr_analytics/.env.example idr_analytics/.env
+# 3. 환경 변수 설정 (`.env*` 파일은 Git 무시 — 템플릿은 env.example)
+cp env.example .env
 # .env 편집: DATABASE_URL, REDIS_URL, SECRET_KEY, ANTHROPIC_API_KEY 등
 
 # 4. DB 마이그레이션
@@ -215,7 +215,7 @@ PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/integration/ -v
 
 ## 환경 변수
 
-`idr_analytics/.env.example` 를 복사해 `.env`로 사용합니다.
+루트 **`env.example`** 을 **`cp env.example .env`** 로 복사해 사용합니다. (이름이 `.env`로 시작하는 파일은 `.gitignore`로 전부 제외)
 
 | 변수 | 설명 | 예시 |
 |------|------|------|
@@ -255,7 +255,7 @@ PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/integration/ -v
 - **Dify 연동 규칙**: [`docs/rules/dify_integration.md`](docs/rules/dify_integration.md)
 - **아키텍처 설계서(SDD)**: [`ref_files/IDR_Data_Analysis_SDD.md`](ref_files/IDR_Data_Analysis_SDD.md)
 - **커밋 메시지**: 한국어 Conventional Commits — `feat(범위): 한글 제목`
-- **추적 제외·비밀**: `.env` 실파일·키·Dify 볼륨 등은 **절대 커밋하지 않음**. 새 로컬 산출물이 생기면 루트 `.gitignore`를 같은 변경에 포함할 것. 상세 절차·표는 [`docs/rules/project_context.md`](docs/rules/project_context.md) **「Git · 추적 제외 및 비밀 관리」** 절.
+- **추적 제외·비밀**: **`.env`로 시작하는 파일 전부** (패턴 `.env*`)·키·Dify 볼륨 등은 **커밋하지 않음**. 템플릿은 `env.example`·`env.prod.example`·`infra/dify/env.vendor.example` 사용. 상세는 [`docs/rules/project_context.md`](docs/rules/project_context.md) **「Git · 추적 제외 및 비밀 관리」** 절.
 
 ### Git 커밋 전 체크리스트
 

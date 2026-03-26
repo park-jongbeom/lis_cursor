@@ -249,7 +249,7 @@ networks:
 > 네트워크 공유 이유: Dify의 HTTP Request Node에서 `http://fastapi-app:8000`으로 직접 접근하기 위함.
 > 포트 포워딩(localhost:8000) 대신 Docker 내부 DNS로 통신.
 
-### 환경 변수 (.env.example 필수 항목)
+### 환경 변수 (루트 `env.example` / 실사용 `.env` 필수 항목 — `.env*` 는 Git 무시)
 
 ```dotenv
 # Dify 연동 설정 (방식 A — FastAPI 프록시 시, 로컬 nginx 포트 8080 기준)

@@ -82,9 +82,9 @@ PostgreSQL(호스트 매핑 예: 15432) / Redis :6379
 
 ### 1-2. 환경 변수
 
-- [x] `.env.example` 작성 (참조: SDD §10.1, `dify_integration.md §5`)
+- [x] **`env.example`** 작성 (참조: SDD §10.1, `dify_integration.md §5`; `.env*` 는 Git 무시)
   - 필수 항목: `DATABASE_URL`, `REDIS_URL`, `SECRET_KEY`, `AI_ESCALATION_THRESHOLD=70`, `PANDAS_MAX_ROWS=2000000`, `ANTHROPIC_API_KEY`, `LLM_MODEL=claude-sonnet-4-6`, `DIFY_API_BASE_URL`, `DIFY_API_KEY`, `DIFY_WORKFLOW_ID`, `PROPHET_CHANGEPOINT_SCALE=0.05`, `KMEANS_DEFAULT_CLUSTERS=4`, `CHURN_RECENCY_THRESHOLD_DAYS=90`
-- [x] `.env` 작성 (`.env.example` 기반, 실제 값 채우기) — 로컬 전용, Git 제외
+- [x] `.env` 작성 (`cp env.example .env` 후 실제 값) — 로컬 전용, Git 제외
 
 ### 1-3. 디렉토리 구조 생성
 

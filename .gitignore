@@ -1,13 +1,11 @@
 # 내부 참조 문서 — 외부 공개 금지
 ref_files/
 
-# ─── Secrets & 환경 변수 (실값·로컬 전용) ───────────────────────────────────
-# 주의: *.example / 템플릿은 반드시 Git에 포함한다 — 아래 예외 규칙 유지
-.env
-.env.*
-!.env.example
-!.env.*.example
-# 점 없는 로컬 env 파일
+# ─── Secrets & 환경 변수 ───────────────────────────────────────────────────────
+# 이름이 .env 로 시작하는 파일은 전부 무시 (예: .env, .env.example, .env.local, vendor/.env.example)
+.env*
+# 템플릿은 Git 에 `env.example`, `env.prod.example`, `infra/dify/env.vendor.example` 등 점 없는 이름으로 둔다.
+# 점 없는 로컬 env
 env.local
 env.*.local
 .envrc
@@ -38,7 +36,7 @@ google-services.json
 *.tfvars
 !*.tfvars.example
 
-# Dify 1.13+ (런타임 데이터; 비밀 파일은 위 .env / .env.* / !*.example 규칙으로 처리)
+# Dify 1.13+ (런타임 데이터; 템플릿은 infra/dify/env.vendor.example)
 infra/dify/vendor/volumes/
 # nginx/ssl 에 실인증서가 생기면 추적 방지 (.gitkeep 만 유지)
 infra/dify/vendor/nginx/ssl/*

@@ -73,18 +73,18 @@ dev-down:
 # ── Dify 인프라 ────────────────────────────────────────────────────────────────
 
 .PHONY: dify-env-bootstrap
-## Dify용 infra/dify/.env 생성 (vendor/.env.example 복사, 이미 있으면 유지)
+## Dify용 infra/dify/.env 생성 (env.vendor.example 복사 — vendor/.env.example 은 Git 무시)
 dify-env-bootstrap:
-	@test -f infra/dify/.env && echo "infra/dify/.env 이미 있음" || cp infra/dify/vendor/.env.example infra/dify/.env
+	@test -f infra/dify/.env && echo "infra/dify/.env 이미 있음" || cp infra/dify/env.vendor.example infra/dify/.env
 	@echo "다음: infra/dify/.env 에서 EXPOSE_NGINX_PORT=8080, SECRET_KEY, DB_PASSWORD, REDIS_PASSWORD 확인"
 
 .PHONY: dify-up
 ## Dify Self-hosted 스택 기동 (공식 1.13.x + infra/dify/docker-compose.idr.yml)
-## 1) infra/dify/.env 존재 확인 (없으면: cp infra/dify/vendor/.env.example infra/dify/.env 후 EXPOSE_NGINX_PORT=8080)
+## 1) infra/dify/.env 존재 확인 (없으면: make dify-env-bootstrap 또는 cp infra/dify/env.vendor.example)
 ## 2) idr-net 생성
 ## 3) vendor/ 에서 compose 기동 — Web UI: http://localhost:8080
 dify-up:
-	@test -f infra/dify/.env || (echo "오류: infra/dify/.env 없음. 실행: cp infra/dify/vendor/.env.example infra/dify/.env"; echo "      편집: EXPOSE_NGINX_PORT=8080, SECRET_KEY/DB_PASSWORD/REDIS_PASSWORD 변경"; exit 1)
+	@test -f infra/dify/.env || (echo "오류: infra/dify/.env 없음. 실행: make dify-env-bootstrap"; echo "      편집: EXPOSE_NGINX_PORT=8080, SECRET_KEY/DB_PASSWORD/REDIS_PASSWORD 변경"; exit 1)
 	@podman network exists idr-net 2>/dev/null || podman network create idr-net
 	@$(DIFY_COMPOSE_CMD) up -d
 	@echo "Dify 1.13 스택 기동. Web UI: http://localhost:8080 (EXPOSE_NGINX_PORT 기준)"

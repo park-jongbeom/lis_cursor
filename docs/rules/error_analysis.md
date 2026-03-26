@@ -142,20 +142,20 @@
 
 ---
 
-### [2026-03-26] GitHub Push Protection — `infra/dify/vendor/.env.example` 의 `SECRET_KEY=sk-…` 오탐
+### [2026-03-26] GitHub Push Protection — Dify 예시 `SECRET_KEY=sk-…` 오탐 → `.env*` 전면 ignore 정책
 
 **오류 유형**: 원격 저장소 규칙 / 시크릿 스캔 (GH013, OpenAI API Key 패턴)
 
-**발생 상황**: `git push origin main` 시 **Push cannot contain secrets**, 위치 `infra/dify/vendor/.env.example:104`. Dify 업스트림 예시의 `SECRET_KEY` 값이 **`sk-` 로 시작**해 GitHub가 OpenAI 키로 오탐.
+**발생 상황**: `git push` 시 **Push cannot contain secrets**. Dify 업스트림 `vendor/.env.example` 의 `SECRET_KEY` 예시가 **`sk-` 로 시작**해 GitHub가 OpenAI 키로 오탐.
 
-**근본 원인**: 업스트림 `vendor/.env.example` 플레이스홀더가 실제 비밀이 아니어도 **`sk-` 접두**만으로 차단됨. **`git push --force` 로는 해결되지 않음**(같은 blob 이 남으면 계속 거절).
+**근본 원인**: 플레이스홀더라도 **`sk-` 접두**만으로 차단. **`git push --force` 로는 해결되지 않음**(같은 blob 이 남으면 계속 거절).
 
 **재발 방지 규칙**:
-1. `vendor` 동기화 후 **`SECRET_KEY` 줄에 `sk-` 로 시작하는 예시 값을 두지 않는다** — `change-me-…` / `openssl rand -base64 42` 안내 주석만 둔다.
-2. 차단 시 커밋에서 해당 파일을 고친 뒤 **`git commit --amend`**(아직 원격에 안 올라간 커밋) 또는 히스토리 수정 후 **일반 `git push`** 로 재시도한다.
-3. GitHub UI의 “allow secret” 은 **실제 유출 키가 아닐 때**만 신중히 사용한다.
+1. **이름이 `.env`로 시작하는 파일은 Git 에 올리지 않는다** (`.gitignore` 의 `.env*`, 예외 없음). FastAPI 템플릿은 **`env.example`**, Dify 는 **`infra/dify/env.vendor.example`** 등 점 없는 파일명으로 관리한다.
+2. `vendor` 동기화 시 새 변수는 **`env.vendor.example` 에 반영**하고, `SECRET_KEY` 등 **`sk-` 로 시작하는 예시 금지**.
+3. 차단된 커밋은 파일 수정 후 **`git commit --amend`** 또는 히스토리 수정 후 **일반 `git push`**.
 
-**관련 파일**: `infra/dify/vendor/.env.example`, `infra/dify/README.md`(vendor 동기화 시 확인 권장)
+**관련 파일**: `.gitignore`, `env.example`, `infra/dify/env.vendor.example`, `infra/dify/README.md`
 
 ---
 

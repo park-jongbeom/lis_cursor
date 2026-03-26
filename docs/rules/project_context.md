@@ -90,7 +90,7 @@ idr_analytics/
 ├── tests/
 │   ├── unit/
 │   └── integration/
-├── .env.example
+├── env.example                      # Git 추적 템플릿 (.env* 는 전부 ignore)
 ├── pyproject.toml
 ├── docker-compose.yml                  # PostgreSQL + Redis (idr 전용)
 └── infra/dify/                        # Self-hosted Dify 1.13+ (vendor + docker-compose.idr.yml)
@@ -140,7 +140,7 @@ idr_analytics/
 
 | 범주 | 예시 | 비고 |
 |------|------|------|
-| 환경 변수(실값) | `.env`, `.env.dev`, `.env.prod`, `.env.test`, `infra/dify/.env`, `.envrc` | 템플릿은 아래 표 참조 |
+| 환경 변수(실값) | **이름이 `.env`로 시작하는 모든 파일** (`.env`, `.env.dev`, `.env.example`, `vendor/.env.example` 등), `infra/dify/.env`, `.envrc` | Git 에는 **올리지 않음** |
 | Compose 로컬 오버라이드 | `docker-compose.override.yml`, `docker-compose.local.yml`, `docker-compose.*.local.yml` | 팀원마다 다른 비밀·포트 |
 | 비밀키·인증서 | `*.pem`, `id_rsa`, `*.key`, `*.p12`, `*.pfx`, `*.jks` | `*.key.example` 등 **예시 전용**은 예외 가능 |
 | 클라우드·IaC 비밀 | `*credentials*.json`, `google-services.json`, `*.tfstate*`, 민감한 `*.tfvars` | `*.tfvars.example` 는 커밋 가능 |
@@ -148,16 +148,17 @@ idr_analytics/
 | 언어·도구 캐시·커버리지 | `__pycache__/`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`, `htmlcov/`, `coverage.xml`, `*.sqlite3` | CI/로컬 재현 산출물 |
 | 내부 전용 문서 트리 | `ref_files/` | 레포 정책상 추적 제외 |
 
-### 반드시 Git에 포함하는 것 (템플릿·예시만)
+### 반드시 Git에 포함하는 것 (템플릿·예시만 — **`.env` 접두사 금지**)
 
-- **`.env.example`**, **`env.prod.example`**, **`infra/dify/vendor/.env.example`** 등: 변수 **이름·구조·플레이스홀더**만. API 키·운영 비밀번호는 넣지 않는다.
-- `.gitignore`에 있는 **`!.env.example`**, **`!.env.*.example`** 는 위 템플릿이 무시되지 않게 하는 규칙이다. 패턴을 바꿀 때는 **템플릿이 여전히 추적되는지** `git check-ignore -v <경로>` 로 확인한다.
+- **`env.example`** (FastAPI 루트 템플릿), **`env.prod.example`**, **`infra/dify/env.vendor.example`** (Dify 템플릿): 변수 **이름·구조·플레이스홀더**만. API 키·운영 비밀번호는 넣지 않는다.
+- **`.env*` 패턴으로 `.env`로 시작하는 파일은 예외 없이 무시**한다. 업스트림이 `.env.example` 이름만 쓰는 경우, 레포에는 **`env.*.example`** 등 점 없는 이름으로 복사해 둔다 (`make dify-env-bootstrap` 등).
+- 새 템플릿을 추가할 때 **`git check-ignore -v <경로>`** 로 실수로 무시되는지 확인한다.
 
 ### 새 파일을 만들 때 절차 (체크리스트)
 
 1. **`git status`** — 의도하지 않은 경로가 뜨지 않는지 본다.
 2. 로컬 전용·비밀이면 **먼저 `.gitignore`에 패턴 추가** (또는 기존 패턴에 걸리는지 확인).
-3. **`git check-ignore -v <경로>`** — 무시되는지, 어떤 규칙에 걸렸는지 확인 (템플릿이 실수로 무시되면 규칙 순서·`!` 예외를 수정).
+3. **`git check-ignore -v <경로>`** — 무시되는지 확인. 템플릿 파일명은 **`.env`로 시작하지 않게** 유지한다.
 4. **`git add -p` 또는 경로 지정 `git add`** — `-A` 만 습관적으로 쓰지 않고, 특히 `infra/`·`.env*`·인증서 경로는 선택적으로 스테이징한다.
 
 ### 히스토리에 비밀이 올라간 경우

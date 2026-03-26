@@ -35,15 +35,20 @@ podman stop dify-nginx dify-api dify-worker dify-web dify-db dify-redis dify-wea
 ## 최초 설정
 
 ```bash
-cd infra/dify
-cp vendor/.env.example .env
+# 프로젝트 루트에서 (권장)
+make dify-env-bootstrap
+# 또는
+cp infra/dify/env.vendor.example infra/dify/.env
 ```
+
+`vendor/` 안의 업스트림 스크립트가 `vendor/.env.example` 을 요구하면, 로컬에서만  
+`cp env.vendor.example vendor/.env.example` 한 뒤 사용한다. **`.env`로 시작하는 경로는 Git에 올리지 않는다.**
 
 `.env`에서 최소 확인:
 
 - **`EXPOSE_NGINX_PORT=8080`** — rootless 환경에서 80 대신 호스트 `8080` (기본값 80이면 실패할 수 있음)
 - **`SECRET_KEY`**, **`DB_PASSWORD`**, **`REDIS_PASSWORD`** — 기본값 그대로 두지 말 것
-- **`COMPOSE_PROFILES`** — `vendor/.env.example` 기본(`VECTOR_STORE`·`DB_TYPE` 연동) 유지 시 `postgresql`+`weaviate` 프로필 활성
+- **`COMPOSE_PROFILES`** — `env.vendor.example` 기본(`VECTOR_STORE`·`DB_TYPE` 연동) 유지 시 `postgresql`+`weaviate` 프로필 활성
 
 프로젝트 루트에서:
 
