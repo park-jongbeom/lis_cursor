@@ -1,0 +1,55 @@
+# IDR 프로젝트 오버레이 — 공식 `vendor/docker-compose.yaml` (Dify 1.13.x) 위에 병합
+# RHEL rootless Podman: seccomp/label, Postgres bookworm, 호스트 PG 도구용 포트, idr-net
+#
+# vendor/docker-compose.yaml 에서 podman-compose 비호환 depends_on(db_mysql 등) 제거됨(IDR 패치).
+#
+# api/worker/worker_beat 에 idr-net 을 붙이면 Podman 다중 네트워크 DNS 가 redis 등 내부 호스트명을
+# 깨뜨릴 수 있어, Dify 백엔드는 vendor_default 만 사용한다. FastAPI(호스트) 호출은 HTTP Request 에서
+# host.containers.internal 또는 호스트 IP 사용.
+
+services:
+  init_permissions:
+    security_opt: &podman_sec
+      - seccomp=unconfined
+      - label=disable
+
+  api:
+    security_opt: *podman_sec
+
+  worker:
+    security_opt: *podman_sec
+
+  worker_beat:
+    security_opt: *podman_sec
+
+  web:
+    security_opt: *podman_sec
+
+  db_postgres:
+    image: postgres:15-bookworm
+    ports:
+      - "15434:5432"
+    security_opt: *podman_sec
+
+  redis:
+    security_opt: *podman_sec
+
+  sandbox:
+    security_opt: *podman_sec
+
+  plugin_daemon:
+    security_opt: *podman_sec
+
+  ssrf_proxy:
+    security_opt: *podman_sec
+
+  nginx:
+    security_opt: *podman_sec
+
+  weaviate:
+    security_opt: *podman_sec
+
+networks:
+  # podman-compose 병합 시 implicit default 가 사라지는 경우 대비
+  default:
+    driver: bridge

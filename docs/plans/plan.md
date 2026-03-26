@@ -13,7 +13,9 @@
 | 2 코어/DB | 완료 | ORM, Alembic, routing, dependencies |
 | 3 스키마 | 완료 | `app/schemas/*`, `test_schemas.py` |
 | 4 서비스 | **완료** | Session 04 — 서비스·CRUD·단위 테스트 123개·테스트 DB 환경 |
-| 5~7 | 미착수 | — |
+| 5 API 라우터 | **완료** | Session 05 — v1 엔드포인트·ARQ 워커·통합 테스트 11건 |
+| 6 Dify 인프라·연동 | 완료 | 스택(`infra/dify` 1.13.2)·워크플로 Publish·Session 06 Gate A~D; **실연동(`DIFY_*`·workflows/run·Tier2)** 는 §Phase 6 검증 시점 → Phase 7-3 이연 |
+| 7 테스트·검증 | 진행 중 | Session 07 — 커버리지·pre-commit 전체·Phase 6 이연 시나리오 확정 (`CURRENT_WORK_SESSION.md`) |
 
 ---
 
@@ -22,7 +24,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 4까지 완료. Phase 5 API 라우터 계층 진행 예정 (`docs/CURRENT_WORK_SESSION.md` 참조) |
+| **현재 상태** | Phase 7 진행 중 — Session 06 마감(Gate E). 회귀·품질(`make test`·lint·mypy) 검증 완료; Dify 실호출·커버리지 풀 스위트·`pre-commit --all-files` 는 Session 07에서 추적 |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -250,41 +252,41 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 - **장기 보관·감사**: 완료 시 `analysis_results`(및 `result_json`)에 스냅샷 저장을 **선택**으로 추가할 수 있다.
 - 구현 시 `app/workers/arq_worker.py`와 엔드포인트가 동일한 직렬화 규칙을 쓰도록 문서화한다.
 
-- [ ] `app/main.py` — `FastAPI(lifespan=...)` + CORS + `api_router` 마운트
+- [x] `app/main.py` — `FastAPI(lifespan=...)` + CORS + `api_router` 마운트
   - lifespan: DB 연결 풀 생성 / 종료
-- [ ] `app/api/v1/api.py` — `include_router` × 5 (`auth`, `datasets`, `scm`, `crm`, `bi`, `agent`)
-- [ ] `app/api/v1/endpoints/auth.py`
+- [x] `app/api/v1/api.py` — `include_router` × 6 (`auth`, `datasets`, `scm`, `crm`, `bi`, `agent`)
+- [x] `app/api/v1/endpoints/auth.py`
   - `POST /auth/login` → JWT 발급
   - `POST /auth/refresh` → 토큰 갱신
-- [ ] `app/api/v1/endpoints/datasets.py`
+- [x] `app/api/v1/endpoints/datasets.py`
   - `POST /datasets/upload` — `UploadFile` + `multipart/form-data` → `ingestion_service` → DB 저장
   - `GET /datasets` — 목록 조회
   - `GET /datasets/{id}/preview` — 상위 20행
   - `GET /datasets/{id}/profile` — 데이터 품질 리포트
   - `DELETE /datasets/{id}`
-- [ ] `app/api/v1/endpoints/scm.py` (참조: SDD §7.3)
+- [x] `app/api/v1/endpoints/scm.py` (참조: SDD §7.3)
   - `POST /scm/forecast` — 비동기 ARQ job 등록 → `job_id` 반환
   - `GET /scm/forecast/{job_id}` — 폴링
   - `GET /scm/restock-alert?dataset_id=&compact=false`
   - `GET /scm/seasonal-pattern?dataset_id=&compact=false`
   - **`compact: bool = False` 파라미터 필수** (참조: `dify_integration.md §2`)
-- [ ] `app/api/v1/endpoints/crm.py` (참조: SDD §7.4, `dify_integration.md §2`)
+- [x] `app/api/v1/endpoints/crm.py` (참조: SDD §7.4, `dify_integration.md §2`)
   - `POST /crm/cluster` → ARQ job
   - `GET /crm/cluster/{job_id}`
   - `GET /crm/churn-risk?dataset_id=&top_n=20&compact=false`
   - `GET /crm/rfm-summary?dataset_id=&compact=false`
   - **compact=true 응답**: `high_risk_count`, `top_customers[{code,name,risk_score}][:top_n]`, `summary` (4KB 이하)
-- [ ] `app/api/v1/endpoints/bi.py` (참조: SDD §7.5, `dify_integration.md §2`)
+- [x] `app/api/v1/endpoints/bi.py` (참조: SDD §7.5, `dify_integration.md §2`)
   - `POST /bi/trend`
   - `GET /bi/trend/{job_id}`
   - `GET /bi/regional-heatmap?period=&test_category=&compact=false`
   - `GET /bi/yoy-comparison?dataset_id=&compact=false`
   - `GET /bi/top-tests?period=&top_n=10&compact=false`
   - **compact=true 응답**: `period`, `top_regions`, `trending_tests`, `heatmap_highlights`, `summary` (4KB 이하)
-- [ ] `app/api/v1/endpoints/agent.py` (참조: SDD §7.6)
+- [x] `app/api/v1/endpoints/agent.py` (참조: SDD §7.6)
   - `POST /agent/query` — body `AgentQueryRequest` → **`RoutingRequest`(또는 `ComplexityScorer` 입력)** 로 변환하는 어댑터(필드 매핑·기본 `query_type` 등) 후 `AnalysisRoutingService` / `ComplexityScorer.score()` → Tier 2 시 `AgentService.analyze()`
   - `GET /agent/query/{session_id}`
-- [ ] `app/workers/arq_worker.py` — ARQ `WorkerSettings` + `forecast_job`, `cluster_job` 태스크 정의 (위 ARQ 결과 전략과 일치)
+- [x] `app/workers/arq_worker.py` — ARQ `WorkerSettings` + `forecast_job`, `cluster_job`, `trend_job` (위 ARQ 결과 전략과 일치)
 
 ---
 
@@ -292,22 +294,31 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 > 참조: SDD §4.3, §10.2, `docs/rules/dify_integration.md §5`
 
-- [ ] `docker-compose.dify.yml` 작성 (참조: SDD §10.2)
-  - 서비스: `api`, `worker`, `web`, `db(postgres:15 :5433)`, `sandbox`, `nginx(:80)`
-  - 네트워크: `idr-net: external: true` — FastAPI 스택과 동일 네트워크 공유
-  - `REDIS_HOST`: `idr-net`의 Redis 컨테이너 서비스명
-- [ ] `podman-compose -f docker-compose.dify.yml up -d` 실행
-- [ ] `http://localhost` 접속 → Dify 관리자 계정 생성 → API Key 발급
-- [ ] `.env` 업데이트: `DIFY_API_KEY`, `DIFY_WORKFLOW_ID`
-- [ ] Dify Workflow 에디터에서 CRM 이탈 분석 워크플로 구성 (참조: `dify_integration.md §3`)
+- [x] `infra/dify/vendor` — Dify **v1.13.2** 공식 `docker/` 동기화 + `docker-compose.idr.yml` (Podman·`idr-net`·Postgres `15434`)
+  - 스택: `api`, `worker`, `worker_beat`, `web`, `db_postgres`, `redis`, `sandbox`, `plugin_daemon`, `ssrf_proxy`, `nginx`, `weaviate`, `init_permissions` (공식 compose 기준)
+  - 로컬 UI: **`EXPOSE_NGINX_PORT=8080`** (`infra/dify/.env`)
+- [x] `make dify-up` / `podman-compose` 로 기동 (`infra/dify/README.md`)
+- [x] Dify 콘솔 접속 → **관리자 계정 생성·로그인**
+- [x] Settings → **Model Provider** 설정 (예: Ollama)
+- [ ] Studio → **API Key** 발급 → 루트 `.env`: `DIFY_API_KEY`, `DIFY_WORKFLOW_ID` (실값 반영 — Tier2·통합 검증 전 필수)
+- [x] Dify Workflow 구성·DSL 가져오기 (참조: **`dify_integration.md` §3** — 동기 호출)
   ```
-  Start → HTTP Request (POST /crm/cluster?compact=true)
-        → HTTP Request (GET /bi/regional-heatmap?compact=true)
-        → Variable Aggregator
-        → LLM Node (Claude Sonnet / System Prompt: 영업 분석 전문가)
-        → Answer Node
+  Start → GET /crm/churn-risk?compact=true
+        → GET /bi/regional-heatmap?compact=true&period=<필수>
+        → Variable Aggregator → LLM → Answer
   ```
-- [ ] Dify Chat UI에서 자연어 쿼리 테스트: "이탈 위험 고객 분석해줘"
+- [x] Workflow **Publish**(게시) 완료
+
+### Phase 6 — Dify 검증 시점 (계획 조정)
+
+워크플로 **게시까지는 완료**하였다. 다만 아래 항목은 **FastAPI 측 기본 기능(로그인·사용자·DB 시드 등)이 모두 구현·안정화된 뒤**, **즉시 수동 스모크로 강제하지 않고**, **통합 테스트 실행 시점**에 다시 점검한다.
+
+| 이연 항목 | 비고 |
+|-----------|------|
+| Dify HTTP Request → FastAPI (`Bearer`, `host.containers.internal:8000` 등) | 로그인 발급 JWT·호스트 연결 전제 |
+| Explore / `workflows/run` E2E | `DIFY_API_KEY`·`DIFY_WORKFLOW_ID`·시작 변수(`period` 등) 실환경 |
+| FastAPI `POST /agent/query`(Tier2) 스모크 | `AgentService`·`.env`·위와 동일 전제 |
+| Phase 7 통합 테스트 반영 | 기존 `test_api_phase5.py` 확장 또는 Dify Mock/선택적 E2E 시나리오로 재검 (세부는 Phase 7·`CURRENT_WORK_SESSION`에서 확정) |
 
 ---
 
@@ -322,21 +333,23 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 ### 7-2. 단위 테스트
 
-- [ ] `tests/unit/test_preprocessing_service.py`
+> **동기화 (2026-03-26, Session 06→07 전환)**: 아래 파일·시나리오는 Phase 4~5에서 구현되었고 `make test` 단위 스위트(123건)에 포함됨. 추가 케이스는 Session 07 Gate A에서 정의.
+
+- [x] `tests/unit/test_preprocessing_service.py`
   - `build_time_index()`: DatetimeIndex 생성 + ffill 확인
   - `add_lag_features()`: lag 컬럼 생성 확인
   - 원본 DataFrame 불변성 확인 (`id(original) != id(result)`)
-- [ ] `tests/unit/test_scm_service.py`
+- [x] `tests/unit/test_scm_service.py`
   - Prophet 수요 예측: 반환 컬럼 `[ds, yhat, yhat_lower, yhat_upper]` 존재 확인
   - ARIMA 폴백: 행 < 60 샘플 → ARIMA 실행 확인
-- [ ] `tests/unit/test_crm_service.py`
+- [x] `tests/unit/test_crm_service.py`
   - `build_rfm_features()`: `recency_score`, `frequency_score`, `monetary_score` 컬럼 확인
   - `cluster()`: `cluster` + `segment` 컬럼, `n_clusters` 개수 확인
-- [ ] `tests/unit/test_routing_service.py`
+- [x] `tests/unit/test_routing_service.py`
   - `AGGREGATION(10)` → Pandas Tier 1 라우팅 확인
   - `NATURAL_LANGUAGE(80)` → AI Tier 2 라우팅 확인
   - `FORECAST(30) + DATA_SIZE_PENALTY(20) + CROSS_TABLE_BONUS(15) = 65` → Tier 1 확인
-- [ ] `tests/unit/test_agent_service.py` — Dify httpx Mock (참조: `backend_architecture.md §6`)
+- [x] `tests/unit/test_agent_service.py` — Dify httpx Mock (참조: `backend_architecture.md §6`)
   ```python
   with patch("app.services.ai.agent_service.httpx.AsyncClient") as mock_client:
       mock_response.json.return_value = {"data": {"outputs": {"answer": "분석 완료"}}}
@@ -344,12 +357,13 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 ### 7-3. 통합 테스트
 
-- [ ] `tests/integration/test_scm_endpoints.py`
-  - `POST /scm/forecast` → 202 Accepted + `job_id` 반환 확인
-  - `GET /scm/restock-alert?compact=true` → 응답 4KB 이하 확인
-- [ ] `tests/integration/test_crm_endpoints.py`
-  - `GET /crm/churn-risk?compact=true` → `high_risk_count`, `top_customers`, `summary` 키 존재 확인
-  - `GET /crm/churn-risk?compact=false` → 전체 응답 반환 확인
+- [x] `tests/integration/test_api_phase5.py` (+ `conftest.py`, `helpers.py`) — Phase 5 API 일괄 검증
+  - `POST /scm/forecast` → 202 + `job_id` (ARQ `create_pool` 목)
+  - `GET /scm/restock-alert?compact=true` → UTF-8 기준 4KB 이하
+  - `GET /crm/churn-risk?compact=true` → `high_risk_count`, `top_customers`, `summary` 키
+  - `GET /crm/churn-risk?compact=false` → `high_risk_customers` 등 전체 응답
+  - 로그인·리프레시·소유권 403·미인증 401 등 포함 (`make test` / `POSTGRES_PASSWORD=idr-test-pw` + `migrate-test` 전제)
+- [ ] **Phase 6 연동(이연)**: Dify `workflows/run` 또는 Tier2 `/agent/query` — Phase 6 계획에 따라 로그인·시드 등 전제 완비 후 본 통합 스위트 또는 별도 시나리오에서 재검 (Mock 우선 가능 시 `test_agent_service` 단위로 선행)
 
 ### 7-4. 최종 실행
 
@@ -381,8 +395,8 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 | PostgreSQL (idr) 컨테이너 내부 | 5432 | 표준 |
 | PostgreSQL (idr) **호스트 매핑** | **15432** | 로컬 dev(`docker-compose.dev.yml` 등) — 기존 5432 점유 회피 |
 | Redis | 6379 | idr 스택 |
-| Dify Web UI + API | 80 | `docker-compose.dify.yml` (Phase 6) |
-| PostgreSQL (Dify 전용) | 5433 | Dify DB — idr DB와 분리 |
+| Dify Web UI + API | **8080** (호스트) | `infra/dify/` + `EXPOSE_NGINX_PORT` |
+| PostgreSQL (Dify 전용) | **15434** (호스트) | `db_postgres` — idr DB(15432)와 분리 |
 | Ollama (선택) | 11434 | 호스트 직접 실행 |
 
 > 아키텍처 다이어그램의 `5432`는 **컨테이너 내부** 관점이다. 개발 PC에서 `psql`/pytest 연결 시에는 **호스트 포트(15432)** 를 사용한다.

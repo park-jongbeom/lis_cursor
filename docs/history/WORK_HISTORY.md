@@ -173,3 +173,46 @@
 - `crm_service._sync_churn_pipeline` 내부 `datetime.utcnow()` DeprecationWarning 2건 — 기능 영향 없음. Phase 5 이전에 `datetime.now(UTC)`로 교체 예정.
 - `routing_service.route` TREND/AGGREGATION 분기에서 `asyncio.to_thread` 사용(lambda 래핑) — `bi_service`의 동기 메서드를 이벤트 루프 블로킹 없이 호출.
 - 다음 세션: Phase 5 API 라우터 계층 (`auth`, `datasets`, `scm`, `crm`, `bi`, `agent`). **엔드포인트 파일에서 `from __future__ import annotations` 금지** (backend_architecture.md §1).
+
+### [2026-03-26] Session 05 — Phase 5 API 라우터 + Gate C/D 통합 테스트 (plan.md Phase 5)
+
+**완료 내용**: v1 라우터 전 구간(`auth`~`agent`)·ARQ 워커(`forecast`/`cluster`/`trend`)·`main` lifespan·통합 테스트 11건·비밀번호 검증을 `bcrypt` 네이티브로 전환(passlib/bcrypt4 초기화 이슈 회피).
+
+**변경 파일** (주요):
+- `idr_analytics/app/main.py`, `app/api/v1/api.py`, `app/api/v1/endpoints/*.py`, `app/workers/arq_worker.py`, `app/core/security.py`, `app/core/job_poll.py`, `app/core/config.py`, 서비스·스키마 보강
+- `idr_analytics/tests/integration/conftest.py`, `helpers.py`, `test_api_phase5.py`
+- `pyproject.toml` — dev `asgi-lifespan`, 직접 의존 `bcrypt ^4`, `poetry.lock`
+- `docker-compose.test.yml` — `POSTGRES_PASSWORD` 기본값 `idr-test-pw`
+- `docs/plans/plan.md` — Phase 5·7-3 체크 반영, 진행 표 갱신
+- `docs/CURRENT_WORK_SESSION.md` — Gate C/D/E 반영 후 Session 06으로 교체
+
+**결정 사항**:
+1. **통합 테스트 lifespan**: httpx 0.27은 `ASGITransport(lifespan=…)` 미지원 → `asgi-lifespan.LifespanManager`로 감쌈.
+2. **ARQ**: 엔드포인트 검증은 `create_pool` 목으로 Redis·워커 없이 `enqueue_job`만 확인.
+3. **CRM 픽스처 CSV**: KMeans `n_clusters=4`보다 고객(행) 수가 많도록 최소 5고객·6행 샘플 유지.
+4. **`security.verify_password`**: `bcrypt.checkpw` 단일 경로. `hash_password` 추가(시드·통합 테스트 공용).
+
+**테스트 결과**: 단위 123 passed; 통합 11 passed (`POSTGRES_PASSWORD=idr-test-pw`, `make migrate-test`, 테스트 스택 기준). `ruff` / `mypy --strict` 통과.
+
+**특이사항**: 기존 Postgres 볼륨에 다른 비밀번호가 박혀 있으면 `podman-compose … down -v` 후 재기동 또는 환경 변수를 볼륨 생성 시점과 맞출 것.
+
+### [2026-03-26] Session 06 마감 — Phase 6 Dify 인프라·연동 + Gate D/E (plan.md Phase 6)
+
+**완료 내용**: Dify 1.13.2 스택(`infra/dify/vendor` + `docker-compose.idr.yml`)·`make dify-*`·공개 프록시(한 도메인 path)·워크플로 DSL·Publish(수동). `plan.md` §「검증 시점」에 따라 **C-1/C-2(Dify API·Tier2 실연동)** 는 이연. **Gate D**: `make test`(단위 123·통합 11)·`make lint`·`make typecheck` 통과 후 `CURRENT` 기록. **Gate E**: 본 이력·`plan.md` 진행 표·`CURRENT` → Session 07(Phase 7) 전환.
+
+**변경 파일** (누적·문서 중심; 구현 본문은 세션 전반에 분산):
+- `infra/dify/*` — vendor 동기화, `docker-compose.idr.yml`, `README.md`, 워크플로 YAML, nginx·스크립트 등
+- `Makefile` — `dify-up`/`dify-down`/JWT 보조 타겟
+- `.env.example` / 루트 `.env`(로컬) — `DIFY_*` 안내
+- `idr_analytics/app/core/config.py` — Dify URL 기본값 등
+- `docs/CURRENT_WORK_SESSION.md` — Session 06 전 구간·Gate D 결과
+- `docs/plans/plan.md` — Phase 6 체크·진행 표(본 Gate E 반영)
+
+**결정 사항**:
+1. **Dify 검증 시점**: HTTP Request·`workflows/run`·`/agent/query` Tier2 스모크는 루트 `.env`의 `DIFY_API_KEY`·`DIFY_WORKFLOW_ID` 실값 및 네트워크 전제와 함께 **Phase 7 통합·선택 E2E**에서 재검 (`plan.md` §Phase 6 표).
+2. **회귀 검증**: Phase 6 종료 시점에 **C-3·품질 게이트**로 FastAPI 회귀를 확정(Gate D).
+
+**테스트 결과 (Gate D, 2026-03-26)**: `make test` 통과(단위 123·통합 11); `ruff check`·`mypy idr_analytics/app --strict`(49 files) 통과. `podman-compose test` 기동/종료 시 dev/Dify와 네트워크·볼륨 공유로 **경고 로그**가 날 수 있으나 exit code 0.
+
+**특이사항**: `plan.md` Phase 6의 **API Key → `.env` 실값** 체크박스(`Studio → API Key…`)는 운영자 `.env` 반영 여부에 따라 별도 완료 처리. 미반영 시 Tier2·C-1/C-2는 계속 블로커.
+

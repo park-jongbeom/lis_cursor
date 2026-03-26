@@ -1,0 +1,314 @@
+# IDR Tier2 — CRM churn-risk + BI regional-heatmap → LLM 요약 (Dify Workflow DSL)
+# Dify 1.13.x Studio → DSL 가져오기 로 사용. 상세: 동일 디렉터리 README.md
+#
+# 가져온 뒤 필수: HTTP 요청 2개 노드에 Authorization(Bearer JWT) 설정, LLM 모델을 Ollama로 지정.
+app:
+  description: 'FastAPI compact 엔드포인트 2건을 호출한 뒤 Ollama로 한국어 인사이트 생성 (IDR Phase 6)'
+  icon: "\U0001F52C"
+  icon_background: '#D1E0FF'
+  mode: workflow
+  name: IDR CRM·BI Tier2
+  use_icon_as_answer_icon: false
+dependencies: []
+kind: app
+version: 0.1.5
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: http-request
+      id: 1743100000001-source-1743100000002-target
+      selected: false
+      source: '1743100000001'
+      sourceHandle: source
+      target: '1743100000002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: http-request
+      id: 1743100000002-source-1743100000003-target
+      selected: false
+      source: '1743100000002'
+      sourceHandle: source
+      target: '1743100000003'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: variable-aggregator
+      id: 1743100000003-source-1743100000004-target
+      selected: false
+      source: '1743100000003'
+      sourceHandle: source
+      target: '1743100000004'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: variable-aggregator
+        targetType: llm
+      id: 1743100000004-source-1743100000005-target
+      selected: false
+      source: '1743100000004'
+      sourceHandle: source
+      target: '1743100000005'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: end
+      id: 1743100000005-source-1743100000006-target
+      selected: false
+      source: '1743100000005'
+      sourceHandle: source
+      target: '1743100000006'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: 'AgentService inputs 와 동일한 키: user_query, dataset_id. BI period 는 regional-heatmap 필수.'
+        selected: false
+        title: "\uC2DC\uC791"
+        type: start
+        variables:
+        - label: user_query
+          max_length: 8192
+          options: []
+          required: true
+          type: paragraph
+          variable: user_query
+        - label: dataset_id
+          max_length: 256
+          options: []
+          required: true
+          type: text-input
+          variable: dataset_id
+        - label: period
+          max_length: 64
+          options: []
+          required: true
+          type: text-input
+          variable: period
+      height: 192
+      id: '1743100000001'
+      position:
+        x: 80
+        y: 200
+      positionAbsolute:
+        x: 80
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 'GET /api/v1/crm/churn-risk — 가져온 뒤 Authorization Bearer JWT 설정 필수'
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: CRM churn-risk
+        type: http-request
+        url: http://host.containers.internal:8000/api/v1/crm/churn-risk?dataset_id={{#1743100000001.dataset_id#}}&compact=true&top_n=10
+        variables: []
+      height: 124
+      id: '1743100000002'
+      position:
+        x: 400
+        y: 200
+      positionAbsolute:
+        x: 400
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 'GET /api/v1/bi/regional-heatmap — period 는 데이터셋 기간 컬럼 값과 일치해야 함'
+        headers: ''
+        method: get
+        params: ''
+        selected: false
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: BI regional-heatmap
+        type: http-request
+        url: http://host.containers.internal:8000/api/v1/bi/regional-heatmap?dataset_id={{#1743100000001.dataset_id#}}&period={{#1743100000001.period#}}&compact=true
+        variables: []
+      height: 124
+      id: '1743100000003'
+      position:
+        x: 720
+        y: 200
+      positionAbsolute:
+        x: 720
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        output_type: string
+        selected: false
+        title: "\uBCC0\uC218 \uC9D1\uACC4\uC790"
+        type: variable-aggregator
+        variables:
+        - - '1743100000002'
+          - body
+        - - '1743100000003'
+          - body
+      height: 139
+      id: '1743100000004'
+      position:
+        x: 1040
+        y: 200
+      positionAbsolute:
+        x: 1040
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: '가져온 뒤 모델을 Ollama 로 지정 (예: llama3.2)'
+        model:
+          completion_params:
+            temperature: 0.3
+          mode: chat
+          name: llama3.2
+          provider: ollama
+        prompt_template:
+        - id: c0ffee00-0001-4000-8000-000000000001
+          role: system
+          text: "\uB2F9\uC2E0\uC740 \uC758\uB8CC \uAC80\uC0AC \uC601\uC5C5 \uBD84\uC11D
+            \uC804\uBB38\uAC00\uC785\uB2C8\uB2E4. \uC8FC\uC5B4\uC9C4 JSON \uB370\uC774\uD130\uB97C
+            \uBC14\uD0D5\uC73C\uB85C \uD55C\uAD6D\uC5B4\uB85C \uC2E4\uBB34\uC801\uC778
+            \uC778\uC0AC\uC774\uD2B8\uB97C \uC81C\uC2DC\uD558\uC138\uC694. \uC218\uCE58\uB97C
+            \uC9C0\uC5B4\uB0B4\uC9C0 \uB9D0\uACE0, \uACFC\uC7A5\uD55C \uD574\uC11D\uC740
+            \uD53C\uD558\uC138\uC694."
+        - id: c0ffee00-0002-4000-8000-000000000002
+          role: user
+          text: "\uB370\uC774\uD130 (\uC5F0\uACB0\uB41C compact JSON):\n{{#1743100000004.output#}}\n\n\uC0AC\uC6A9\uC790
+            \uC9C8\uBB38:\n{{#1743100000001.user_query#}}\n\n\uC704 \uB370\uC774\uD130\uC640
+            \uC9C8\uBB38\uC5D0 \uB300\uD574 \uD55C\uAD6D\uC5B4\uB85C \uB2F5\uBCC0\uD558\uC138\uC694."
+        selected: false
+        title: LLM (Ollama)
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 98
+      id: '1743100000005'
+      position:
+        x: 1360
+        y: 200
+      positionAbsolute:
+        x: 1360
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - '1743100000005'
+          - text
+          variable: output
+        selected: false
+        title: "\uB05D"
+        type: end
+      height: 90
+      id: '1743100000006'
+      position:
+        x: 1680
+        y: 200
+      positionAbsolute:
+        x: 1680
+        y: 200
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 0.55

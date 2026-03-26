@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str
 
+    # File uploads (dataset CSV 저장 경로)
+    DATA_UPLOAD_DIR: str = "./data/uploads"
+
     # Analysis routing
     AI_ESCALATION_THRESHOLD: int = 70
     PANDAS_MAX_ROWS: int = 2_000_000
@@ -40,10 +43,10 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
 
-    # Dify
-    DIFY_API_BASE_URL: str = "http://localhost/v1"
-    DIFY_API_KEY: str
-    DIFY_WORKFLOW_ID: str
+    # Dify (rootless podman: 8080:80). 키·워크플로 ID는 콘솔 발급 전까지 비워 두면 Tier 1만 동작.
+    DIFY_API_BASE_URL: str = "http://localhost:8080/v1"
+    DIFY_API_KEY: str = ""
+    DIFY_WORKFLOW_ID: str = ""
 
     # SCM / CRM
     PROPHET_CHANGEPOINT_SCALE: float = 0.05

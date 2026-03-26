@@ -88,6 +88,75 @@
 
 **관련 파일**: `Makefile` (`format` 타깃), `idr_analytics/tests/unit/test_crud_base.py`, `idr_analytics/tests/unit/test_scm_service.py`, `idr_analytics/app/services/analytics/bi_service.py`, `.pre-commit-config.yaml`
 
+### [2026-03-26] passlib + bcrypt 4.x 로그인 시 `ValueError` / `bcrypt.__about__`
+
+**오류 유형**: 라이브러리 호환 (런타임)
+
+**발생 상황**: 통합 테스트·로그인에서 `verify_password` 경로로 passlib bcrypt 백엔드 초기화 시 `ValueError: password cannot be longer than 72 bytes` 또는 `AttributeError: module 'bcrypt' has no attribute '__about__'`.
+
+**근본 원인**: passlib 1.7.4와 bcrypt 4.x/5.x API가 완전히 맞지 않음.
+
+**재발 방지 규칙**:
+1. 비밀번호 검증·해시는 **`bcrypt.checkpw` / `bcrypt.hashpw`** (`app/core/security.py`의 `verify_password`, `hash_password`)를 사용한다.
+2. 통합 테스트 시드도 `hash_password()`를 사용한다.
+3. `pyproject.toml`에 `bcrypt` 직접 의존을 명시하고 메이저 업 시 로그인 스모크를 수행한다.
+
+**관련 파일**: `idr_analytics/app/core/security.py`, `idr_analytics/tests/integration/conftest.py`, `pyproject.toml`
+
+---
+
+### [2026-03-26] ga-nginx 바인드 마운트가 갱신되지 않아 설정 일부만 적용됨
+
+**오류 유형**: 환경 설정 / 컨테이너 (운영)
+
+**발생 상황**: 호스트의 `go-almond.swagger.conf`를 늘렸는데 `docker exec ga-nginx` 안의 `default.conf` 줄 수가 더 짧고, `nginx -T`에 `lis`용 `listen 443` 블록이 없음. `lis` 요청이 예전처럼 apex `qk54r71z` 블록으로 매칭되어 `/android/`로 301.
+
+**근본 원인**: 바인드 마운트된 파일을 갱신한 뒤에도 컨테이너가 이전 inode/캐시를 보는 경우가 있음(환경에 따라 상이).
+
+**재발 방지 규칙**:
+1. 배포 후 **`docker exec ga-nginx wc -l /etc/nginx/conf.d/default.conf`** 로 호스트 `wc -l`과 일치하는지 확인한다.
+2. 불일치 시 **`docker restart ga-nginx`** 후 `nginx -t`·`nginx -s reload`로 재적용한다.
+
+**관련 파일**: ga-server `docs/nginx/go-almond.swagger.conf`, 컨테이너 `ga-nginx`
+
+---
+
+### [2026-03-26] pre-commit: unstaged stash 롤백 + mypy `security.py` / `agent.py` (jose·bcrypt·pandas)
+
+**오류 유형**: 정적 분석 / pre-commit·mypy strict (`no-any-return`, `redundant-cast`)
+
+**발생 상황**: VSCode Git 로그(`vscode.git.Git`)에서 커밋 시 **`[WARNING] Unstaged files detected`** → pre-commit이 unstaged 변경을 stash한 뒤 ruff·ruff-format이 스테이징된 파일만 수정하고, **`Stashed changes conflicted with hook auto-fixes... Rolling back fixes`** 로 자동 수정이 되돌아감. 이후 ruff는 통과했으나 **mypy**가 `idr_analytics/app/core/security.py`의 `hash_password` / `verify_password` / `create_access_token`, `idr_analytics/app/api/v1/endpoints/agent.py`의 `_pandas_answer`(DataFrame·`to_json` 분기)에서 **`Returning Any from function declared to return "str"`** 또는 **`Redundant cast to "str"`** 등을 보고해 커밋이 막힘.
+
+**근본 원인**: (1) **일부만 스테이징**된 채 커밋하여 pre-commit stash와 훅 자동 수정이 충돌. (2) **python-jose** `jwt.encode`가 타입 스텁에서 **`Any`** 로 남는 경우가 많아 `str` 반환 함수와 맞지 않음. (3) **bcrypt** `hashpw` / `checkpw`는 스텁·버전에 따라 이미 `bytes` / `bool` 로 잡히므로, 여기에 `cast`를 얹으면 오히려 **`redundant-cast`** 가 난다. (4) **pandas** `DataFrame.to_json()` 반환이 스텁에서 `Any` 로 잡히면 `no-any-return` 이 난다(환경에 따라 `str` 로 잡혀 직접 반환 가능).
+
+**재발 방지 규칙**:
+1. 커밋 전 **`git add -A`**(또는 이번에 올릴 변경 **전부** 스테이징). unstaged를 남긴 채 IDE에서만 커밋하지 않는다. (`docs/rules/project_context.md` 「Git · 추적 제외」·README Git 체크리스트와 동일.)
+2. 커밋 전 터미널에서 **`make format && make lint && make typecheck`** 로 ruff·mypy를 **로컬에서 먼저** 통과시킨다.
+3. **`create_access_token`**: `jwt.encode(...)` 결과만 **`cast(str, ...)`** 으로 `str` 에 맞춘다. `bcrypt` 쪽은 스텁이 구체 타입을 주면 **cast 없이** 반환한다(redundant-cast 방지).
+4. **`_pandas_answer`**: mypy가 `to_json` 을 `Any` 로만 보면 **`cast(str, raw)[:50000]`** 등으로 좁힌다. 수정 후 반드시 **`PYTHONPATH=idr_analytics poetry run mypy idr_analytics/app --strict`** 로 전체 검증.
+5. 로그에 **stash / rollback** 문구가 보이면, 원인이 미스테이징인지 확인하고 1→2 순서를 다시 수행한다.
+
+**추가(재발, 동일 증상)**: **`mirrors-mypy` 격리 환경**에는 `pyproject.toml` 의 Poetry 의존성이 자동으로 들어가지 않는다. `bcrypt`·`pandas` 가 없으면 해당 API가 **Any** → `hash_password` / `verify_password` / `DataFrame.to_json` 에 **`no-any-return`**. 반면 **`types-python-jose`** 를 `additional_dependencies` 에 넣으면 `jwt.encode` 가 **str** 로 잡혀 **`cast(str, jwt.encode(...))`** 가 **`redundant-cast`** 가 된다. **조치**: `.pre-commit-config.yaml` 의 mypy 훅에 `bcrypt`, `pandas`, `pandas-stubs`, `numpy` 등 앱이 쓰는 패키지를 Poetry 와 맞춰 넣고, `args` 에 **`--config-file=pyproject.toml`** 를 써서 프로젝트 mypy 설정과 통일한다. JWT 반환은 **`return str(jwt.encode(...))`** 로 로컬(jose Any)·pre-commit(str) 모두에서 `str` 로 맞춘다(불필요한 `str(str)` 는 런타임 무해).
+
+**관련 파일**: `idr_analytics/app/core/security.py`, `idr_analytics/app/api/v1/endpoints/agent.py`, `.pre-commit-config.yaml`, `Makefile`, `pyproject.toml` (mypy·types)
+
+---
+
+### [2026-03-26] GitHub Push Protection — `infra/dify/vendor/.env.example` 의 `SECRET_KEY=sk-…` 오탐
+
+**오류 유형**: 원격 저장소 규칙 / 시크릿 스캔 (GH013, OpenAI API Key 패턴)
+
+**발생 상황**: `git push origin main` 시 **Push cannot contain secrets**, 위치 `infra/dify/vendor/.env.example:104`. Dify 업스트림 예시의 `SECRET_KEY` 값이 **`sk-` 로 시작**해 GitHub가 OpenAI 키로 오탐.
+
+**근본 원인**: 업스트림 `vendor/.env.example` 플레이스홀더가 실제 비밀이 아니어도 **`sk-` 접두**만으로 차단됨. **`git push --force` 로는 해결되지 않음**(같은 blob 이 남으면 계속 거절).
+
+**재발 방지 규칙**:
+1. `vendor` 동기화 후 **`SECRET_KEY` 줄에 `sk-` 로 시작하는 예시 값을 두지 않는다** — `change-me-…` / `openssl rand -base64 42` 안내 주석만 둔다.
+2. 차단 시 커밋에서 해당 파일을 고친 뒤 **`git commit --amend`**(아직 원격에 안 올라간 커밋) 또는 히스토리 수정 후 **일반 `git push`** 로 재시도한다.
+3. GitHub UI의 “allow secret” 은 **실제 유출 키가 아닐 때**만 신중히 사용한다.
+
+**관련 파일**: `infra/dify/vendor/.env.example`, `infra/dify/README.md`(vendor 동기화 시 확인 권장)
+
 ---
 
 > 이후 AI 오판이 발생하면 위 형식으로 이어서 추가하세요.

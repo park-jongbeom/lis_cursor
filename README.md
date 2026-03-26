@@ -255,6 +255,7 @@ PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/integration/ -v
 - **Dify 연동 규칙**: [`docs/rules/dify_integration.md`](docs/rules/dify_integration.md)
 - **아키텍처 설계서(SDD)**: [`ref_files/IDR_Data_Analysis_SDD.md`](ref_files/IDR_Data_Analysis_SDD.md)
 - **커밋 메시지**: 한국어 Conventional Commits — `feat(범위): 한글 제목`
+- **추적 제외·비밀**: `.env` 실파일·키·Dify 볼륨 등은 **절대 커밋하지 않음**. 새 로컬 산출물이 생기면 루트 `.gitignore`를 같은 변경에 포함할 것. 상세 절차·표는 [`docs/rules/project_context.md`](docs/rules/project_context.md) **「Git · 추적 제외 및 비밀 관리」** 절.
 
 ### Git 커밋 전 체크리스트
 

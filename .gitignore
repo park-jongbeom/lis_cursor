@@ -1,16 +1,48 @@
 # 내부 참조 문서 — 외부 공개 금지
 ref_files/
 
-# Secrets & local env — 이 파일들은 절대 커밋하지 않는다
+# ─── Secrets & 환경 변수 (실값·로컬 전용) ───────────────────────────────────
+# 주의: *.example / 템플릿은 반드시 Git에 포함한다 — 아래 예외 규칙 유지
 .env
-.env.dev
-.env.prod
-.env.test
-.env.local
-*.env.local
-# Docker compose override (로컬 전용 오버라이드 — 서비스별 패스워드 포함 가능)
+.env.*
+!.env.example
+!.env.*.example
+# 점 없는 로컬 env 파일
+env.local
+env.*.local
+.envrc
+.direnv/
+
+# Docker compose override (로컬 전용 — 패스워드·경로 포함 가능)
 docker-compose.override.yml
 docker-compose.local.yml
+docker-compose.*.local.yml
+
+# 비밀·키·인증서 (예시·gitkeep 만 예외)
+*.pem
+!**/.gitkeep
+id_rsa
+id_ecdsa
+id_ed25519
+*.key
+!*.key.example
+*.p12
+*.pfx
+*.jks
+
+# 클라우드·CI 서비스 계정 JSON (예시 파일명은 수동으로 add 가능)
+*credentials*.json
+google-services.json
+.terraform.tfstate
+.terraform.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# Dify 1.13+ (런타임 데이터; 비밀 파일은 위 .env / .env.* / !*.example 규칙으로 처리)
+infra/dify/vendor/volumes/
+# nginx/ssl 에 실인증서가 생기면 추적 방지 (.gitkeep 만 유지)
+infra/dify/vendor/nginx/ssl/*
+!infra/dify/vendor/nginx/ssl/.gitkeep
 
 # Python
 __pycache__/
@@ -19,6 +51,7 @@ __pycache__/
 .Python
 .venv/
 venv/
+*.egg
 *.egg-info/
 dist/
 build/
@@ -27,11 +60,48 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
+*.cover
+.tox/
+.nox/
+.hypothesis/
+.dmypy.json
+dmypy.json
+celerybeat-schedule
+celerybeat.pid
 
-# IDE
+# 로컬 데이터·덤프
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 로그·PID·백업
+*.log
+*.pid
+*.bak
+*.orig
+*~
+\#*\#
+
+# IDE / 에디터 (저장소에 올리는 설정만 예외)
 .idea/
 *.swp
 *.swo
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/*.local.json
 
 # OS
 .DS_Store
+Thumbs.db
+Desktop.ini
+.AppleDouble
+
+# 캐시·도구
+.cache/
+.parcel-cache/
+.docker/
+.terraform/

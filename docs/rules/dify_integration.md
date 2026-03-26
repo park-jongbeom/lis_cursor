@@ -103,60 +103,75 @@ async def get_churn_risk(
 
 ## 3. Dify HTTP Request Node 연동 가이드
 
-### Dify에서 FastAPI 엔드포인트를 호출하는 방법
+### 3.0 관리자 계정·로그인 완료 후 체크리스트 (순서 고정)
 
-```yaml
-# Dify Workflow 노드 구성 예시 (Dify Web UI에서 설정)
+워크플로에서 FastAPI를 부를 때는 **동기 JSON 응답**이 나오는 엔드포인트를 쓴다.  
+`/crm/cluster`는 **202 + job_id**(ARQ)라서 Dify 체인에 바로 넣기 어렵다 → **`/crm/churn-risk`(GET)** 를 사용한다.
 
-노드 타입: HTTP Request
-메서드: POST
-URL: http://fastapi-app:8000/api/v1/crm/cluster
-  # Docker 네트워크 내부: fastapi-app은 docker-compose.yml의 서비스명
-  # 외부에서 테스트: http://localhost:8000/api/v1/crm/cluster
+| 순서 | 작업 | 비고 |
+|:----:|------|------|
+| 1 | **Settings → Model Provider** 에서 Anthropic(또는 Ollama) 설정 | Dify가 LLM 노드를 실행하려면 필수 |
+| 2 | **Studio → Create app → Workflow** (예: 이름 `IDR CRM 이탈 분석`) | Chat이 아닌 Workflow 타입 |
+| 3 | Workflow **시작 변수**: `user_query` (paragraph), `dataset_id` (short text) | `AgentService`가 `inputs`로 동일 키 전달 |
+| 4 | Studio **API Access → API Key** 발급 → 프로젝트 `.env`의 `DIFY_API_KEY` | `app-...` 형식 |
+| 5 | 앱 **API URL** 또는 Studio에서 확인한 **Workflow / App id** → `.env`의 `DIFY_WORKFLOW_ID` | 버전별 UI 문구 상이; 복사한 UUID/문자열 그대로 |
+| 6 | 아래 §3.2대로 HTTP Request 2개 + Aggregator + LLM + Answer 구성 | FastAPI는 호스트에서 띄운 경우 URL은 §3.1. **또는** 저장소 [`infra/dify/workflows/idr_crm_bi_tier2.yml`](../../infra/dify/workflows/idr_crm_bi_tier2.yml) DSL 가져오기 → [`infra/dify/workflows/README.md`](../../infra/dify/workflows/README.md) 에서 가져온 뒤 JWT·모델 확인 |
+| 7 | **Publish** 후 Explore 또는 `/agent/query`(Tier2)로 스모크 | `docs/CURRENT_WORK_SESSION.md` Gate C |
 
-Headers:
-  Content-Type: application/json
-  Authorization: Bearer {{sys.user_id}}  # 또는 고정 API 키
+### 3.1 FastAPI 베이스 URL (Dify 컨테이너 → 호스트)
 
-Query Params:
-  compact: "true"    # 반드시 문자열 "true"로 전달
+| 실행 방식 | HTTP Request 의 URL 예 |
+|-----------|-------------------------|
+| FastAPI를 **호스트**에서 `uvicorn` (포트 8000) | `http://host.containers.internal:8000/api/v1/...` (Podman/Linux에서 동작하지 않으면 호스트 브리지 IP 사용) |
+| FastAPI가 **idr-net** 상의 컨테이너 | `http://<서비스명>:8000/api/v1/...` |
 
-Body (JSON):
-  {
-    "dataset_id": "{{dataset_id}}",
-    "cluster_count": 4,
-    "include_rfm": true
-  }
+모든 분석 호출에 **`compact=true`** 를 붙인다.
 
-출력 변수명: crm_result
-```
+### 3.2 동기 호출 예시 (HTTP Request 노드)
 
-### Dify 워크플로 전체 흐름 (CRM 이탈 분석 예시)
+**노드 A — 이탈 위험**
+
+- 메서드: **GET**
+- URL: `http://host.containers.internal:8000/api/v1/crm/churn-risk`
+- Query: `dataset_id` = `{{#dataset_id#}}` (또는 해당 앱의 변수 치환 문법), `compact` = `true`, `top_n` = `10`
+- Headers: `Authorization: Bearer <FastAPI JWT>` — 로컬 발급: 프로젝트 루트 `make dify-fastapi-jwt-bearer` (`.env`의 `IDR_LOGIN_USERNAME` / `IDR_LOGIN_PASSWORD`, 선택 `IDR_API_BASE_URL`). Dify **Secret**에 토큰만 저장 후 `Authorization: Bearer {{#env....#}}` 로 참조 가능(버전별 UI에 맞게 조정).
+- 출력 변수명: `crm_result`
+
+**노드 B — 지역 히트맵**
+
+- 메서드: **GET**
+- URL: `http://host.containers.internal:8000/api/v1/bi/regional-heatmap`
+- Query: `dataset_id`, **`period`** (필수 — CSV의 기간 컬럼 값과 동일한 문자열, 예: `2026-01`), `compact` = `true`
+- Headers: 노드 A와 동일 Bearer
+- 출력 변수명: `bi_result`
+
+> **JWT 발급**: `POST /api/v1/auth/login` 로 사용자명·비밀번호로 access_token을 받아 Dify Secret에 넣는다. 장기 토큰이 없다면 만료 시 갱신 필요.
+
+### Dify 워크플로 전체 흐름 (CRM 이탈 분석 — 권장)
 
 ```
 ① Start Node
    - 입력 변수: user_query (string), dataset_id (string)
+   - (선택) period — regional-heatmap 용; 없으면 상수 노드로 기본월 지정
 
-② HTTP Request Node  →  FastAPI /crm/cluster
-   - compact=true
+② HTTP Request → GET /api/v1/crm/churn-risk?compact=true&top_n=10
    - 출력: crm_result
 
-③ HTTP Request Node  →  FastAPI /bi/regional-heatmap
-   - compact=true, period=현재월
+③ HTTP Request → GET /api/v1/bi/regional-heatmap?compact=true&period=...
    - 출력: bi_result
 
-④ Variable Aggregator Node
-   - 입력: crm_result + bi_result
-   - 출력: combined_data
+④ Variable Aggregator
+   - 입력: crm_result + bi_result → combined_data
 
-⑤ LLM Node (Claude Sonnet 또는 Ollama)
+⑤ LLM Node
    System: "당신은 의료 검사 영업 분석 전문가입니다. 주어진 데이터를 분석하여 한국어로 인사이트를 제공하세요."
    User:   "데이터: {{combined_data}}\n질문: {{user_query}}"
    - 출력: llm_answer
 
-⑥ Answer Node
-   - 응답: "{{llm_answer}}"
+⑥ Answer Node → {{llm_answer}}
 ```
+
+**비고**: 배치 클러스터만 필요하면 `POST /api/v1/crm/cluster` + 폴링 `GET /api/v1/crm/cluster/{job_id}` 를 별도 워크플로로 구성한다. Body는 `{"dataset_id": "<uuid>", "n_clusters": 4}` (`ClusterRequest`).
 
 ---
 
@@ -205,28 +220,30 @@ class AgentService:
 
 ### 포트 구성 (충돌 방지)
 
-| 서비스 | 포트 | 파일 |
-|--------|------|------|
-| FastAPI (idr_analytics) | 8000 | `docker-compose.yml` |
-| Dify Web UI + API Gateway | 80 | `docker-compose.dify.yml` |
-| PostgreSQL (idr 전용) | 5432 | `docker-compose.yml` |
-| PostgreSQL (Dify 전용) | **5433** | `docker-compose.dify.yml` (충돌 방지) |
-| Redis (공유 가능) | 6379 | `docker-compose.yml` |
+| 서비스 | 포트 | 파일 / 비고 |
+|--------|------|---------------|
+| FastAPI (idr_analytics) | 8000 | 호스트 uvicorn 또는 prod compose |
+| Dify Web UI + API Gateway | **호스트 8080→컨테이너 80** | `infra/dify/` — `.env` 의 `EXPOSE_NGINX_PORT` |
+| PostgreSQL (idr 전용) | 5432 (내부) / **15432** (호스트) | `docker-compose.dev.yml` 등 |
+| PostgreSQL (Dify 전용) | **15434** (호스트 도구용) | `infra/dify/docker-compose.idr.yml` 가 `db_postgres` 노출 |
+| Redis (Dify 내장) | 컨테이너 내부만 | 공식 스택 `redis` 서비스 |
+| Redis (idr) | 6379 | `docker-compose.dev.yml` |
 | Ollama (온프레미스 LLM) | 11434 | 호스트 직접 실행 |
 
 ### 네트워크 공유 — `idr-net` 브리지
 
 ```yaml
-# docker-compose.yml (FastAPI 스택)
+# docker-compose.dev.yml 등 (FastAPI / idr 인프라)
 networks:
   idr-net:
     name: idr-net
     driver: bridge
 
-# docker-compose.dify.yml (Dify 스택)
+# infra/dify/docker-compose.idr.yml — api / worker / worker_beat 가 idr-net 에 추가 연결
 networks:
-  idr-net:
-    external: true  # FastAPI 스택과 같은 네트워크 공유
+  idr_net:
+    name: idr-net
+    external: true
 ```
 
 > 네트워크 공유 이유: Dify의 HTTP Request Node에서 `http://fastapi-app:8000`으로 직접 접근하기 위함.
@@ -235,8 +252,8 @@ networks:
 ### 환경 변수 (.env.example 필수 항목)
 
 ```dotenv
-# Dify 연동 설정 (방식 A — FastAPI 프록시 시)
-DIFY_API_BASE_URL=http://localhost/v1
+# Dify 연동 설정 (방식 A — FastAPI 프록시 시, 로컬 nginx 포트 8080 기준)
+DIFY_API_BASE_URL=http://localhost:8080/v1
 DIFY_API_KEY=app-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 DIFY_WORKFLOW_ID=your-workflow-id-here
 ```

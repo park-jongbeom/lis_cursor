@@ -1,0 +1,81 @@
+worker_processes auto;
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout 65;
+    client_max_body_size 15m;
+
+    # ga-server 등 상위 리버스 프록시가 X-Forwarded-Proto: https 를 넘기면 그대로 API/Web에 전달
+    # (여기서 $scheme 만 쓰면 항상 http 로 덮어써서 쿠키 Secure·리다이렉트가 깨짐)
+    map $http_x_forwarded_proto $dify_forwarded_proto {
+        default $http_x_forwarded_proto;
+        ''      $scheme;
+    }
+
+    upstream dify_api {
+        server dify-api:5001;
+    }
+
+    upstream dify_web {
+        server dify-web:3000;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+
+        # Dify API (콘솔·워크플로·앱 API)
+        location /console/api {
+            proxy_pass http://dify_api;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $dify_forwarded_proto;
+        }
+
+        location /api {
+            proxy_pass http://dify_api;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $dify_forwarded_proto;
+        }
+
+        location /v1 {
+            proxy_pass http://dify_api;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $dify_forwarded_proto;
+        }
+
+        location /files {
+            proxy_pass http://dify_api;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $dify_forwarded_proto;
+        }
+
+        # Dify Web (Next.js UI)
+        location / {
+            proxy_pass http://dify_web;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $dify_forwarded_proto;
+            # SSE(Server-Sent Events) 스트리밍 지원
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 3600s;
+        }
+    }
+}

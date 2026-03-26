@@ -3,6 +3,11 @@
 
 COMPOSE_TEST = podman-compose -f docker-compose.test.yml
 COMPOSE_DEV  = podman-compose -f docker-compose.dev.yml
+# Dify 1.13+ : 공식 compose + IDR 오버레이 (항상 vendor/ 에서 실행)
+DIFY_VENDOR_DIR := infra/dify/vendor
+define DIFY_COMPOSE_CMD
+mkdir -p "$$HOME/tmp" && cd $(DIFY_VENDOR_DIR) && TMPDIR="$$HOME/tmp" podman-compose --profile weaviate --profile postgresql -f docker-compose.yaml -f ../docker-compose.idr.yml --env-file ../.env
+endef
 ALEMBIC      = PYTHONPATH=idr_analytics poetry run alembic -c idr_analytics/alembic/alembic.ini
 PYTEST       = PYTHONPATH=idr_analytics poetry run pytest
 
@@ -64,6 +69,67 @@ dev-up:
 .PHONY: dev-down
 dev-down:
 	$(COMPOSE_DEV) down
+
+# ── Dify 인프라 ────────────────────────────────────────────────────────────────
+
+.PHONY: dify-env-bootstrap
+## Dify용 infra/dify/.env 생성 (vendor/.env.example 복사, 이미 있으면 유지)
+dify-env-bootstrap:
+	@test -f infra/dify/.env && echo "infra/dify/.env 이미 있음" || cp infra/dify/vendor/.env.example infra/dify/.env
+	@echo "다음: infra/dify/.env 에서 EXPOSE_NGINX_PORT=8080, SECRET_KEY, DB_PASSWORD, REDIS_PASSWORD 확인"
+
+.PHONY: dify-up
+## Dify Self-hosted 스택 기동 (공식 1.13.x + infra/dify/docker-compose.idr.yml)
+## 1) infra/dify/.env 존재 확인 (없으면: cp infra/dify/vendor/.env.example infra/dify/.env 후 EXPOSE_NGINX_PORT=8080)
+## 2) idr-net 생성
+## 3) vendor/ 에서 compose 기동 — Web UI: http://localhost:8080
+dify-up:
+	@test -f infra/dify/.env || (echo "오류: infra/dify/.env 없음. 실행: cp infra/dify/vendor/.env.example infra/dify/.env"; echo "      편집: EXPOSE_NGINX_PORT=8080, SECRET_KEY/DB_PASSWORD/REDIS_PASSWORD 변경"; exit 1)
+	@podman network exists idr-net 2>/dev/null || podman network create idr-net
+	@$(DIFY_COMPOSE_CMD) up -d
+	@echo "Dify 1.13 스택 기동. Web UI: http://localhost:8080 (EXPOSE_NGINX_PORT 기준)"
+	@echo "설정: infra/dify/README.md | 공개 URL은 infra/dify/.env 의 CONSOLE_API_URL / APP_API_URL"
+	@echo "Tip: make dify-logs-api"
+
+.PHONY: dify-down
+## Dify Self-hosted 스택 종료 (볼륨 유지)
+dify-down:
+	@$(DIFY_COMPOSE_CMD) down
+
+.PHONY: dify-down-v
+## Dify 스택 종료 + compose 기본 볼륨 삭제 (바인드 마운트 vendor/volumes/ 는 수동 rm 가능)
+dify-down-v:
+	@$(DIFY_COMPOSE_CMD) down -v
+
+.PHONY: dify-logs
+## Dify 전 서비스 로그 (vendor 디렉터리 기준)
+dify-logs:
+	@$(DIFY_COMPOSE_CMD) logs --tail=50 -f
+
+.PHONY: dify-logs-api
+## Dify API 컨테이너 로그만
+dify-logs-api:
+	@$(DIFY_COMPOSE_CMD) logs --tail=80 -f api
+
+.PHONY: dify-ps
+## Dify 컨테이너 상태 확인
+dify-ps:
+	@$(DIFY_COMPOSE_CMD) ps
+
+.PHONY: dify-fastapi-jwt
+## FastAPI 로그인 JWT 출력 — 환경 변수 IDR_API_BASE_URL(선택), IDR_LOGIN_USERNAME, IDR_LOGIN_PASSWORD 필요. Dify용 헤더: make dify-fastapi-jwt-bearer
+dify-fastapi-jwt:
+	@poetry run python infra/dify/scripts/fetch_fastapi_jwt.py
+
+.PHONY: dify-fastapi-jwt-bearer
+## 위와 동일 + `Authorization: Bearer <token>` 한 줄 출력
+dify-fastapi-jwt-bearer:
+	@poetry run python infra/dify/scripts/fetch_fastapi_jwt.py --bearer
+
+.PHONY: ollama-dify-host-bind
+## 호스트 Ollama를 0.0.0.0:11434에 바인딩 (systemd drop-in, sudo 필요) — Dify 모델 공급자 검증용
+ollama-dify-host-bind:
+	@bash infra/ollama/apply-dify-host-bind.sh
 
 # ── 코드 품질 ──────────────────────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -143,6 +144,13 @@ def _forecast_one_group(
             return None
 
 
+def _filter_by_test_codes(df: pd.DataFrame, group_col: str, test_codes: list[str] | None) -> pd.DataFrame:
+    if not test_codes:
+        return df
+    codes = {str(c) for c in test_codes}
+    return df[df[group_col].astype(str).isin(codes)].copy()
+
+
 def _sync_forecast(
     df: pd.DataFrame,
     target_col: str,
@@ -178,6 +186,67 @@ class SCMService:
             _executor,
             lambda: _sync_forecast(df, target_col, date_col, group_col, periods),
         )
+
+    async def restock_alert_report(
+        self,
+        df: pd.DataFrame,
+        target_col: str,
+        date_col: str,
+        group_col: str,
+        *,
+        test_codes: list[str] | None = None,
+        forecast_days: int = 30,
+    ) -> dict[str, Any]:
+        work = _filter_by_test_codes(df, group_col, test_codes)
+        forecasts = await self.forecast(work, target_col, date_col, group_col, forecast_days)
+        items: list[dict[str, object]] = []
+        for item in forecasts:
+            preds = item.predictions
+            if not preds:
+                continue
+            last_yhat = preds[-1].yhat
+            if len(preds) >= 2:
+                tail = preds[:-1][-6:] if len(preds) > 7 else preds[:-1]
+                prev_avg = sum(p.yhat for p in tail) / max(len(tail), 1)
+            else:
+                prev_avg = last_yhat
+            alert = prev_avg > 0 and last_yhat > prev_avg * 1.15
+            items.append(
+                {
+                    "test_code": item.test_code,
+                    "restock_suggested": alert,
+                    "predicted_last_period_qty": last_yhat,
+                    "recent_avg_qty": prev_avg,
+                }
+            )
+        restock_alerts = sum(1 for x in items if x["restock_suggested"])
+        return {
+            "forecasts": forecasts,
+            "restock_alerts": restock_alerts,
+            "items": items,
+        }
+
+    async def seasonal_pattern_report(
+        self,
+        df: pd.DataFrame,
+        target_col: str,
+        date_col: str,
+        group_col: str,
+        *,
+        test_codes: list[str] | None = None,
+        forecast_days: int = 30,
+    ) -> dict[str, Any]:
+        work = _filter_by_test_codes(df, group_col, test_codes)
+        forecasts = await self.forecast(work, target_col, date_col, group_col, forecast_days)
+        patterns = [
+            {
+                "test_code": f.test_code,
+                "seasonality": f.seasonality,
+                "trend_direction": f.trend_direction,
+            }
+            for f in forecasts
+        ]
+        return {"patterns": patterns, "forecast_days": forecast_days}
 
 
 scm_service = SCMService()

@@ -6,6 +6,7 @@ import asyncio
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
+from typing import Any
 
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -106,6 +107,22 @@ def _sync_churn_pipeline(file_path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return rfm, clustered
 
 
+def _sync_rfm_summary(file_path: str) -> dict[str, Any]:
+    df, _ = read_csv_validated(file_path, required_columns=CRM_REQUIRED)
+    ref = datetime.utcnow()
+    rfm = build_rfm_features(df, ref)
+    clustered = cluster(rfm, n_clusters=settings.KMEANS_DEFAULT_CLUSTERS)
+    seg_counts = clustered["rfm_segment"].value_counts().to_dict()
+    return {
+        "customer_count": int(len(clustered)),
+        "avg_recency_days": float(clustered["recency_days"].mean()),
+        "avg_frequency": float(clustered["frequency"].mean()),
+        "avg_monetary": float(clustered["monetary"].mean()),
+        "segment_distribution": {str(k): int(v) for k, v in seg_counts.items()},
+        "cluster_count": int(settings.KMEANS_DEFAULT_CLUSTERS),
+    }
+
+
 class CRMService:
     def build_rfm_features(self, df: pd.DataFrame, reference_date: date | datetime) -> pd.DataFrame:
         return build_rfm_features(df, reference_date)
@@ -158,6 +175,14 @@ class CRMService:
             total_at_risk=len(items),
             processing_time_ms=None,
         )
+
+    async def compute_rfm_summary(self, dataset_id: uuid.UUID, db: AsyncSession) -> dict[str, Any]:
+        row = await dataset_crud.get(db, dataset_id)
+        if row is None:
+            msg = f"AnalysisDataset {dataset_id} not found"
+            raise ValueError(msg)
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: _sync_rfm_summary(row.file_path))
 
 
 crm_service = CRMService()
