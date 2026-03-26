@@ -57,7 +57,7 @@ async def cluster_job(ctx: dict[str, Any], dataset_id: str, n_clusters: int) -> 
         raise ValueError(msg)
 
     df, _ = ingestion_service.read_csv_validated(row.file_path, required_columns=CRM_REQUIRED)
-    rfm = crm_service.build_rfm_features(df, datetime.utcnow())
+    rfm = crm_service.build_rfm_features(df, datetime.now())
     clustered = crm_service.cluster(rfm, n_clusters=n_clusters)
     elapsed = int((time.perf_counter() - t0) * 1000)
     sample = clustered.head(100)

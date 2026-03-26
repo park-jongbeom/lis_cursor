@@ -101,7 +101,7 @@ def _recommended_action(segment: str, recency_days: int) -> str:
 
 def _sync_churn_pipeline(file_path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     df, _ = read_csv_validated(file_path, required_columns=CRM_REQUIRED)
-    ref = datetime.utcnow()
+    ref = datetime.now()
     rfm = build_rfm_features(df, ref)
     clustered = cluster(rfm, n_clusters=settings.KMEANS_DEFAULT_CLUSTERS)
     return rfm, clustered
@@ -109,7 +109,7 @@ def _sync_churn_pipeline(file_path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def _sync_rfm_summary(file_path: str) -> dict[str, Any]:
     df, _ = read_csv_validated(file_path, required_columns=CRM_REQUIRED)
-    ref = datetime.utcnow()
+    ref = datetime.now()
     rfm = build_rfm_features(df, ref)
     clustered = cluster(rfm, n_clusters=settings.KMEANS_DEFAULT_CLUSTERS)
     seg_counts = clustered["rfm_segment"].value_counts().to_dict()
