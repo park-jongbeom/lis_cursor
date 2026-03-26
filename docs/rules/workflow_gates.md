@@ -2,7 +2,7 @@
 
 > **목적**: `plan.md`만 보고 곧바로 코딩하거나, 사용자 확인 없이 단계를 건너뛰는 일을 방지한다.  
 > **적용 대상**: Cursor AI 및 모든 기여자.  
-> **연계 문서**: `.cursorrules`, [`docs/rules/project_context.md`](project_context.md) §작업 프로토콜, `docs/CURRENT_WORK_SESSION.md`.
+> **연계 문서**: `.cursorrules`, [`docs/rules/project_context.md`](project_context.md) §작업 프로토콜, `docs/CURRENT_WORK_SESSION.md`, Cursor 프로젝트 스킬 `.cursor/skills/idr-session-workflow/SKILL.md` (본 문서의 에이전트용 요약; 상충 시 **본 문서 우선**).
 
 `docs/CURRENT_WORK_SESSION.md`의 **세션 워크플로 표**와 아래 **Gate A~E**는 동일한 5단계다.
 

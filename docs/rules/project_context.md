@@ -116,8 +116,7 @@ idr_analytics/
 
 ## 작업 프로토콜 (반드시 준수)
 
-어떤 태스크를 받더라도 아래 순서를 지키고, **각 단계 후 반드시 멈추고 개발자 승인을 기다린다.**  
-게이트 **A~E** 정의·금지 사항은 **`docs/rules/workflow_gates.md`** 를 따른다. `docs/CURRENT_WORK_SESSION.md`의 워크플로 표와 동일하다.
+어떤 태스크를 받더라도 아래 Gate 순서를 지키고, **각 Gate 전환 전 개발자 승인**을 받는다. 절차 전문·금지 사항·`CURRENT` 표준 섹션은 **`docs/rules/workflow_gates.md`** 가 단일 원본이다. Cursor 에이전트용 요약은 **`.cursor/skills/idr-session-workflow/SKILL.md`** 를 참고한다. `docs/CURRENT_WORK_SESSION.md`의 워크플로 표와 동일하다.
 
 | 단계 | Gate |
 |------|------|
@@ -127,29 +126,4 @@ idr_analytics/
 | 테스트 실행·검증 결과 기록 | D |
 | `WORK_HISTORY`·`plan.md` 체크·다음 세션 CURRENT | E |
 
-### Step 1: 구현 상세 계획 (Gate A — 코딩 전)
-
-- `docs/plans/plan.md`, SDD, `docs/rules/*.md`를 확인한 뒤, **`docs/CURRENT_WORK_SESSION.md`의 「구현 상세 계획」**에 이번 세션 범위·순서·파일 단위·주의사항을 기록한다.
-- 완료 후: "구현 상세 계획을 CURRENT에 반영했습니다. 승인해 주시면 구현(Step 2)을 시작합니다." 라고 하고 **대기**.
-- **사용자 명시 승인 전에는 코드 구현을 시작하지 않는다.**
-
-### Step 2: 코드 구현 (Gate B)
-
-- 개발자 승인 후 구현한다.
-- 소스코드 내에는 **클래스/함수 레벨 Docstring만** 작성 (튜토리얼식 주석 금지).
-- 개발자 백그라운드(Spring Boot / Kotlin / JPA / Flyway)와 1:1 비유로 설명한다.
-- **구현 종료 직후**: `docs/CURRENT_WORK_SESSION.md`에 **구현 완료 요약**을 작성하고, 진행 상태를 **구현 완료 — 사용자 확인 대기**로 표시한다. 체크리스트 `- [x]` 반영.
-- **금지**: 사용자 검토 없이 `CURRENT_WORK_SESSION.md`를 다음 세션 과제만 담은 문서로 통째로 교체하는 것.
-- 완료 후: "구현 내용을 CURRENT에 기록했습니다. 검토해 주시면 테스트 상세 계획(Step 3a)을 작성하겠습니다." 라고 하고 **대기**.
-
-### Step 3a: 테스트 상세 계획 (Gate C)
-
-- 사용자가 Step 2를 확인한 뒤에만, **「테스트 계획」**에 범위·케이스·우선순위·명령을 **상세히** 적는다.
-- 브리핑 후 승인 대기. **승인 전에는 테스트 코드 작성·실행을 하지 않는다.**
-
-### Step 3b: 테스트 검증 (Gate D)
-
-- 승인 후 테스트 코드 작성 및 실행.
-- 이 프로젝트 레이아웃: `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/` (또는 세션 문서에 적힌 명령).
-- 결과를 **「테스트 검증 결과」**에 기록한다.
-- 성공 및 사용자 최종 확인 후 **Gate E**: `docs/history/WORK_HISTORY.md`에 이전, **`docs/plans/plan.md` 완료 체크**, `CURRENT_WORK_SESSION.md`를 다음 과제 중심으로 갱신한다.
+구현 시 관례: 소스에는 **클래스/함수 수준 Docstring만** (튜토리얼식 주석 금지). 설명은 Spring Boot / Kotlin / JPA / Flyway 비유를 사용한다. pytest 예시: `PYTHONPATH=idr_analytics poetry run pytest idr_analytics/tests/` (또는 `CURRENT`에 적힌 명령).
