@@ -46,6 +46,7 @@ PYTHONPATH=idr_analytics poetry run python demo/sample_data/transform_lis_to_dem
 - `demo/sample_data/scm_from_lis.csv`
 - `demo/sample_data/crm_from_lis.csv`
 - `demo/sample_data/bi_from_lis.csv`
+- `demo/sample_data/mixed_from_lis.csv`
 
 SCM 변환 규칙:
 
@@ -57,6 +58,12 @@ SCM 실행 팁( `scm_from_lis.csv` ):
 
 - 데모 UI의 `test_codes` 입력에 `A002,A003,OS002,S003` 를 넣으면
   폴링 결과에서 예측 시리즈가 안정적으로 표시된다.
+
+Mixed 데이터셋 팁( Dify CRM+BI 동시 실행 ):
+
+- `mixed_from_lis.csv`는 CRM 필수(`customer_code`,`order_date`,`order_amount`)와
+  BI 필수(`period`,`region`,`value`,`test_code`)를 동시에 포함한다.
+- Dify 워크플로에서 `dataset_id` 하나로 CRM+BI 노드를 동시에 호출하려면 이 파일 업로드를 권장한다.
 
 ## 빠른 시연 순서
 

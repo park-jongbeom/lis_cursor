@@ -1,6 +1,8 @@
 """데이터셋 업로드·조회·삭제."""
 
+import csv
 import json
+import shutil
 import uuid
 from pathlib import Path
 from typing import cast
@@ -48,6 +50,62 @@ class DatasetListItem(BaseModel):
     created_at: object
 
 
+class SampleDatasetItem(BaseModel):
+    sample_file: str
+    dataset_type: str
+    columns: list[str]
+    preview_rows: list[dict[str, str]]
+
+
+class SampleUploadRequest(BaseModel):
+    sample_file: str
+    dataset_name: str | None = None
+    dataset_type: str | None = None
+
+
+SAMPLE_FILES: dict[str, str] = {
+    "bi_from_lis.csv": "bi",
+    "crm_from_lis.csv": "crm",
+    "scm_from_lis.csv": "scm",
+    "mixed_from_lis.csv": "mixed",
+}
+
+
+def _sample_data_dir() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        candidate = parent / "demo" / "sample_data"
+        if candidate.exists():
+            return candidate
+    return current.parents[3] / "demo" / "sample_data"
+
+
+def _sample_catalog() -> list[SampleDatasetItem]:
+    base = _sample_data_dir()
+    items: list[SampleDatasetItem] = []
+    for file_name, dataset_type in SAMPLE_FILES.items():
+        path = base / file_name
+        if not path.exists():
+            continue
+        with path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            columns = list(reader.fieldnames or [])
+            preview_rows: list[dict[str, str]] = []
+            for idx, row in enumerate(reader):
+                if idx >= 3:
+                    break
+                preview_rows.append({str(k): str(v) for k, v in row.items() if k is not None})
+        items.append(
+            SampleDatasetItem(
+                sample_file=file_name,
+                dataset_type=dataset_type,
+                columns=columns,
+                preview_rows=preview_rows,
+            )
+        )
+    return items
+
+
 @router.post(
     "/upload",
     status_code=status.HTTP_201_CREATED,
@@ -86,6 +144,74 @@ async def upload_dataset(
             "id": new_id,
             "name": dataset_name,
             "dataset_type": dataset_type,
+            "file_path": str(dest.resolve()),
+            "row_count": row_count,
+            "columns_json": columns_json,
+            "profile_json": None,
+            "owner_id": current_user.id,
+        },
+    )
+    return _profile_from_row(row)
+
+
+@router.get(
+    "/sample-catalog",
+    response_model=list[SampleDatasetItem],
+    summary="데모 샘플 목록",
+    description="내장 샘플 CSV 목록과 컬럼/미리보기(상위 3행)를 반환합니다.",
+    response_description="샘플 파일 메타데이터 목록",
+)
+async def sample_catalog(
+    current_user: User = Depends(get_current_user),
+) -> list[SampleDatasetItem]:
+    del current_user
+    return _sample_catalog()
+
+
+@router.post(
+    "/upload-sample",
+    status_code=status.HTTP_201_CREATED,
+    summary="내장 샘플 업로드",
+    description="서버 내 demo/sample_data의 샘플 CSV를 선택해 즉시 데이터셋으로 등록합니다.",
+    response_description="업로드된 데이터셋 프로필",
+)
+async def upload_sample_dataset(
+    body: SampleUploadRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> DatasetProfileResponse:
+    sample_file = body.sample_file.strip()
+    if sample_file not in SAMPLE_FILES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="지원하지 않는 샘플 파일입니다.")
+    source = _sample_data_dir() / sample_file
+    if not source.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="샘플 파일을 찾을 수 없습니다.")
+
+    upload_dir = Path(settings.DATA_UPLOAD_DIR)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    new_id = uuid.uuid4()
+    suffix = source.suffix or ".csv"
+    dest = upload_dir / f"{new_id}{suffix}"
+    shutil.copyfile(source, dest)
+
+    try:
+        df, row_count = ingestion_service.read_csv_validated(str(dest))
+    except ValueError as exc:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    profile = ingestion_service.build_columns_profile(df)
+    columns_json: dict[str, object] = {
+        "columns": profile["columns"],
+        "dtypes": profile["dtypes"],
+        "null_counts": profile["null_counts"],
+    }
+    row = await dataset_crud.create(
+        db,
+        {
+            "id": new_id,
+            "name": (body.dataset_name or source.stem).strip() or source.stem,
+            "dataset_type": (body.dataset_type or SAMPLE_FILES[sample_file]).strip(),
             "file_path": str(dest.resolve()),
             "row_count": row_count,
             "columns_json": columns_json,

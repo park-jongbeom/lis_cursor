@@ -104,6 +104,23 @@
       color: var(--danger);
       margin-top: 0.5rem;
     }
+    .sample-struct {
+      margin-top: 0.6rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 0.6rem;
+      font-size: 0.82rem;
+    }
+    .sample-struct .meta { color: var(--muted); margin-bottom: 0.45rem; }
+    .chip {
+      display: inline-block;
+      background: rgba(61, 156, 240, 0.16);
+      border: 1px solid var(--accent-dim);
+      border-radius: 999px;
+      padding: 0.1rem 0.45rem;
+      margin: 0.15rem 0.2rem 0.15rem 0;
+      font-size: 0.76rem;
+    }
     .demo-hidden { display: none !important; }
   </style>
 </head>
@@ -146,6 +163,17 @@
           </select>
         </label>
         <button type="button" id="btnUpload">업로드</button>
+      </div>
+      <div class="row">
+        <label>내장 샘플 선택
+          <select id="sampleSelect">
+            <option value="">샘플 목록 불러오는 중…</option>
+          </select>
+        </label>
+        <button type="button" id="btnSampleUpload" class="secondary">선택 샘플 즉시 업로드</button>
+      </div>
+      <div id="sampleStruct" class="sample-struct">
+        샘플을 선택하면 컬럼 구조와 미리보기(상위 3행)를 표시합니다.
       </div>
       <div>현재 <span class="mono">dataset_id</span>: <span id="datasetId" class="dataset-id">(업로드 전)</span></div>
       <p class="warn demo-hidden">내부 우회: <span class="mono">APP_ENV=development</span>, DB에 <span class="mono">INTERNAL_BYPASS_USERNAME</span>(기본 admin) 사용자 필요. 없으면 <span class="mono">demo/README.md</span> 참조.</p>
@@ -255,6 +283,7 @@
     let _chartCrm = null;
     let _chartBi = null;
     let datasetId = "";
+    let sampleCatalog = [];
 
     function defaultApiBase() {
       if (window.location.protocol === "file:") return "http://127.0.0.1:8000/api/v1";
@@ -360,6 +389,60 @@
       return datasetId;
     }
 
+    function escHtml(v) {
+      return String(v == null ? "" : v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function renderSampleStruct(item) {
+      var el = document.getElementById("sampleStruct");
+      if (!item) {
+        el.textContent = "샘플을 선택하면 컬럼 구조와 미리보기(상위 3행)를 표시합니다.";
+        return;
+      }
+      var chips = (item.columns || []).map(function (c) {
+        return "<span class='chip'>" + escHtml(c) + "</span>";
+      }).join("");
+      var headers = item.columns || [];
+      var rows = (item.preview_rows || []).map(function (row) {
+        var cols = headers.map(function (h) {
+          return "<td>" + escHtml(row[h] || "") + "</td>";
+        }).join("");
+        return "<tr>" + cols + "</tr>";
+      }).join("");
+      var table = headers.length
+        ? "<table class='simple'><thead><tr>" + headers.map(function (h) { return "<th>" + escHtml(h) + "</th>"; }).join("")
+          + "</tr></thead><tbody>" + rows + "</tbody></table>"
+        : "<div class='meta'>미리보기 데이터가 없습니다.</div>";
+      el.innerHTML =
+        "<div class='meta'><strong>" + escHtml(item.sample_file) + "</strong> · dataset_type=" + escHtml(item.dataset_type) + "</div>"
+        + "<div>" + chips + "</div>"
+        + table;
+    }
+
+    async function loadSampleCatalog() {
+      var select = document.getElementById("sampleSelect");
+      try {
+        var res = await axios.get(apiBase() + "/datasets/sample-catalog", { headers: authHeaders(false) });
+        sampleCatalog = res.data || [];
+        if (!sampleCatalog.length) {
+          select.innerHTML = "<option value=''>샘플 없음</option>";
+          renderSampleStruct(null);
+          return;
+        }
+        select.innerHTML = "<option value=''>샘플 선택</option>" + sampleCatalog.map(function (s) {
+          return "<option value='" + escHtml(s.sample_file) + "'>" + escHtml(s.sample_file) + " (" + escHtml(s.dataset_type) + ")</option>";
+        }).join("");
+      } catch (e) {
+        select.innerHTML = "<option value=''>샘플 목록 로드 실패</option>";
+        renderSampleStruct(null);
+      }
+    }
+
     document.querySelectorAll(".tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-tab");
@@ -431,7 +514,8 @@
     })();
 
     document.getElementById("btnLogin").addEventListener("click", async function () {
-      await performLogin(false);
+      var ok = await performLogin(false);
+      if (ok) await loadSampleCatalog();
     });
 
     document.getElementById("bearerToken").addEventListener("change", function () {
@@ -462,8 +546,25 @@
       setTimeout(async function () {
         persistApiBase();
         await performLogin(true);
+        await loadSampleCatalog();
       }, 120);
+    } else {
+      loadSampleCatalog();
     }
+
+    document.getElementById("sampleSelect").addEventListener("change", function () {
+      var file = this.value;
+      var item = sampleCatalog.find(function (s) { return s.sample_file === file; });
+      if (!item) {
+        renderSampleStruct(null);
+        return;
+      }
+      renderSampleStruct(item);
+      document.getElementById("dsType").value = item.dataset_type;
+      if (!document.getElementById("dsName").value.trim()) {
+        document.getElementById("dsName").value = item.sample_file.replace(/\.csv$/i, "");
+      }
+    });
 
     document.getElementById("btnUpload").addEventListener("click", async function () {
       var fileEl = document.getElementById("csvFile");
@@ -484,6 +585,31 @@
         datasetId = "";
         document.getElementById("datasetId").textContent = "(실패)";
         setStatus(document.getElementById("statusScm"), fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnSampleUpload").addEventListener("click", async function () {
+      var file = document.getElementById("sampleSelect").value;
+      if (!file) {
+        alert("먼저 샘플을 선택하세요.");
+        return;
+      }
+      var st = document.getElementById("statusScm");
+      setStatus(st, "선택 샘플 업로드 중…");
+      try {
+        var body = {
+          sample_file: file,
+          dataset_name: document.getElementById("dsName").value.trim() || file.replace(/\.csv$/i, ""),
+          dataset_type: document.getElementById("dsType").value,
+        };
+        var res = await axios.post(apiBase() + "/datasets/upload-sample", body, { headers: authHeaders(true) });
+        datasetId = res.data.dataset_id;
+        document.getElementById("datasetId").textContent = datasetId;
+        setStatus(st, "샘플 업로드 완료 — 행 수: " + res.data.row_count + " / 파일: " + file);
+      } catch (e) {
+        datasetId = "";
+        document.getElementById("datasetId").textContent = "(실패)";
+        setStatus(st, fmtErr(e), true);
       }
     });
 

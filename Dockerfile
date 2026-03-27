@@ -29,6 +29,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY idr_analytics/ ./
+COPY demo/sample_data/ ./demo/sample_data/
 
 EXPOSE 8000
 

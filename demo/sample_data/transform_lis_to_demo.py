@@ -5,6 +5,7 @@
   - scm_from_lis.csv  (order_date,test_code,order_qty)
   - crm_from_lis.csv  (customer_code,customer_name,order_date,order_amount)
   - bi_from_lis.csv   (period,year,region,test_code,value)
+  - mixed_from_lis.csv (CRM+BI 공용: customer/order + period/region/value 포함)
 """
 
 from __future__ import annotations
@@ -106,6 +107,30 @@ def build_bi(df: pd.DataFrame) -> pd.DataFrame:
     return agg[["period", "year", "region", "test_code", "value"]]
 
 
+def build_mixed(df: pd.DataFrame) -> pd.DataFrame:
+    """CRM+BI를 한 번에 만족하는 공용 스키마."""
+    work = df.copy()
+    work["order_date"] = work["request_date"].dt.strftime("%Y-%m-%d")
+    work["period"] = work["request_date"].dt.to_period("M").astype(str)
+    work["year"] = work["request_date"].dt.year.astype(int)
+    work["order_amount"] = work["sales_amount"].astype(float).round().astype(int)
+    work["value"] = work["sales_amount"].astype(float).round().astype(int)
+    out = work[
+        [
+            "customer_code",
+            "customer_name",
+            "order_date",
+            "order_amount",
+            "period",
+            "year",
+            "region",
+            "test_code",
+            "value",
+        ]
+    ].copy()
+    return out.sort_values(["order_date", "customer_code", "test_code"])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="LIS CSV -> 데모용 CSV 변환")
     parser.add_argument(
@@ -128,19 +153,23 @@ def main() -> None:
     scm_df = build_scm(df)
     crm_df = build_crm(df)
     bi_df = build_bi(df)
+    mixed_df = build_mixed(df)
 
     scm_path = out_dir / "scm_from_lis.csv"
     crm_path = out_dir / "crm_from_lis.csv"
     bi_path = out_dir / "bi_from_lis.csv"
+    mixed_path = out_dir / "mixed_from_lis.csv"
 
     scm_df.to_csv(scm_path, index=False)
     crm_df.to_csv(crm_path, index=False)
     bi_df.to_csv(bi_path, index=False)
+    mixed_df.to_csv(mixed_path, index=False)
 
     print(f"[ok] input rows: {len(df)}")
     print(f"[ok] {scm_path} rows={len(scm_df)}")
     print(f"[ok] {crm_path} rows={len(crm_df)}")
     print(f"[ok] {bi_path} rows={len(bi_df)}")
+    print(f"[ok] {mixed_path} rows={len(mixed_df)}")
 
 
 if __name__ == "__main__":
