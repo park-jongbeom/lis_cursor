@@ -538,3 +538,16 @@
 **결정 사항**: Tier2 스모크 실패 원인 분리 — (1) nginx→FastAPI 502, (2) FastAPI→Dify `workflows/run` 404, (3) 워크플로 내부 HTTP 404(`dataset_id`·`period`·mixed CSV·노드 URL). `mixed_from_lis.csv`·`--period` 는 README·스크립트 기본값 `2024-01` 로 정합.
 
 **특이사항**: **미완(사용자)**: Dify Studio E1~E3·데모 F1 육안·보충 B3·D2·D3·`DEMO_SCRIPT.md` 체크·Phase 9 P9-1 LLM 1회 확정. **`CURRENT` Session 19 전면 교체**는 강의 후 또는 사용자 지시 시.
+
+### [2026-03-28] Session 19 — `/ide/docs/rules/` 탭 UI(Cursor · VS Code+Claude Code)·Gate C/D
+
+**완료 내용**:
+- **`demo/ide/docs/rules/index.html`**: `role="tablist"`/`tabpanel`로 **Cursor**·**VS Code + Claude Code** 탭 분리; 공통 ZIP·§0 안내 유지; 해시 `#cursor`/`#vscode-claude`; 탭별 목차·Mermaid 지연 렌더; Cursor 탭 정본 반영(§7 오류 카드·`workflow_gates` 전 기여자 문구 등).
+- **`docs/CURRENT_WORK_SESSION.md`**: Session 19 Gate A~D 기록; Session 18 중복 워크플로 표 제거.
+- **검증**: `make test` **156 passed**; `TestClient` `GET /ide/docs/rules/` **200**; 공인 `verify_lis_public_smoke.py` **OK**(당시 환경).
+
+**변경 파일**: `demo/ide/docs/rules/index.html`, `docs/CURRENT_WORK_SESSION.md`, `docs/history/WORK_HISTORY.md`(본 항목).
+
+**결정 사항**: 교육 페이지는 **단일 HTML**에서 도구 탭으로 확장; Claude Code 경로는 제품 문서 변동 가능성을 HTML에 명시.
+
+**특이사항**: **Gate E**(후속): `plan.md` Session 19 행·진행 현황·Phase 9 표 갱신, `CURRENT` **Session 20**으로 전면 교체(2026-03-28 사용자 「다음 단계 진행」).

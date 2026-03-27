@@ -29,6 +29,7 @@
 | **16** | 2026-03-27 | **Gate E 완료** — Phase 9 데모(`demo/*`)·`env.example`·`make test` 134+15·이력 `WORK_HISTORY` 이전 | 9 |
 | **17** | 2026-03-28 | **Gate E 완료** — pytest **152 passed**·샘플 CSV 통합·공인 `/ide` 계획 `CURRENT` 통합·데모 링크·`error_analysis`/remote-proxy 보강·ga-nginx 검증 기록(`WORK_HISTORY`) | 9 |
 | **18** | 2026-03-28 | **Gate D 완료·Gate E(이력) 부분** — pytest **156 passed**·공인 스모크·`verify_dify_upstream`·Dify `DIFY_*` 문서·`CURRENT` 보충 테스트 계획·`WORK_HISTORY` 본 항목. **남음**: P9-1 UI·Tier2(`DIFY_*` 실환경)·`DEMO_SCRIPT`·Phase 9 최종 확정 | 9 |
+| **19** | 2026-03-28 | **Gate E 완료** — `/ide/docs/rules/` **탭 UI**(Cursor·VS Code+Claude Code)·`make test` **156 passed**·TestClient·공인 `verify_lis_public_smoke`·`WORK_HISTORY`·`plan.md`·`CURRENT`→Session 20 교체 | 9 |
 
 ---
 
@@ -45,7 +46,7 @@
 | 6 Dify 인프라·연동 | 완료 | `DIFY_*` 실값 반영, `workflows/run`·Tier2 실연동 검증 완료 (Session 06·08) |
 | 7 테스트·검증 | 완료 | §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 (Session 07·08) |
 | **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~15 완료, 이후는 Session 16+ (`plan.md` §Phase 8) |
-| **강의 데모 UI** | **진행 중** | Session 17 마감 — **강의 전** P9-1 브라우저·리허설 + 공인 `/ide` 운영(§0) **Session 18**·`demo/DEMO_SCRIPT.md` |
+| **강의 데모 UI** | **진행 중** | Session 19 마감 — 공인 **`/ide/docs/rules/`** 교육 탭 HTML·회귀 완료. **남음**: P9-1 브라우저·Dify Studio·`DEMO_SCRIPT`·Tier2 `DIFY_*`·Phase 9 확정 — **`CURRENT` Session 20** |
 
 ---
 
@@ -54,7 +55,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Phase 9 진행 중 — **`docs/CURRENT_WORK_SESSION.md` Session 18** (`make test` **156 passed**, 2026-03-28). 공인 `/ide`·스모크는 터널 가동 시 **200** 확인됨. **남음**: P9-1 브라우저·Dify Studio·`DEMO_SCRIPT`·Tier2 공인 경로 `DIFY_*` |
+| **현재 상태** | Phase 7 완료 + Phase 9 진행 중 — **`docs/CURRENT_WORK_SESSION.md` Session 20** (`make test` **156 passed**, 2026-03-28). Session 19에서 **`/ide/docs/rules/`** 탭(교육생 Cursor·VS Code+Claude)·회귀·공인 스모크 완료. **남음**: P9-1·`DEMO_SCRIPT`·Dify 육안·Tier2 `DIFY_*`(공인 `agent/query` 등) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -593,8 +594,9 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 | 16 | P9-2 `demo/index.html`·README·P9-3 `DEMO_SCRIPT.md`·`env.example` + Gate A~E | Phase 9 |
 | 17 | P9-1·pytest·샘플 CSV·공인 `/ide` 문서·Gate E | Phase 9 |
 | 18 | P9-1 브라우저 나머지·리허설·공인 `/ide` Phase B·E·Phase 9 확정 | Phase 9 |
+| 19 | `/ide/docs/rules/` 탭 UI·정본 동기화·pytest·공인 스모크·Gate E(`WORK_HISTORY`·`plan`·`CURRENT` 전환) | Phase 9 |
 
-> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 18**(Gate E 이력 부분 반영, `CURRENT` 본문 유지).
+> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 20** — Phase 9 잔여(P9-1·Dify·`DEMO_SCRIPT`·Tier2).
 
 ---
 
