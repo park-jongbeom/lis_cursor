@@ -1,6 +1,9 @@
 # 내부 참조 문서 — 외부 공개 금지
 ref_files/
 
+# 강의 시연용 로컬 스크립트(시간·환경 의존 노트 — 저장소 추적 제외)
+demo/DEMO_SCRIPT.md
+
 # ─── Secrets & 환경 변수 ───────────────────────────────────────────────────────
 # 이름이 .env 로 시작하는 파일은 전부 무시 (예: .env, .env.example, .env.local, vendor/.env.example)
 .env*

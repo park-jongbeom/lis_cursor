@@ -26,7 +26,8 @@
 | 13 | 2026-03-27 | 운영 안정화: `env.example`·README `ALLOWED_ORIGINS` 형식·쉘 오염 주의 명시 | post-7 |
 | 14 | 2026-03-27 | 운영 안정화: OpenAPI 보강·ARQ 잡 통합 테스트(`test_arq_worker_integration_suite`) | post-7 |
 | 15 | 2026-03-27 | 운영 안정화: `0003_timestamptz`·운영 점검 `production_checklist.md` | post-7 |
-| **16** | — | **진행 예정** — 범위는 `CURRENT_WORK_SESSION.md` Gate A에서 확정 | post-7 |
+| **16** | 2026-03-27 | **Gate E 완료** — Phase 9 데모(`demo/*`)·`env.example`·`make test` 134+15·이력 `WORK_HISTORY` 이전 | 9 |
+| **17** | — | **진행 예정** — 강의 전 P9-1·브라우저 E2E 수동 검증(`demo/DEMO_SCRIPT.md`)·Phase 9 완료 기준 충족 확인 | 9 |
 
 ---
 
@@ -43,6 +44,7 @@
 | 6 Dify 인프라·연동 | 완료 | `DIFY_*` 실값 반영, `workflows/run`·Tier2 실연동 검증 완료 (Session 06·08) |
 | 7 테스트·검증 | 완료 | §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 (Session 07·08) |
 | **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~15 완료, 이후는 Session 16+ (`plan.md` §Phase 8) |
+| **강의 데모 UI** | **진행 중** | 산출물 반영 완(Session 16) — **강의 전** P9-1·E2E 리허설만 남음(Session 17·`demo/DEMO_SCRIPT.md`) |
 
 ---
 
@@ -423,6 +425,173 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 ### 후보 항목 (미착수 · Session 16+)
 
 > 운영 중 발견되는 과제를 Gate A에서 목록에 추가·선택한다. (현재 `plan.md`에 고정 후보 없음.)
+
+---
+
+## Phase 9 — 강의 데모 UI (3/28 강의 발표용, post-Phase 8)
+
+> **배경**: 2026-03-28(토) 김희원 강사 강의에서 보조강사로 이 프로젝트를 시연한다. 강사님의 이론 강의(4주차·5주차) + 데이터 분석 시연 후, 보조강사가 실제 동작하는 화면을 보여준다.  
+> **강의 계획서 참조**: `ref_files/컨설팅계획서_김희원_IDR시스템즈_전문가_양식.md` — 4주차(AI 도구 기반 SW 개발 프로세스), 5주차(데이터 과학 AI 도구 활용), 6주차(분석 결과 비즈니스 기획)  
+> **강사 지시**: "데이터분석 보여주고 → 밥먹고 → 코드 샘플 보여주고 → 보조강사가 한 거 보여주면"
+
+---
+
+### 현황 분석 — 지금 브라우저로 볼 수 있는 것
+
+| 컴포넌트 | URL | 현재 상태 | 강의 가시성 |
+|----------|-----|-----------|------------|
+| FastAPI Swagger UI | `http://localhost:8000/docs` | ✅ 완성 | API 구조 설명은 가능하나 수치/차트 없음 |
+| Dify Studio (워크플로 편집) | `http://localhost:8080` | ✅ 완성 | 워크플로 DSL 흐름 시각화 가능 |
+| Dify Chat/Workflow 실행 화면 | `http://localhost:8080` — 앱 실행 페이지 | ✅ 이미 존재 | LLM 요약 결과 텍스트만 보임 |
+| 분석 결과 시각화 UI | **없음** | ❌ 미구현 | 차트·표 없이 JSON만 반환 |
+| 데이터 업로드 / 분석 실행 통합 화면 | **없음** | ❌ 미구현 | 청중이 직관적으로 이해하기 어려움 |
+
+**결론**: Dify 워크플로 동작 자체는 브라우저에서 이미 시연 가능하나, **분석 결과를 시각적으로 보여주는 웹 UI**가 없다. 강의 시연을 위해 아래 두 트랙을 추가한다.
+
+---
+
+### 데모 시연 목표
+
+| 단계 | 보여줄 내용 | 도구 |
+|------|------------|------|
+| ① Dify 워크플로 동작 | CRM 이탈 위험 + BI 트렌드 → LLM 요약이 Chat 창에 나타나는 장면 | Dify Studio `http://localhost:8080` |
+| ② FastAPI Swagger 구조 | `/docs` — 엔드포인트 계층·`compact=true` 파라미터 설명 | `http://localhost:8000/docs` |
+| ③ 데모 웹 UI (신규) | CSV 업로드 → 분석 실행 → 차트·표 시각화 (SCM/CRM/BI 한 화면) | 단일 HTML 페이지 |
+
+---
+
+### P9-1 : Dify 워크플로 시연 준비 (환경 점검)
+
+> 코드 변경 없음 — 기동 상태·샘플 데이터 준비 체크리스트
+
+- [ ] `make dify-up` 정상 기동 및 `http://localhost:8080` Studio 접근 확인
+- [ ] `idr_crm_bi_tier2.yml` 워크플로가 Dify에 임포트되어 있고 **Publish** 상태인지 확인
+- [ ] FastAPI 기동 (`PYTHONPATH=idr_analytics poetry run uvicorn app.main:app --reload --port 8000`) 및 `/health` 200 확인
+- [ ] Dify HTTP 노드의 Bearer 토큰이 최신(만료 전)인지 확인 (`make dify-fastapi-jwt-bearer`)
+- [ ] 부록 C의 Kaggle 대체 데이터셋 3종이 준비되어 있고, 미리 FastAPI에 업로드·등록까지 완료 (데모 중 로딩 딜레이 최소화)
+- [ ] Dify Chat 앱에서 `user_query`+`dataset_id`+`period` 입력 → LLM 응답 정상 확인 (리허설)
+
+**강의 시연 흐름 (Dify)**:
+
+```
+① Dify Studio → 워크플로 편집 화면 → 노드 구조 설명
+   (시작 노드 → HTTP CRM → HTTP BI → 변수집계 → LLM → 종료)
+② 앱 실행 창 → 입력값 입력 → 실행
+③ LLM 요약 결과가 Chat 창에 스트리밍되는 장면 시연
+```
+
+---
+
+### P9-2 : 데모 웹 UI 구축 (단일 HTML 파일 방식)
+
+> **설계 원칙**:
+> - 별도 프레임워크·빌드 불필요 — 단일 `demo/index.html` (CDN: Chart.js + Axios)
+> - FastAPI 기존 엔드포인트를 그대로 호출 (`/api/v1/...`)
+> - 강의용이므로 인증 간소화 — 개발용 `INTERNAL_BYPASS_BEARER_TOKEN`을 `.env`에 설정하고 HTML에 하드코딩 허용 (강의 노트북 전용, 프로덕션 배포 아님)
+> - CORS: `ALLOWED_ORIGINS`에 `"http://localhost:5500"` 등 라이브 서버 포트 추가
+
+#### 화면 구성
+
+```
+┌─────────────────────────────────────────────────────┐
+│  IDR Analytics — AI 데이터 분석 데모                  │
+├──────────────┬──────────────────────────────────────┤
+│  [데이터 업로드] CSV 파일 선택 → 업로드 → dataset_id 표시 │
+├──────────────┴──────────────────────────────────────┤
+│  탭:  [SCM 수요예측] [CRM 이탈분석] [BI 트렌드]        │
+│                                                     │
+│  SCM 탭:                                            │
+│   ├─ [예측 실행] 버튼 → POST /scm/forecast (ARQ 잡)  │
+│   └─ Line Chart: 품목별 수요 예측 곡선 (Chart.js)     │
+│                                                     │
+│  CRM 탭:                                            │
+│   ├─ [이탈 위험 분석] → GET /crm/churn-risk          │
+│   ├─ Bar Chart: 이탈 위험 Top-N 거래처               │
+│   └─ [클러스터 실행] → POST /crm/cluster (ARQ 잡)    │
+│       └─ Scatter: RFM 세그먼트 분포                  │
+│                                                     │
+│  BI 탭:                                             │
+│   ├─ [트렌드 분석] → GET /bi/regional-heatmap        │
+│   ├─ Heatmap (지역 × 기간 매트릭스, Chart.js)        │
+│   └─ [YoY 비교] → GET /bi/yoy-comparison            │
+│       └─ Bar Chart: 전년 동기 대비                   │
+│                                                     │
+│  [Dify AI 요약] 버튼 → /agent/query Tier2 호출       │
+│   └─ 텍스트 박스: LLM 한국어 요약 출력                │
+└─────────────────────────────────────────────────────┘
+```
+
+#### 구현 체크리스트
+
+- [x] `demo/index.html` 생성 (단일 파일 SPA)
+  - Chart.js CDN + Axios CDN
+  - 탭 구조 (SCM / CRM / BI + Agent)
+  - CSV 업로드 → `POST /api/v1/datasets/upload` → `dataset_id` 저장
+  - SCM: `POST /scm/forecast` → 잡 ID 폴링(`GET /scm/forecast/{job_id}`) → Line Chart 렌더
+  - CRM: `GET /crm/churn-risk` → Bar Chart + `POST /crm/cluster` → 잡 폴링·표·세그먼트 막대
+  - BI: `GET /bi/regional-heatmap` → 표·막대 + `GET /bi/yoy-comparison` → Bar Chart
+  - [Dify AI 요약] 버튼 → `POST /agent/query` (Tier 2 경로) → 응답 텍스트 표시
+- [x] `env.example`에 Live Server 출처 예시 반영 — 로컬 `.env`는 사용자가 직접 설정
+- [ ] `.env` `INTERNAL_BYPASS_ENABLED=true` + `INTERNAL_BYPASS_BEARER_TOKEN=…` (.git 제외 — 강의 노트북 한정)
+- [x] `demo/README.md` — 실행·CORS·우회·ARQ 워커·`admin` 시드
+
+---
+
+### P9-3 : 강의 당일 시연 순서 스크립트
+
+> 강의 흐름과 연동한 시연 순서 — `demo/DEMO_SCRIPT.md`로 저장
+
+```markdown
+## 강의 시연 순서 (3/28 보조강사 파트)
+
+### [오전] 4주차 — AI 도구 기반 소프트웨어 개발 프로세스
+
+1. Cursor IDE + AI 작성 코드 구조 설명 (5분)
+   - `.cursorrules`, `docs/plans/plan.md`, Gate A~E 워크플로 소개
+   - "바이브코딩 vs 스펙 기반 개발" 대비 시연
+
+2. FastAPI Swagger UI 구조 설명 (5분)
+   - `http://localhost:8000/docs`
+   - SCM / CRM / BI / Agent 엔드포인트 계층 설명
+   - `compact=true` 파라미터 역할 시연
+
+### [오후] 5주차+6주차 — 데이터 분석 + 비즈니스 AI 연동
+
+3. 데모 웹 UI 시연 (10분)
+   - `demo/index.html` 열기 (VS Code Live Server 또는 직접 파일 열기)
+   - CSV 업로드 → SCM 수요 예측 차트
+   - CRM 이탈 위험 거래처 Bar Chart
+   - BI 지역별 질환 트렌드 Heatmap
+
+4. Dify 워크플로 시연 (10분)
+   - `http://localhost:8080` Studio — 노드 구조 설명
+   - 앱 실행 → 입력 → LLM 요약 텍스트 스트리밍
+   - "[Dify AI 요약] 버튼"으로 데모 UI에서도 동일 결과 재현
+```
+
+- [x] `demo/DEMO_SCRIPT.md` 작성 (위 내용 기반, 강의 날 직전 리허설 체크리스트 포함)
+
+---
+
+### Phase 9 완료 기준
+
+| 항목 | 기준 |
+|------|------|
+| P9-1 환경 점검 | Dify `idr_crm_bi_tier2` 워크플로 실행 후 LLM 응답 확인 |
+| P9-2 데모 UI | 브라우저에서 `demo/index.html` 열고 SCM·CRM·BI 3개 탭 차트 렌더 확인 |
+| P9-3 스크립트 | `demo/DEMO_SCRIPT.md` 존재, 강의 당일 리허설 완료 |
+| 전체 | `make dev-up` → uvicorn 기동 → `demo/index.html` → 차트 정상 표시 |
+
+---
+
+### Phase 9 위치 (Session 번호)
+
+| Session | 내용 | 연계 |
+|---------|------|------|
+| 16 | P9-2 `demo/index.html`·README·P9-3 `DEMO_SCRIPT.md`·`env.example` + Gate A~E | Phase 9 |
+| 17 | P9-1 강의 직전 환경 점검 + 브라우저 E2E·리허설(수동) | Phase 9 |
+
+> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 17**.
 
 ---
 

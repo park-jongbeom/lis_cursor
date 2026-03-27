@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IDR Analytics — 강의 데모</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a222d;
+      --border: #2d3a4d;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3d9cf0;
+      --accent-dim: #2a6fad;
+      --danger: #f07178;
+      --ok: #7fd962;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    h1 { font-size: 1.35rem; font-weight: 700; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.25rem; }
+    code, .mono { font-family: "JetBrains Mono", monospace; font-size: 0.82rem; }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 0.75rem; }
+    label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--muted); }
+    input[type="text"], input[type="file"], select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0.45rem 0.55rem;
+      min-width: 140px;
+      font-family: inherit;
+    }
+    input[type="file"] { padding: 0.35rem; min-width: 220px; }
+    button {
+      background: var(--accent);
+      color: #0a0e12;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.secondary { background: var(--border); color: var(--text); }
+    .tabs { display: flex; gap: 4px; margin-bottom: 0; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+    .tabs button {
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px 8px 0 0;
+      margin-bottom: -1px;
+      border: 1px solid transparent;
+      border-bottom: none;
+    }
+    .tabs button.active {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+      border-bottom: 1px solid var(--surface);
+    }
+    .tab-panel { display: none; padding-top: 1rem; }
+    .tab-panel.active { display: block; }
+    .status {
+      font-size: 0.85rem;
+      padding: 0.5rem 0.65rem;
+      border-radius: 6px;
+      background: rgba(61, 156, 240, 0.12);
+      border: 1px solid var(--accent-dim);
+      margin-top: 0.5rem;
+      min-height: 2.5rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status.err { background: rgba(240, 113, 120, 0.12); border-color: var(--danger); color: #ffcdd0; }
+    .dataset-id { color: var(--ok); font-weight: 600; }
+    .chart-box { position: relative; height: 280px; margin-top: 1rem; }
+    table.simple { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 0.75rem; }
+    table.simple th, table.simple td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    table.simple th { background: var(--bg); color: var(--muted); }
+    .warn {
+      font-size: 0.78rem;
+      color: var(--danger);
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>IDR Analytics 데모</h1>
+    <p class="sub">FastAPI 백엔드 + Chart.js · 강의 시연용(로컬 전용). 아래 Bearer는 <span class="mono">.env</span>의 <span class="mono">INTERNAL_BYPASS_BEARER_TOKEN</span>과 동일해야 합니다.</p>
+
+    <div class="panel">
+      <div class="row">
+        <label>API 베이스 URL
+          <input type="text" id="apiBase" value="http://127.0.0.1:8000/api/v1" />
+        </label>
+        <label>우회 Bearer 토큰
+          <input type="text" id="bearerToken" class="mono" placeholder="demo-idr-bypass" autocomplete="off" />
+        </label>
+      </div>
+      <div class="row">
+        <label>CSV 파일
+          <input type="file" id="csvFile" accept=".csv,text/csv" />
+        </label>
+        <label>데이터셋 이름
+          <input type="text" id="dsName" value="demo_dataset" />
+        </label>
+        <label>dataset_type
+          <select id="dsType">
+            <option value="scm">scm</option>
+            <option value="crm">crm</option>
+            <option value="bi">bi</option>
+            <option value="mixed">mixed</option>
+          </select>
+        </label>
+        <button type="button" id="btnUpload">업로드</button>
+      </div>
+      <div>현재 <span class="mono">dataset_id</span>: <span id="datasetId" class="dataset-id">(업로드 전)</span></div>
+      <p class="warn">내부 우회: <span class="mono">APP_ENV=development</span>, DB에 <span class="mono">INTERNAL_BYPASS_USERNAME</span>(기본 admin) 사용자 필요. 없으면 <span class="mono">demo/README.md</span> 참조.</p>
+    </div>
+
+    <div class="panel" style="padding-bottom:0;">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="scm">SCM 수요예측</button>
+        <button type="button" class="tab" data-tab="crm">CRM 이탈·클러스터</button>
+        <button type="button" class="tab" data-tab="bi">BI 트렌드</button>
+        <button type="button" class="tab" data-tab="agent">Dify AI 요약</button>
+      </div>
+    </div>
+
+    <div id="panel-scm" class="tab-panel panel active">
+      <div class="row">
+        <label>target_column
+          <input type="text" id="scmTarget" value="order_qty" />
+        </label>
+        <label>date_column
+          <input type="text" id="scmDate" value="order_date" />
+        </label>
+        <label>group_by
+          <input type="text" id="scmGroup" value="test_code" />
+        </label>
+        <label>test_codes (쉼표, 비우면 전체)
+          <input type="text" id="scmCodes" placeholder="A,B,C" />
+        </label>
+        <label>forecast_days
+          <input type="text" id="scmDays" value="30" />
+        </label>
+        <button type="button" id="btnForecast">예측 실행 → 폴링</button>
+      </div>
+      <div class="chart-box"><canvas id="chartScm"></canvas></div>
+      <div id="statusScm" class="status"></div>
+    </div>
+
+    <div id="panel-crm" class="tab-panel panel">
+      <div class="row">
+        <label>churn top_n
+          <input type="text" id="crmTopN" value="12" />
+        </label>
+        <button type="button" id="btnChurn">이탈 위험 분석</button>
+        <label>n_clusters
+          <input type="text" id="crmClusters" value="4" />
+        </label>
+        <button type="button" id="btnCluster">클러스터 실행 → 폴링</button>
+      </div>
+      <div class="chart-box"><canvas id="chartCrm"></canvas></div>
+      <div id="crmTable"></div>
+      <div id="statusCrm" class="status"></div>
+    </div>
+
+    <div id="panel-bi" class="tab-panel panel">
+      <div class="row">
+        <label>period (필수, CSV 값과 동일)
+          <input type="text" id="biPeriod" value="2024-01" />
+        </label>
+        <label>period_col
+          <input type="text" id="biPeriodCol" value="period" />
+        </label>
+        <label>region_col
+          <input type="text" id="biRegionCol" value="region" />
+        </label>
+        <label>value_col
+          <input type="text" id="biValueCol" value="value" />
+        </label>
+        <button type="button" id="btnHeatmap">지역 히트맵</button>
+      </div>
+      <div class="row">
+        <label>year_col (YoY)
+          <input type="text" id="biYearCol" value="year" />
+        </label>
+        <button type="button" id="btnYoy">YoY 비교</button>
+      </div>
+      <div id="biTable"></div>
+      <div class="chart-box"><canvas id="chartBi"></canvas></div>
+      <div id="statusBi" class="status"></div>
+    </div>
+
+    <div id="panel-agent" class="tab-panel panel">
+      <div class="row">
+        <label style="flex:1; min-width:280px;">질의 (Tier2 복합 시 자연어)
+          <input type="text" id="agentQuery" value="이 데이터셋의 SCM·CRM·BI 관점에서 핵심 인사이트를 한국어로 요약해 줘." style="width:100%" />
+        </label>
+        <button type="button" id="btnAgent">에이전트 실행</button>
+      </div>
+      <textarea id="agentOut" readonly rows="12" style="width:100%; margin-top:0.75rem; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:0.6rem; font-family:inherit; font-size:0.9rem;"></textarea>
+      <div id="statusAgent" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * 강의 노트북 전용: Bearer는 로컬 .env 의 INTERNAL_BYPASS_BEARER_TOKEN 과 일치해야 함.
+     * 프로덕션 배포·공개 저장소에 실토큰을 커밋하지 마세요.
+     */
+    const LS_TOKEN = "idr_demo_bearer";
+    const LS_API = "idr_demo_api_base";
+
+    let _chartScm = null;
+    let _chartCrm = null;
+    let _chartBi = null;
+    let datasetId = "";
+
+    function apiBase() {
+      return document.getElementById("apiBase").value.trim().replace(/\/$/, "");
+    }
+
+    function bearer() {
+      return document.getElementById("bearerToken").value.trim();
+    }
+
+    function authHeaders(json) {
+      const h = { Authorization: "Bearer " + bearer() };
+      if (json) h["Content-Type"] = "application/json";
+      return h;
+    }
+
+    function setStatus(el, msg, isErr) {
+      el.textContent = msg || "";
+      el.classList.toggle("err", !!isErr);
+    }
+
+    function fmtErr(err) {
+      if (err.response && err.response.data) {
+        const d = err.response.data;
+        if (typeof d.detail === "string") return d.detail;
+        try { return JSON.stringify(d.detail || d, null, 2); } catch (e) { return String(d); }
+      }
+      return err.message || String(err);
+    }
+
+    function requireDataset() {
+      if (!datasetId) {
+        throw new Error("먼저 CSV를 업로드해 dataset_id를 받으세요.");
+      }
+      return datasetId;
+    }
+
+    document.querySelectorAll(".tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-tab");
+        document.querySelectorAll(".tab").forEach(function (b) { b.classList.toggle("active", b === btn); });
+        document.querySelectorAll(".tab-panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === "panel-" + id);
+        });
+      });
+    });
+
+    (function initLocal() {
+      var t = localStorage.getItem(LS_TOKEN);
+      if (t) document.getElementById("bearerToken").value = t;
+      var a = localStorage.getItem(LS_API);
+      if (a) document.getElementById("apiBase").value = a;
+    })();
+
+    document.getElementById("bearerToken").addEventListener("change", function () {
+      localStorage.setItem(LS_TOKEN, bearer());
+    });
+    document.getElementById("apiBase").addEventListener("change", function () {
+      localStorage.setItem(LS_API, apiBase());
+    });
+
+    document.getElementById("btnUpload").addEventListener("click", async function () {
+      var fileEl = document.getElementById("csvFile");
+      if (!fileEl.files || !fileEl.files[0]) {
+        alert("CSV 파일을 선택하세요.");
+        return;
+      }
+      var fd = new FormData();
+      fd.append("file", fileEl.files[0]);
+      fd.append("dataset_name", document.getElementById("dsName").value.trim() || "demo");
+      fd.append("dataset_type", document.getElementById("dsType").value);
+      try {
+        var res = await axios.post(apiBase() + "/datasets/upload", fd, { headers: authHeaders(false) });
+        datasetId = res.data.dataset_id;
+        document.getElementById("datasetId").textContent = datasetId;
+        setStatus(document.getElementById("statusScm"), "업로드 완료 — 행 수: " + res.data.row_count);
+      } catch (e) {
+        datasetId = "";
+        document.getElementById("datasetId").textContent = "(실패)";
+        setStatus(document.getElementById("statusScm"), fmtErr(e), true);
+      }
+    });
+
+    async function pollJob(path) {
+      var url = apiBase() + path;
+      for (var i = 0; i < 180; i++) {
+        var res = await axios.get(url, { headers: authHeaders(false) });
+        var st = res.data.status;
+        if (st === "completed") return res.data;
+        if (st === "failed") throw new Error(res.data.error || "잡 실패");
+        await new Promise(function (r) { setTimeout(r, 1000); });
+      }
+      throw new Error("폴링 시간 초과(180초)");
+    }
+
+    document.getElementById("btnForecast").addEventListener("click", async function () {
+      var st = document.getElementById("statusScm");
+      setStatus(st, "예측 잡 등록 중…");
+      try {
+        var codesRaw = document.getElementById("scmCodes").value.trim();
+        var test_codes = codesRaw ? codesRaw.split(",").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+        var body = {
+          dataset_id: requireDataset(),
+          target_column: document.getElementById("scmTarget").value.trim(),
+          date_column: document.getElementById("scmDate").value.trim(),
+          group_by: document.getElementById("scmGroup").value.trim(),
+          test_codes: test_codes,
+          forecast_days: parseInt(document.getElementById("scmDays").value, 10) || 30,
+          model: "prophet",
+        };
+        var enq = await axios.post(apiBase() + "/scm/forecast", body, { headers: authHeaders(true) });
+        var jid = enq.data.job_id;
+        setStatus(st, "job_id=" + jid + " — 폴링 중…");
+        var done = await pollJob("/scm/forecast/" + encodeURIComponent(jid));
+        var result = done.result;
+        if (!result || !result.forecasts || !result.forecasts.length) {
+          setStatus(st, "완료되었으나 forecasts가 비어 있습니다. 컬럼·데이터를 확인하세요.");
+          return;
+        }
+        var colors = ["#3d9cf0", "#7fd962", "#f0a030", "#c678dd", "#e06c75"];
+        var fc = result.forecasts.slice(0, 5);
+        var labels = (fc[0].predictions || []).map(function (p) { return p.ds; });
+        var datasets = fc.map(function (f, idx) {
+          return {
+            label: String(f.test_code),
+            data: (f.predictions || []).map(function (p) { return p.yhat; }),
+            borderColor: colors[idx % colors.length],
+            backgroundColor: "transparent",
+            tension: 0.2,
+            pointRadius: 0,
+          };
+        });
+        var ctx = document.getElementById("chartScm");
+        if (_chartScm) _chartScm.destroy();
+        _chartScm = new Chart(ctx, {
+          type: "line",
+          data: { labels: labels, datasets: datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+              x: { title: { display: true, text: "ds" } },
+              y: { title: { display: true, text: "yhat" } },
+            },
+            plugins: { legend: { position: "bottom" } },
+          },
+        });
+        setStatus(st, "완료 — model: " + (result.model_used || "") + ", 시리즈 " + result.forecasts.length + "개 중 상위 5개 표시");
+      } catch (e) {
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnChurn").addEventListener("click", async function () {
+      var st = document.getElementById("statusCrm");
+      setStatus(st, "이탈 분석 중…");
+      try {
+        var topn = parseInt(document.getElementById("crmTopN").value, 10) || 12;
+        var url = apiBase() + "/crm/churn-risk?dataset_id=" + encodeURIComponent(requireDataset())
+          + "&compact=false&top_n=" + topn;
+        var res = await axios.get(url, { headers: authHeaders(false) });
+        var items = res.data.high_risk_customers || [];
+        var labels = items.map(function (c) { return c.customer_code || c.customer_name || "?"; });
+        var vals = items.map(function (c) { return Number(c.churn_risk_score) || 0; });
+        var ctx = document.getElementById("chartCrm");
+        if (_chartCrm) _chartCrm.destroy();
+        _chartCrm = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "churn_risk_score",
+              data: vals,
+              backgroundColor: "rgba(61, 156, 240, 0.65)",
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, max: 1 } },
+            plugins: { legend: { display: false } },
+          },
+        });
+        var rows = items.map(function (c) {
+          return "<tr><td>" + (c.customer_code || "") + "</td><td>" + (c.customer_name || "") + "</td><td>"
+            + (c.last_order_days_ago != null ? c.last_order_days_ago : "") + "</td><td>"
+            + (c.churn_risk_score != null ? c.churn_risk_score.toFixed(3) : "") + "</td><td>" + (c.rfm_segment || "") + "</td></tr>";
+        }).join("");
+        document.getElementById("crmTable").innerHTML = "<table class='simple'><thead><tr><th>코드</th><th>이름</th><th>경과일</th><th>위험</th><th>세그먼트</th></tr></thead><tbody>"
+          + rows + "</tbody></table>";
+        setStatus(st, "고위험 " + (res.data.total_at_risk || 0) + "명 — 상위 " + items.length + "명 표시");
+      } catch (e) {
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnCluster").addEventListener("click", async function () {
+      var st = document.getElementById("statusCrm");
+      setStatus(st, "클러스터 잡 등록…");
+      try {
+        var n = parseInt(document.getElementById("crmClusters").value, 10) || 4;
+        var enq = await axios.post(apiBase() + "/crm/cluster", { dataset_id: requireDataset(), n_clusters: n },
+          { headers: authHeaders(true) });
+        var jid = enq.data.job_id;
+        setStatus(st, "job_id=" + jid + " — 폴링 중…");
+        var done = await pollJob("/crm/cluster/" + encodeURIComponent(jid));
+        var result = done.result || {};
+        var sample = result.sample || [];
+        var segMap = {};
+        sample.forEach(function (r) {
+          var s = r.rfm_segment || "unknown";
+          segMap[s] = 1 + (segMap[s] || 0);
+        });
+        var labels = Object.keys(segMap);
+        var counts = labels.map(function (k) { return segMap[k]; });
+        var ctx = document.getElementById("chartCrm");
+        if (_chartCrm) _chartCrm.destroy();
+        _chartCrm = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "표본 내 세그먼트 수(상위 100행)",
+              data: counts,
+              backgroundColor: "rgba(127, 217, 98, 0.65)",
+            }],
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        });
+        var rows = sample.slice(0, 30).map(function (r) {
+          return "<tr><td>" + (r.customer_code || "") + "</td><td>" + (r.recency_days != null ? r.recency_days : "")
+            + "</td><td>" + (r.rfm_segment || "") + "</td></tr>";
+        }).join("");
+        document.getElementById("crmTable").innerHTML = "<table class='simple'><thead><tr><th>고객</th><th>경과일</th><th>세그먼트</th></tr></thead><tbody>"
+          + rows + "</tbody></table><p class='sub'>전체 고객 수(잡 결과): " + (result.customer_total || "—") + "</p>";
+        setStatus(st, "클러스터 완료 — 표본 " + sample.length + "행");
+      } catch (e) {
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnHeatmap").addEventListener("click", async function () {
+      var st = document.getElementById("statusBi");
+      setStatus(st, "히트맵 조회 중…");
+      try {
+        var p = document.getElementById("biPeriod").value.trim();
+        var q = "dataset_id=" + encodeURIComponent(requireDataset())
+          + "&period=" + encodeURIComponent(p)
+          + "&compact=false&test_category=all"
+          + "&period_col=" + encodeURIComponent(document.getElementById("biPeriodCol").value.trim())
+          + "&region_col=" + encodeURIComponent(document.getElementById("biRegionCol").value.trim())
+          + "&value_col=" + encodeURIComponent(document.getElementById("biValueCol").value.trim());
+        var res = await axios.get(apiBase() + "/bi/regional-heatmap?" + q, { headers: authHeaders(false) });
+        var heat = res.data.heatmap || [];
+        var rows = heat.map(function (h) {
+          return "<tr><td>" + (h.region || "") + "</td><td>" + (h.order_count != null ? h.order_count : "")
+            + "</td><td>" + (h.yoy_growth != null ? (100 * h.yoy_growth).toFixed(1) + "%" : "")
+            + "</td><td>" + (h.top_test || "") + "</td></tr>";
+        }).join("");
+        document.getElementById("biTable").innerHTML = "<p class='sub'>" + (res.data.insight || "") + "</p>"
+          + "<table class='simple'><thead><tr><th>지역</th><th>건수</th><th>YoY</th><th>상위 검사</th></tr></thead><tbody>"
+          + rows + "</tbody></table>";
+        var labels = heat.map(function (h) { return h.region; });
+        var vals = heat.map(function (h) { return Number(h.order_count) || 0; });
+        var ctx = document.getElementById("chartBi");
+        if (_chartBi) _chartBi.destroy();
+        _chartBi = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{ label: "order_count", data: vals, backgroundColor: "rgba(240, 160, 48, 0.75)" }],
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        });
+        setStatus(st, "기간 " + (res.data.period || p) + " — 지역 " + heat.length + "곳");
+      } catch (e) {
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnYoy").addEventListener("click", async function () {
+      var st = document.getElementById("statusBi");
+      setStatus(st, "YoY 조회 중…");
+      try {
+        var yc = document.getElementById("biYearCol").value.trim();
+        var vc = document.getElementById("biValueCol").value.trim();
+        var q = "dataset_id=" + encodeURIComponent(requireDataset()) + "&year_col=" + encodeURIComponent(yc)
+          + "&value_col=" + encodeURIComponent(vc) + "&compact=false";
+        var res = await axios.get(apiBase() + "/bi/yoy-comparison?" + q, { headers: authHeaders(false) });
+        var yoy = res.data.yoy_by_year || {};
+        var years = Object.keys(yoy).sort();
+        var labels = years;
+        var vals = years.map(function (y) { return Number(yoy[y]) * 100; });
+        var ctx = document.getElementById("chartBi");
+        if (_chartBi) _chartBi.destroy();
+        _chartBi = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [{ label: "YoY (%)", data: vals, backgroundColor: "rgba(199, 120, 221, 0.75)" }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { title: { display: true, text: "%" } } },
+            plugins: { legend: { display: false } },
+          },
+        });
+        setStatus(st, "YoY 연도 수: " + years.length);
+      } catch (e) {
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+
+    document.getElementById("btnAgent").addEventListener("click", async function () {
+      var st = document.getElementById("statusAgent");
+      var ta = document.getElementById("agentOut");
+      ta.value = "";
+      setStatus(st, "에이전트 호출 중…(Tier2는 Dify·네트워크에 따라 수십 초 걸릴 수 있음)");
+      try {
+        var body = {
+          query: document.getElementById("agentQuery").value.trim(),
+          dataset_id: requireDataset(),
+          language: "ko",
+        };
+        var res = await axios.post(apiBase() + "/agent/query", body, { headers: authHeaders(true), timeout: 180000 });
+        ta.value = res.data.answer || JSON.stringify(res.data, null, 2);
+        setStatus(st, "route: " + (res.data.route_used || "") + " — session_id: " + (res.data.session_id || ""));
+      } catch (e) {
+        ta.value = fmtErr(e);
+        setStatus(st, fmtErr(e), true);
+      }
+    });
+  </script>
+</body>
+</html>

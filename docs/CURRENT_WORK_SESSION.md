@@ -1,10 +1,10 @@
-# 현재 작업 세션 — Session 16
+# 현재 작업 세션 — Session 17
 
-> **대상 Phase**: 운영 안정화/후속 개선(Phase 7 완료 이후)
-> **전체 계획 참조**: [`docs/plans/plan.md`](plans/plan.md) §Session 번호 정의·§Phase 8 운영 안정화
+> **대상 Phase**: Phase 9 — 강의 데모 UI (강의 전 수동 검증)
+> **전체 계획 참조**: [`docs/plans/plan.md`](plans/plan.md) §Phase 9
 > **워크플로 규칙**: [`docs/rules/workflow_gates.md`](rules/workflow_gates.md)
 
-> **직전 세션**: Session 15 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 15 — 운영 안정화: `TIMESTAMPTZ` 마이그레이션 + 운영 점검 체크리스트」.
+> **직전 세션**: Session 16 마감 — [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 「[2026-03-27] Session 16 — Phase 9 강의 데모 UI: `demo/*`·`env.example`·Gate A~E」.
 
 ---
 
@@ -12,7 +12,7 @@
 
 **현재 단계**: **구현 상세 계획 작성 전** (Gate A)
 
-가능한 값: `구현 상세 계획 작성 전` → `구현 상세 계획 완료 — 사용자 확인 대기` (Gate A) → …
+(이번 세션은 **코드 변경 최소·수동 검증 중심**일 수 있음 — 범위는 아래 Gate A 확정 후 `docs/rules/workflow_gates.md` 따름.)
 
 ---
 
@@ -20,11 +20,11 @@
 
 | 게이트 | 완료 | 비고 |
 |--------|:----:|------|
-| A. 구현 상세 계획 | ⬜ | Session 16 범위 확정 전 |
-| B. 구현 완료 | ⬜ | A 승인 후 |
-| C. 테스트 상세 계획 | ⬜ | B 완료 후 |
-| D. 테스트 검증 | ⬜ | C 승인 후 |
-| E. 이력 이전·문서 전환 | ⬜ | D 완료 후 |
+| A. 구현 상세 계획 | ⬜ | 리허설·E2E 범위 확정 |
+| B. 구현 완료 | ⬜ | 코드 변경 없으면 「해당 없음」으로 명시 가능 |
+| C. 테스트 상세 계획 | ⬜ | 수동만이면 Gate A에 흡수 가능 |
+| D. 테스트 검증 | ⬜ | 리허설 체크 기록 |
+| E. 이력 이전·문서 전환 | ⬜ | 강의 후 Phase 9 완료 표 시 |
 
 ---
 
@@ -32,45 +32,46 @@
 
 | 구간 | 한 줄 |
 |------|--------|
-| **Session 15 결과** | `0003_timestamptz`·ORM aware `created_at`·`production_checklist.md`; `make test` **134+15** 통과 |
-| **Session 16 후보** | `plan.md` §Phase 8 「후보 항목 (Session 16+)」— 운영 중 과제를 Gate A에서 추가 |
+| **Session 16 결과** | `demo/index.html`·README·`DEMO_SCRIPT.md`·`env.example`; `make test` **134+15** 통과; 브라우저 E2E·P9-1은 **미실시** |
+| **Session 17 초점** | **3/28 강의 전** `demo/DEMO_SCRIPT.md`·`plan.md` §P9-1·`demo/index.html` 브라우저 스모크 |
 
-**바로 다음 액션**: Session 16 범위를 Gate A에 상세화하고 사용자 승인 후 진행한다.
+**바로 다음 액션**: Gate A에 「강의 전 할 일」만 쪼개 넣고 승인받는다. (코드 태스크가 없으면 구현 Gate B는 스킵하고 검증·기록 위주로 진행해도 된다 — 그때 `workflow_gates.md`와 맞는 표기로 표만 갱신.)
 
 ---
 
 ## 완료 기준 (초안)
 
-- Session 16 대상 범위 확정
-- Gate A~D 절차에 따라 구현·테스트·검증 기록 완료
-- Gate E에서 이력 및 `plan.md` 동기화 완료
+- [ ] `demo/DEMO_SCRIPT.md` 리허설 체크리스트 전항 확인(가능한 범위)
+- [ ] `plan.md` §P9-1 환경 점검(Dify·FastAPI·Bearer·샘플 데이터) 완료 또는 스킵 사유 기록
+- [ ] `demo/index.html` E2E-1~9 중 강의에 쓸 경로 최소 1회 브라우저 통과
+- [ ] (강의 후) Phase 9 완료 표·`WORK_HISTORY`·`plan.md` 진행 표 정리 — Gate E
 
 ---
 
 ## 구현 상세 계획 (Gate A)
 
-> Session 16 범위 확정 후 작성
+> Session 17 범위 확정 후 작성 (예: 수동 체크 전용 vs 소폭 코드 수정).
 
 ---
 
 ## 구현 완료 요약 (Gate B)
 
-> 사용자 승인 후 작성
+> 해당 시 작성
 
 ---
 
 ## 테스트 계획 (Gate C)
 
-> 사용자 승인 후 작성
+> 해당 시 작성 (수동만이면 체크리스트 + 스크린샷/메모 경로)
 
 ---
 
 ## 테스트 검증 결과 (Gate D)
 
-> 사용자 승인 후 작성
+> 해당 시 작성
 
 ---
 
-## 이전 세션 요약 (Session 15)
+## 이전 세션 요약 (Session 16)
 
-`TIMESTAMPTZ` 마이그레이션·모델 정합·`agent.py` CLUSTER `reference_date`, 운영 점검 문서 `docs/rules/production_checklist.md`. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 동일 제목 항목.
+데모 UI 3종 + `env.example` 보강, 전체 pytest 회귀 통과. 상세는 [`docs/history/WORK_HISTORY.md`](history/WORK_HISTORY.md) 동일 제목 항목.

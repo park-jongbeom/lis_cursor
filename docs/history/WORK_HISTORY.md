@@ -420,3 +420,24 @@
 
 **특이사항**: 없음.
 
+### [2026-03-27] Session 16 — Phase 9 강의 데모 UI: `demo/*`·`env.example`·Gate A~E (plan.md Phase 9)
+
+**완료 내용**: 3/28 강의 시연용 단일 HTML 데모(`demo/index.html`, Chart.js·Axios)·실행 가이드(`demo/README.md`)·시연 스크립트(`demo/DEMO_SCRIPT.md`)를 추가하고, `env.example`에 Live Server용 `ALLOWED_ORIGINS` 예시와 `INTERNAL_BYPASS_*` 주석을 보강했다. 백엔드 우회 인증은 기존(Session 08) 구현을 재사용. Gate A~E·`docs/CURRENT_WORK_SESSION.md`에 계획·구현·테스트·검증·마감을 기록했다.
+
+**변경 파일**:
+- `demo/index.html` — 신규(SPA: 업로드, SCM·CRM·BI, `POST /agent/query`)
+- `demo/README.md`, `demo/DEMO_SCRIPT.md` — 신규
+- `env.example` — `ALLOWED_ORIGINS`·`INTERNAL_BYPASS_*` 주석
+- `docs/CURRENT_WORK_SESSION.md` — Session 16 전 과정(→ Gate E 후 Session 17 템플릿으로 교체)
+- `docs/plans/plan.md` — Session 16·17, Phase 9 체크·진행 표 동기화
+
+**결정 사항**:
+1. 데모는 빌드 없이 CDN만 사용한다.
+2. Gate D 자동화는 `make test`(단위 134·통합 15) 및 `env.example` JSON·`git check-ignore`까지; 브라우저 E2E·P9-1 Dify 스모크는 강의 전 수동(Session 17)으로 남긴다.
+
+**테스트 결과 (Gate D)**:
+- `unset ALLOWED_ORIGINS && make test` → exit 0, 단위 **134 passed**, 통합 **15 passed**
+- `ALLOWED_ORIGINS` JSON 스모크·`.env` ignore 확인
+
+**특이사항**: 기존 `plan.md`의 “Session 17 = DEMO_SCRIPT 전용”은 Session 16에서 문서까지 반영됨. Session 17은 **강의 전 리허설·E2E 수동 검증**에 맞춘다.
+
