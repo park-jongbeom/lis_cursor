@@ -104,6 +104,7 @@
       color: var(--danger);
       margin-top: 0.5rem;
     }
+    .demo-hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -112,7 +113,7 @@
     <p class="sub">FastAPI + Chart.js · 일상 개발(<span class="mono">APP_ENV=development</span>)에서는 우회 Bearer(<span class="mono">INTERNAL_BYPASS_BEARER_TOKEN</span>)를, <span class="mono">APP_ENV=production</span>(로컬 운영형 포함)에서는 아래 <strong>로그인</strong>으로 JWT를 발급해 Bearer 칸에 넣으세요.</p>
 
     <div class="panel">
-      <div class="row">
+      <div class="row demo-hidden">
         <label>로그인(운영·JWT)
           <input type="text" id="loginUser" placeholder="admin" autocomplete="username" />
         </label>
@@ -121,7 +122,7 @@
         </label>
         <button type="button" id="btnLogin" class="secondary">로그인</button>
       </div>
-      <div class="row">
+      <div class="row demo-hidden">
         <label>API 베이스 URL
           <input type="text" id="apiBase" placeholder="자동: 이 사이트 기준 /api/v1" />
         </label>
@@ -147,7 +148,7 @@
         <button type="button" id="btnUpload">업로드</button>
       </div>
       <div>현재 <span class="mono">dataset_id</span>: <span id="datasetId" class="dataset-id">(업로드 전)</span></div>
-      <p class="warn">내부 우회: <span class="mono">APP_ENV=development</span>, DB에 <span class="mono">INTERNAL_BYPASS_USERNAME</span>(기본 admin) 사용자 필요. 없으면 <span class="mono">demo/README.md</span> 참조.</p>
+      <p class="warn demo-hidden">내부 우회: <span class="mono">APP_ENV=development</span>, DB에 <span class="mono">INTERNAL_BYPASS_USERNAME</span>(기본 admin) 사용자 필요. 없으면 <span class="mono">demo/README.md</span> 참조.</p>
     </div>
 
     <div class="panel" style="padding-bottom:0;">
@@ -243,7 +244,12 @@
      * 프로덕션 배포·공개 저장소에 실토큰을 커밋하지 마세요.
      */
     const LS_TOKEN = "idr_demo_bearer";
-    const LS_API = "idr_demo_api_base";
+    /** v3: 호스트만 저장( /api/v1 누락)돼 404 나는 경우 대비 — 키 갱신으로 예전 값 초기화 */
+    const LS_API = "idr_demo_api_base_v3";
+    // 강의 데모 전용 자동 로그인 계정
+    const DEMO_AUTO_LOGIN = true;
+    const DEMO_LOGIN_USER = "admin";
+    const DEMO_LOGIN_PASS = "LiveDemo2026!";
 
     let _chartScm = null;
     let _chartCrm = null;
@@ -252,12 +258,48 @@
 
     function defaultApiBase() {
       if (window.location.protocol === "file:") return "http://127.0.0.1:8000/api/v1";
+      var port = window.location.port;
+      // Live Server / Vite / 일부 정적 서버: HTML 오리진 ≠ FastAPI(보통 :8000)
+      if (port === "5500" || port === "5501" || port === "5173" || port === "4173" || port === "3000") {
+        return "http://127.0.0.1:8000/api/v1";
+      }
+      // Dify 콘솔(nginx :8080) 등 — `/api/v1` 은 IDR FastAPI 경로이므로 같은 포트로 호출하면 HTML(Next.js)만 옴
+      if (port === "8080") {
+        return "http://127.0.0.1:8000/api/v1";
+      }
+      // nginx-local-demo(9080)·공인 URL 등: 동일 오리진에서 `/api/v1` 이 FastAPI(또는 게이트웨이)로 프록시되는 경우
       return window.location.origin + "/api/v1";
+    }
+
+    /**
+     * FastAPI는 `prefix="/api/v1"` ( `app.main` ). 요청은 항상 `…/api/v1/auth/login` 형태.
+     * `http://호스트:8000` 만 넣으면 코드가 `/auth/login` 을 붙여 `/auth/login` 으로 가서 404.
+     * 호스트·포트(오리진)만 취하고 경로는 항상 `/api/v1` 로 맞춘다.
+     */
+    function normalizeApiBaseUrl(href) {
+      var s = (href || "").trim();
+      if (!s) return "";
+      try {
+        var url = new URL(s.indexOf("://") === -1 ? "http://" + s : s);
+        return url.origin + "/api/v1";
+      } catch (e) {
+        return s.replace(/\/+$/, "");
+      }
     }
 
     function apiBase() {
       var v = document.getElementById("apiBase").value.trim().replace(/\/$/, "");
-      return v || defaultApiBase();
+      if (v) {
+        try {
+          var u = new URL(v.includes("://") ? v : "http://" + v);
+          var p = u.port || (u.protocol === "https:" ? "443" : "80");
+          if (p === "8080") {
+            v = "";
+          }
+        } catch (e) { /* ignore */ }
+      }
+      var raw = v || defaultApiBase();
+      return normalizeApiBaseUrl(raw);
     }
 
     function bearer() {
@@ -280,6 +322,13 @@
         return (
           "게이트웨이 502: 역프록시 뒤 IDR FastAPI(로컬 :8000 등)에 연결되지 않았습니다. " +
           "로컬에서 DB·Redis·uvicorn 기동 및 Tailscale/LAN 이 ga-server 에서 도달 가능한지 확인하세요."
+        );
+      }
+      if (err.response && err.response.status === 404) {
+        return (
+          "HTTP 404: 주소가 잘못되었거나 역프록시에 `/api/v1` 경로가 없습니다.\n" +
+          "• API 베이스는 반드시 …/api/v1 까지 포함해야 합니다. 예: http://127.0.0.1:8000/api/v1\n" +
+          "• 호스트만 넣었다면 저장/포커스 아웃 시 자동으로 /api/v1 이 붙습니다. 페이지를 새로고침한 뒤 다시 시도하세요."
         );
       }
       if (err.response && err.response.data) {
@@ -310,21 +359,12 @@
       });
     });
 
-    (function initLocal() {
-      var t = localStorage.getItem(LS_TOKEN);
-      if (t) document.getElementById("bearerToken").value = t;
-      var a = localStorage.getItem(LS_API);
-      var apiEl = document.getElementById("apiBase");
-      if (a) apiEl.value = a;
-      else apiEl.placeholder = defaultApiBase();
-    })();
-
-    document.getElementById("btnLogin").addEventListener("click", async function () {
+    async function performLogin(silent) {
       var u = document.getElementById("loginUser").value.trim();
       var p = document.getElementById("loginPass").value;
       if (!u || !p) {
-        alert("사용자명과 비밀번호를 입력하세요.");
-        return;
+        if (!silent) alert("사용자명과 비밀번호를 입력하세요.");
+        return false;
       }
       var params = new URLSearchParams();
       params.append("username", u);
@@ -333,21 +373,86 @@
         var res = await axios.post(apiBase() + "/auth/login", params, {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           timeout: 60000,
+          responseType: "text",
+          transformResponse: [function (data) { return data; }],
         });
-        document.getElementById("bearerToken").value = res.data.access_token;
-        localStorage.setItem(LS_TOKEN, res.data.access_token);
-        alert("JWT가 Bearer 칸에 설정되었습니다.");
+        var raw = (res.data && String(res.data).trim()) || "";
+        if (raw.indexOf("<!DOCTYPE") === 0 || raw.indexOf("<html") === 0 || raw.indexOf("<!doctype") === 0) {
+          if (!silent) {
+            alert(
+              "응답이 JSON이 아니라 HTML(예: Dify Next.js 페이지)입니다.\n\n" +
+                "「API 베이스 URL」을 IDR FastAPI로 맞추세요. 로컬 기본: http://127.0.0.1:8000/api/v1\n" +
+                "Live Server(5500)·Dify(8080)에서 연 이 페이지는 API를 8000으로 쓰도록 되어 있습니다. 칸을 비우고 다시 로그인해 보세요."
+            );
+          }
+          return false;
+        }
+        var json = JSON.parse(raw);
+        document.getElementById("bearerToken").value = json.access_token;
+        localStorage.setItem(LS_TOKEN, json.access_token);
+        if (!silent) alert("JWT가 Bearer 칸에 설정되었습니다.");
+        return true;
       } catch (e) {
-        alert(fmtErr(e));
+        if (!silent) alert(fmtErr(e));
+        return false;
       }
+    }
+
+    (function initLocal() {
+      var t = localStorage.getItem(LS_TOKEN);
+      if (t) document.getElementById("bearerToken").value = t;
+      var a = localStorage.getItem(LS_API);
+      var apiEl = document.getElementById("apiBase");
+      if (a) {
+        try {
+          var u = new URL(a.indexOf("://") === -1 ? "http://" + a : a);
+          var p = u.port || (u.protocol === "https:" ? "443" : "80");
+          apiEl.value = p === "8080" ? "" : normalizeApiBaseUrl(a);
+        } catch (e) {
+          apiEl.value = a;
+        }
+      } else apiEl.placeholder = defaultApiBase();
+
+      if (DEMO_AUTO_LOGIN) {
+        document.getElementById("loginUser").value = DEMO_LOGIN_USER;
+        document.getElementById("loginPass").value = DEMO_LOGIN_PASS;
+      }
+    })();
+
+    document.getElementById("btnLogin").addEventListener("click", async function () {
+      await performLogin(false);
     });
 
     document.getElementById("bearerToken").addEventListener("change", function () {
       localStorage.setItem(LS_TOKEN, bearer());
     });
-    document.getElementById("apiBase").addEventListener("change", function () {
-      localStorage.setItem(LS_API, document.getElementById("apiBase").value.trim());
-    });
+    function persistApiBase() {
+      var el = document.getElementById("apiBase");
+      var raw = el.value.trim();
+      if (raw) {
+        try {
+          var u = new URL(raw.includes("://") ? raw : "http://" + raw);
+          var p = u.port || (u.protocol === "https:" ? "443" : "80");
+          if (p === "8080") {
+            el.value = "";
+            localStorage.setItem(LS_API, "");
+            return;
+          }
+          el.value = normalizeApiBaseUrl(raw);
+        } catch (e) { /* ignore */ }
+      }
+      localStorage.setItem(LS_API, el.value.trim());
+    }
+    document.getElementById("apiBase").addEventListener("change", persistApiBase);
+    document.getElementById("apiBase").addEventListener("blur", persistApiBase);
+
+    // 강의 데모 전용: 페이지 진입 시 자동 로그인
+    if (DEMO_AUTO_LOGIN) {
+      setTimeout(async function () {
+        persistApiBase();
+        await performLogin(true);
+      }, 120);
+    }
 
     document.getElementById("btnUpload").addEventListener("click", async function () {
       var fileEl = document.getElementById("csvFile");

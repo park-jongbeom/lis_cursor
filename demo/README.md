@@ -68,6 +68,10 @@ HTML 파일을 **파일 경로로 직접 연 경우**(`file://`) 브라우저는
 
 - **권장**: VS Code «Live Server»로 `demo/index.html` 서빙(CORS에 5500 등록)
 - 또는 `file://` + `ALLOWED_ORIGINS`에 `"null"` 포함
+- **API 베이스 URL**: 데모 HTML과 **같은 호스트가 아닙니다.** Live Server(5500)·Dify Studio(8080)에서 페이지를 열어도 요청은 **IDR FastAPI**로 가야 합니다(로컬 기본 `http://127.0.0.1:8000/api/v1`). Dify(:8080)나 Live Server 오리진을 API로 쓰면 로그인 응답이 JSON이 아니라 **HTML(Next.js)** 로 보일 수 있다.
+- **404 방지**: 페이지 스크립트가 API 베이스를 **`원본 오리진 + /api/v1`** 으로 고칩니다. `http://127.0.0.1:8000` 만 입력해도 됩니다. 이 전에는 여기에 `/api/v1` 없이 `/auth/login` 만 붙어 **404** 가 자주 났습니다.
+- **강의 데모 자동 로그인**: 현재 `demo/index.html`은 데모 편의를 위해 `admin / LiveDemo2026!`를 코드에 고정하고 페이지 진입 시 자동 로그인한다(로컬 강의 전용).
+- 샘플 CSV: `demo/sample_data/README.md` (`scm_sample.csv`, `crm_sample.csv`, `bi_sample.csv`)
 
 ## 공인 URL (`https://lis.qk54r71z.freeddns.org/`) — **엣지만 ga-server**
 
@@ -83,6 +87,14 @@ HTML 파일을 **파일 경로로 직접 연 경우**(`file://`) 브라우저는
 
 브라우저 열기: **`make open-lis`** 또는 Cursor 작업 **「LIS 데모 URL 브라우저 열기」**.  
 엣지 설정·정적 사본 동기화 참고: [`infra/remote-proxy/`](../infra/remote-proxy/) (`patch_lis_nginx_remote.py`, `ga-server-append-lis.qk54r71z.conf.snippet` — **공인 URL용으로만** 사용).
+
+**정적 데모 HTML 갱신(엣지)**: 로컬에서 `demo/index.html`을 고친 뒤 공인 `/` 에 반영하려면, `ga-nginx`가 마운트하는 호스트 경로로 복사한다. (SSH `Host ga-server` 가 있다는 가정 예시)
+
+```bash
+scp demo/index.html ga-server:/home/ubuntu/ga-api-platform/docs/nginx/static/lis-demo/index.html
+```
+
+`idr-fastapi`(엣지) DB의 `admin` 비밀번호는 데모 자동 로그인(`LiveDemo2026!`)과 맞출 것.
 
 CORS: 로컬 `.env` / `.env.prod`에 `https://lis.qk54r71z.freeddns.org` 포함(`env.prod.example` 참고).
 

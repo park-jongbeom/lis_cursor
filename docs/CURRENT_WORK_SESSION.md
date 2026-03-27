@@ -10,9 +10,9 @@
 
 ## 진행 상태
 
-**현재 단계**: **구현 완료 — 사용자 확인 대기** (Gate B)
+**현재 단계**: **테스트 검증 완료 — 세션 마감(Gate E) 대기**
 
-코드 변경 없음. CLI·일시 uvicorn으로 **개발 DB/Redis 기동·마이그레이션·`/health` 200**만 확인함. 브라우저·Dify Studio·Bearer·LLM 리허설은 **사용자 수동** (`docs/rules/workflow_gates.md`).
+- Gate D: 사용자 「Gate C대로 실행·기록까지」(2026-03-27) 승인 → C-2 `make test` + C-1.1 개발 스택 스모크 완료. §테스트 검증 결과 참조.
 
 ---
 
@@ -24,7 +24,7 @@
 | Dify | `make dify-up` 등, Studio `:8080`, 워크플로 `idr_crm_bi_tier2` **Publish** |
 | 데모 UI | `demo/index.html` + Live Server(또는 동일 출처), `ALLOWED_ORIGINS`·`INTERNAL_BYPASS_*` |
 | ARQ | SCM `forecast`·CRM `cluster` 시연 시 워커·Redis 동일 설정 필요 (`DEMO_SCRIPT.md` 주의) |
-| 샘플 데이터 | `plan.md` §P9-1 부록 C 3종 — 사전 업로드 권장 |
+| 샘플 데이터 | **`demo/sample_data/`** (`scm_sample.csv`·`crm_sample.csv`·`bi_sample.csv`, `DEMO_SAMPLES_PLAN.md`) — `plan.md` §P9-1 부록 C와 병행 가능 |
 
 ---
 
@@ -33,10 +33,10 @@
 | 게이트 | 완료 | 비고 |
 |--------|:----:|------|
 | A. 구현 상세 계획 | ✅ | 사용자 「진행해라」승인(2026-03-27) |
-| B. 구현 완료 | ✅ | 코드 변경 없음 — §Gate B 요약 참조 |
-| C. 테스트 상세 계획 | ⬜ | 수동만이면 Gate A에 흡수 가능 |
-| D. 테스트 검증 | ⬜ | 리허설 체크 기록 |
-| E. 이력 이전·문서 전환 | ⬜ | 강의 후 Phase 9 완료 표 시 |
+| B. 구현 완료 | ✅ | P9-1 본선: 코드 변경 없음(이전). **데모 샘플**: `demo/sample_data/` 추가 — §Gate B |
+| C. 테스트 상세 계획 | ✅ | §테스트 계획 — 실행 승인 후 Gate D 반영됨 |
+| D. 테스트 검증 | ✅ | 2026-03-27 — §테스트 검증 결과 |
+| E. 이력 이전·문서 전환 | ⬜ | 강의 후 또는 사용자 지시 시 |
 
 ---
 
@@ -45,9 +45,10 @@
 | 구간 | 한 줄 |
 |------|--------|
 | **Session 16 결과** | `demo/index.html`·README·`DEMO_SCRIPT.md`·`env.example`; `make test` **134+15** 통과; 브라우저 E2E·P9-1은 **미실시** |
+| **Session 17 (본 세션) 자동 회귀** | `make test` **134+18** (샘플 CSV 통합 3건: `test_api_sample_data_upload.py`) |
 | **Session 17 초점** | **3/28 강의 전** `demo/DEMO_SCRIPT.md`·`plan.md` §P9-1·`demo/index.html` 브라우저 스모크 |
 
-**바로 다음 액션**: 사용자 Gate B 확인 후 → Gate C(수동 리허설 체크리스트) 승인 → Gate D 기록. **`make test`는 Gate C 승인 전 금지.**
+**바로 다음 액션**: **C-1 나머지**(브라우저·샘플 CSV·선택 ARQ/Dify) 사용자 리허설 → 필요 시 **Gate E**(`WORK_HISTORY`, `plan.md`, 다음 세션 `CURRENT`).
 
 ---
 
@@ -129,7 +130,13 @@
 
 ### 코드·설정
 
-- **변경 파일 없음** (저장소 diff 없음).
+- **데모 샘플·문서 (사용자 승인 후)**  
+  - 추가: `demo/sample_data/scm_sample.csv`, `crm_sample.csv`, `bi_sample.csv`  
+  - 추가: `demo/sample_data/DEMO_SAMPLES_PLAN.md` (상세 계획·검증 기준), `demo/sample_data/README.md`  
+  - 수정: `demo/README.md` — 샘플 디렉터리 안내 1줄  
+  - `crm_sample.csv`: `DEMO_SAMPLES_PLAN.md` §3.2 정합(필수 3컬럼·고객 수·과거 마지막 주문). README 필수 컬럼 설명 정정.  
+- **통합 테스트**: `idr_analytics/tests/integration/test_api_sample_data_upload.py` — 저장소 `demo/sample_data/*.csv` 멀티파트 업로드 → `GET .../profile` · SCM restock / CRM churn / BI heatmap·YoY (테스트 DB). 파일명으로 수집 순서를 `test_arq_worker_integration` 앞에 두어 async 엔진 루프 충돌 방지.
+- **앱 런타임**: SCM/CRM/BI **프로덕션 코드 경로 변경 없음**(샘플·문서·pytest 추가만).
 
 ### 에이전트가 수행한 검증 (2026-03-27)
 
@@ -143,6 +150,7 @@
 
 ### 사용자(브라우저)에서 아직 필요한 작업
 
+- `demo/sample_data/` CSV로 **탭별 업로드 → 분석 1경로** 스모크(계획서 §5 체크리스트, `DEMO_SAMPLES_PLAN.md`).
 - `demo/DEMO_SCRIPT.md` 상단 체크리스트: Dify 로그인·**Publish**·Bearer 반영·데모 HTML 업로드→분석 1경로·Tier2 LLM 1회·네트워크 절전 등.
 - 강의 스크립트 타이밍 리허설.
 - SCM/CRM ARQ 시연 시 워커 기동 여부 확인 (`demo/README.md`).
@@ -156,13 +164,93 @@
 
 ## 테스트 계획 (Gate C)
 
-> 해당 시 작성 (수동만이면 체크리스트 + 스크린샷/메모 경로)
+> **범위**: 웹 브라우저 수동 시연 + (선택) 저장소 자동 테스트.  
+> **실행**: 본 섹션 승인 후 Gate D에서 수행. `make test`/pytest는 **별도 명시 승인** 시에만.
+
+### C-0. 로컬 DB 구분 (질문에 대한 답)
+
+| 구분 | 용도 | Postgres(호스트) | DB 이름 | Redis(호스트) | 비고 |
+|------|------|------------------|---------|---------------|------|
+| **개발 스택** | 일상 개발·**브라우저 데모**(`uvicorn` + `demo/index.html`) | **15432** | `idr_analytics` (`.env` 기준) | **6379** | `make dev-up` + `.env`의 `DATABASE_URL` / `REDIS_URL` |
+| **테스트 스택** | **pytest** (`make test` → `test-integration` 등) | **15433** | `idr_test` | **6380** | `docker-compose.test.yml` (`name: idr-test`), `migrate-test` |
+
+- 둘 다 **본인 PC의 로컬 컨테이너 DB**이지만 **서로 다른 인스턴스**다. 브라우저로 API를 띄울 때는 기본적으로 **개발 DB(15432)** 에 데이터가 쌓인다.  
+- **pytest 통합 테스트는 테스트 DB(15433)** 를 쓰며, 브라우저에서 친 업로드 데이터와 **공유되지 않는다**.
+
+### C-1a. 샘플 CSV 전용 상세 테스트 계획 (업로드·DB·API)
+
+**목적**: `demo/sample_data/*.csv` 로 **실제 적재·분석**이 되는지 증명한다. **자동**: `make test` 통합 모듈 `idr_analytics/tests/integration/test_api_sample_data_upload.py` 가 테스트 DB에서 3종 업로드·프로필·핵심 분석 API까지 검증한다. **수동**(브라우저·Dify·ARQ 폴링 등)은 여전히 아래·`SAMPLE_DATA_TEST_PLAN.md`가 필요하다.
+
+| 참조 | 내용 |
+|------|------|
+| **단일 원본** | [`demo/sample_data/SAMPLE_DATA_TEST_PLAN.md`](../demo/sample_data/SAMPLE_DATA_TEST_PLAN.md) — 트랙 A/B, TC-SCM-/CRM-/BI-, `row_count` 기대값, curl·SQL |
+| **보조** | [`demo/sample_data/DEMO_SAMPLES_PLAN.md`](../demo/sample_data/DEMO_SAMPLES_PLAN.md) §5 체크리스트 |
+
+### C-1. 수동 — 브라우저 데모 (개발 DB 전제)
+
+**전제**: `make dev-up`, `make migrate`, `.env`에 `DATABASE_URL`→`localhost:15432`, `REDIS_URL`→`6379`, 데모용 CORS·`admin` 시드는 `demo/README.md`.  
+**샘플 파일 기준 시나리오**는 **C-1a** 문서를 우선한다.
+
+| 단계 | 절차 | 기대 |
+|------|------|------|
+| C-1.1 | `curl -sf http://127.0.0.1:8000/health` (또는 `/docs`) | 200 |
+| C-1.2 | `demo/index.html` — JWT 또는 우회 Bearer 설정 후 **로그인/인증** 확인 | 401 없이 이후 요청 가능 |
+| C-1.3 | `demo/sample_data/scm_sample.csv` 업로드, `dataset_type=**scm**` | `dataset_id` 발급, 프로필에 컬럼 3개 |
+| C-1.4 | SCM 탭 — 기본 컬럼 그대로 **예측 실행 → 폴링** | `(선택)` ARQ 워커 기동 시 `completed`, 차트·`forecasts` 존재 |
+| C-1.5 | `crm_sample.csv` 업로드, `dataset_type=**crm**` | 동일 |
+| C-1.6 | CRM 탭 — **이탈 위험 분석** | 200, 표/차트 |
+| C-1.7 | CRM 탭 — **클러스터 실행 → 폴링** | `(선택)` 워커 기동 시 잡 완료 |
+| C-1.8 | `bi_sample.csv` 업로드, `dataset_type=**bi**` | 동일 |
+| C-1.9 | BI 탭 — `period=**2024-01**`(CSV와 동일 문자열) **지역 히트맵** | 200, 표·차트 |
+| C-1.10 | BI 탭 — **YoY 비교** (`year`, `value` 기본값) | 200 |
+| C-1.11 | (선택) Dify `:8080` — `dataset_id`·`period` 동일로 워크플로 1회 | LLM·HTTP 노드 스모크 |
+
+**기록(Gate D)**: 일시, 성공/실패 단계, ARQ 유무, 스크린샷 저장 경로(선택).
+
+### C-2. 자동 — pytest (테스트 DB 전제)
+
+**전제**: README §테스트 — `unset ALLOWED_ORIGINS` 등, `make test`는 `15433`/`6380` 스택 기동 후 실행.
+
+| 단계 | 명령 | 기대 |
+|------|------|------|
+| C-2.1 | `make test` (또는 `test-infra-up` → `migrate-test` → `test-unit` → `test-integration` → `test-infra-down`) | 단위·통합 전부 통과 |
+
+브라우저 검증을 **pytest로 대체할 수 없음**(UI·ARQ·Dify는 별도).
+
+### C-3. 금지·주의
+
+- 브라우저 데모 중 `.env`의 `DATABASE_URL`을 **15433**으로 바꿔도 되나, 그때는 **개발용 시드·데이터가 테스트 DB에만** 생기므로 혼동 주의. 일반적으로 **데모=15432** 로 통일 권장.  
+- `make test` 실행 중에는 테스트 스택이 **잠깐** dev와 함께 떠 있을 수 있으나, 포트가 달라 충돌 없음(15432 vs 15433).
 
 ---
 
 ## 테스트 검증 결과 (Gate D)
 
-> 해당 시 작성
+**일시**: 2026-03-27 (에이전트 실행)  
+**승인**: 사용자 「Gate C대로 실행·기록까지」
+
+### C-2 자동 테스트 (테스트 DB `localhost:15433`, Redis `6380`)
+
+| 항목 | 결과 |
+|------|------|
+| 명령 | `unset ALLOWED_ORIGINS && make test` (저장소 루트) |
+| 인프라 | `podman-compose -f docker-compose.test.yml up -d` → healthy → `migrate-test` → `test-infra-down` |
+| 단위 | **134 passed** (~2.2s) |
+| 통합 | **18 passed** (~20s) — 기존 15 + 데모 샘플 CSV 3건 (`test_api_sample_data_upload.py`, 수집 순서상 `test_arq_worker_integration` **앞**에 실행) |
+| 합계 | **152 passed**, exit code **0** |
+
+### C-1 수동·브라우저 계열 (개발 DB `localhost:15432`)
+
+| 단계 | 실행 주체 | 결과 |
+|------|------------|------|
+| C-1.1 `/health`, `/docs` | 에이전트 | `make dev-up`·`make migrate` 후 `uvicorn` 일시 기동 → `GET /health` **200** `{"status":"ok"}`, `/docs` **200**. 이후 uvicorn 종료. |
+| C-1.2 ~ C-1.11 | 사용자 | **미실시**(JWT/우회, `demo/index.html` 업로드·탭·선택 Dify). 브라우저에서 `demo/sample_data/DEMO_SAMPLES_PLAN.md` §5 체크리스트로 확인 권장. |
+
+### 특이사항
+
+- 테스트 스택 기동 시 postgres healthcheck 로그에 일시 `unhealthy` 표기 후 healthy로 전환(기존과 동일 패턴).
+- 샘플 CSV 통합 테스트 구간에서 statsmodels ARIMA 관련 **UserWarning·ConvergenceWarning** 수개(회귀 실패 아님).
+- C-1.2~ 브라우저·Dify·ARQ 수동 구간은 에이전트가 대신할 수 없음 — 사용자 환경에서 리허설 시 `demo/DEMO_SCRIPT.md` 유지.
 
 ---
 
