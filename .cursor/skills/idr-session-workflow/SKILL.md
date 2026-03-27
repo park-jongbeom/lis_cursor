@@ -22,9 +22,9 @@ description: >-
 
 | Gate | 할 일 | 승인 전 금지 |
 |------|--------|----------------|
-| **A** | `CURRENT`에 구현 상세 계획 | 코드 변경 |
+| **A** | `CURRENT`에 구현 상세 계획 (**`docs/plans/` 신설로 대체 금지**) | 코드 변경 |
 | **B** | 구현 후 구현 완료 요약·`[x]` | Gate C/D 테스트 착수 |
-| **C** | `CURRENT`에 테스트 계획(상세) | 테스트 작성·실행 |
+| **C** | `CURRENT`에 테스트 계획(상세) (**`docs/plans/` 신설 금지**) | 테스트 작성·실행 |
 | **D** | 실행·검증 결과 기록 | (실패 시 재실행 후 기록) |
 | **E** | `WORK_HISTORY.md`, `plan.md` 갱신, `CURRENT` 다음 세션용 교체 | E 생략 |
 
@@ -59,6 +59,12 @@ description: >-
 - C 승인 없이 테스트 코드·실행.
 - D 기록 없이 이력만 갱신하거나 `CURRENT`를 다음 세션으로 통째 교체.
 - E에서 `plan.md` 체크·진행 표 누락.
+
+## 상세 계획 문서 위치 (반복 위반 방지)
+
+- **Gate A·C의 상세**(실행 순서, Phase 표, DoD, 체크리스트)는 **`docs/CURRENT_WORK_SESSION.md`에만** 기록한다.
+- **`docs/plans/<새파일>.md`를 세션 상세 계획용으로 만들지 않는다.** `docs/plans/`는 `plan.md`, 경로 정본(`lis_public_url_path_map.md` 등), 강의·패키지 **참조**용이다.
+- 사용자가 「상세 계획 작성」만 요청해도 → **`CURRENT` 해당 섹션을 채운다** (별도 plans 신설 아님). 위반 시 `docs/rules/error_analysis.md`에 기록.
 
 ## `CURRENT_WORK_SESSION.md` 권장 섹션 순서
 

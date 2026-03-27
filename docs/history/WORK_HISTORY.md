@@ -524,3 +524,17 @@
 
 **특이사항**: **P9-1** 브라우저 리허설(C-1.2~)·`demo/DEMO_SCRIPT.md` 전항·Phase 9 완료 표 최종 확정은 **강의일 사용자 확인** 후 Session 18에서 이어감. Session 17 Gate B·C·D·pytest **152 passed** 등 상세는 Git 이력의 `CURRENT_WORK_SESSION.md`(마감 직전 커밋)를 참고.
 
+### [2026-03-28] Session 18 — Gate D 검증·Dify Tier2 진단·Gate E(이력) 부분 반영
+
+**완료 내용**:
+- **pytest**: `make test` **156 passed**(unit 137 + integration 19) — 2026-03-28 에이전트 재실행.
+- **공인 스모크**: `https://lis.qk54r71z.freeddns.org` — `/health`·`/`·`/ide/docs/rules/`·`/apps` **200**(터널·업스트림 가동 시). `scripts/verify_lis_public_smoke.py --base …` **OK**. **`--with-agent` 실패** — `POST /api/v1/agent/query` **502** `DIFY_HTTP_ERROR`·Dify upstream **404**(공인 뒤 FastAPI의 `DIFY_*`/워크플로 URL — 강의 PC `.env` 점검 대상).
+- **진단 스크립트**: `scripts/verify_dify_upstream.py` — `AgentService`와 동일 `POST …/workflows/run`; **`--dataset-id`·`--period`** CLI 우선(동적 값은 `.env` 고정 비권장). `make verify-dify-upstream ARGS='…'`.
+- **문서·힌트**: `env.example`·`env.prod.example` — `DIFY_API_BASE_URL`·`DIFY_WORKFLOW_ID`(UUID)·401/JWT 안내. `infra/dify/workflows/README.md` — `workflows/run` 404·failed·`DIFY_VERIFY`/CLI. `infra/dify/README.md` — Tier2 진단. `idr_analytics/app/api/v1/endpoints/agent.py` — Dify 404 `detail.hint` 보강. `scripts/verify_lis_public_smoke.py` — 실패 시 `verify_dify_upstream` 안내.
+- **`docs/CURRENT_WORK_SESSION.md`**: 보충 테스트 계획(ga-server 정적 → 로컬 정적 가설, Phase A~F) 사용자 승인 반영; Gate D 표 갱신.
+
+**변경 파일**(리포 기준, 세션 중 누적): `scripts/verify_dify_upstream.py`, `Makefile`, `idr_analytics/app/api/v1/endpoints/agent.py`, `scripts/verify_lis_public_smoke.py`, `env.example`, `env.prod.example`, `infra/dify/workflows/README.md`, `infra/dify/README.md`, `docs/CURRENT_WORK_SESSION.md`, `docs/plans/plan.md`(본 Gate E와 함께 갱신), `docs/history/WORK_HISTORY.md`(본 항목).
+
+**결정 사항**: Tier2 스모크 실패 원인 분리 — (1) nginx→FastAPI 502, (2) FastAPI→Dify `workflows/run` 404, (3) 워크플로 내부 HTTP 404(`dataset_id`·`period`·mixed CSV·노드 URL). `mixed_from_lis.csv`·`--period` 는 README·스크립트 기본값 `2024-01` 로 정합.
+
+**특이사항**: **미완(사용자)**: Dify Studio E1~E3·데모 F1 육안·보충 B3·D2·D3·`DEMO_SCRIPT.md` 체크·Phase 9 P9-1 LLM 1회 확정. **`CURRENT` Session 19 전면 교체**는 강의 후 또는 사용자 지시 시.

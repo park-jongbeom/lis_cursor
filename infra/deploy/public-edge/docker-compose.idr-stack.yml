@@ -50,8 +50,8 @@ services:
       REDIS_URL: redis://idr-redis:6379/0
     volumes:
       - idr_edge_uploads:/app/data/uploads
-      # 이미지에 demo/ide 가 없어도 호스트 동기화본으로 /ide 정적 가이드 제공
-      - ../../../demo/ide:/app/demo/ide:ro
+      # 강의 데모 `/`·`/ide`·sample_data — 호스트 리포 demo 와 동기화(정적은 FastAPI 가 서빙)
+      - ../../../demo:/app/demo:ro
     depends_on:
       idr-postgres:
         condition: service_healthy

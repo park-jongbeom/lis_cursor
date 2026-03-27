@@ -28,6 +28,16 @@ async def test_health_ok(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_root_serves_demo_index_html(client: AsyncClient) -> None:
+    """공인 `/` 와 동일 — FastAPI 가 demo/index.html 을 서빙(엣지는 동일 업스트림으로 프록시)."""
+    r = await client.get("/")
+    assert r.status_code == 200
+    assert "text/html" in r.headers.get("content-type", "")
+    body = r.text
+    assert "IDR Analytics" in body or "강의 데모" in body
+
+
+@pytest.mark.asyncio
 async def test_login_returns_bearer_token(client: AsyncClient, db_user: tuple[User, str, str]) -> None:
     _u, plain_pw, uname = db_user
     r = await client.post(

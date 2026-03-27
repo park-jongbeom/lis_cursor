@@ -363,6 +363,7 @@
             var upMsg = up.message || up.detail || "";
             if (upMsg) msg += "\nupstream: " + String(upMsg);
           }
+          if (detail502.hint) msg += "\n\n" + String(detail502.hint);
           return msg;
         }
         return (

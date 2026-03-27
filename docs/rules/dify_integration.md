@@ -270,3 +270,11 @@ DIFY_WORKFLOW_ID=your-workflow-id-here
 - [ ] 응답 JSON에 한국어 요약 문자열 필드(`summary`)가 있는가
 - [ ] Dify HTTP Request Node에서 파싱할 배열의 길이가 `top_n`으로 제한되는가
 - [ ] 에러 응답 시 Dify가 처리할 수 있는 명확한 JSON 에러 메시지를 반환하는가
+
+---
+
+## 7. 공인 `lis.*` · Tier2 장애 진단 (요약)
+
+운영/강의 중 **`/api/v1/agent/query` 502**, **`/v1/workflows/run` 401·404**, `DIFY_*` 설정 혼동, **8000/8010 uvicorn 재기동** 등은 아래 **진단 가이드**에 절차를 모아 두었다.
+
+- **`docs/rules/lis_dify_public_troubleshooting.md`**

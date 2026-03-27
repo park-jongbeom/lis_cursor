@@ -28,7 +28,7 @@
 | 15 | 2026-03-27 | 운영 안정화: `0003_timestamptz`·운영 점검 `production_checklist.md` | post-7 |
 | **16** | 2026-03-27 | **Gate E 완료** — Phase 9 데모(`demo/*`)·`env.example`·`make test` 134+15·이력 `WORK_HISTORY` 이전 | 9 |
 | **17** | 2026-03-28 | **Gate E 완료** — pytest **152 passed**·샘플 CSV 통합·공인 `/ide` 계획 `CURRENT` 통합·데모 링크·`error_analysis`/remote-proxy 보강·ga-nginx 검증 기록(`WORK_HISTORY`) | 9 |
-| **18** | — | **진행 예정** — P9-1 브라우저(C-1.2~)·`DEMO_SCRIPT.md`·공인 `/ide` Phase B·E(터널/담당)·Phase 9 완료 확정 | 9 |
+| **18** | 2026-03-28 | **Gate D 완료·Gate E(이력) 부분** — pytest **156 passed**·공인 스모크·`verify_dify_upstream`·Dify `DIFY_*` 문서·`CURRENT` 보충 테스트 계획·`WORK_HISTORY` 본 항목. **남음**: P9-1 UI·Tier2(`DIFY_*` 실환경)·`DEMO_SCRIPT`·Phase 9 최종 확정 | 9 |
 
 ---
 
@@ -54,7 +54,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Phase 9 진행 중 — **`docs/CURRENT_WORK_SESSION.md` Session 18** (`make test` Session 17 기준 **152 passed**, P9-1 브라우저·공인 `/ide` 남음) |
+| **현재 상태** | Phase 7 완료 + Phase 9 진행 중 — **`docs/CURRENT_WORK_SESSION.md` Session 18** (`make test` **156 passed**, 2026-03-28). 공인 `/ide`·스모크는 터널 가동 시 **200** 확인됨. **남음**: P9-1 브라우저·Dify Studio·`DEMO_SCRIPT`·Tier2 공인 경로 `DIFY_*` |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -594,7 +594,7 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 | 17 | P9-1·pytest·샘플 CSV·공인 `/ide` 문서·Gate E | Phase 9 |
 | 18 | P9-1 브라우저 나머지·리허설·공인 `/ide` Phase B·E·Phase 9 확정 | Phase 9 |
 
-> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 18**.
+> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 18**(Gate E 이력 부분 반영, `CURRENT` 본문 유지).
 
 ---
 

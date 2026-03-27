@@ -7,7 +7,7 @@
 
 ## 0. 팀 운영 원칙 (고정 — 동일 오류 반복 방지)
 
-**공인 `https://lis…` 로 들어오는 IDR FastAPI 트래픽** — 즉 **`/api/v1/` · `/health` · `/docs` · `/openapi.json` · `/ide/`** — 의 업스트림은 **오직 로컬 우회(§2.1 패턴 B)** 만을 운영 표준으로 한다.
+**공인 `https://lis…` 로 들어오는 IDR FastAPI 트래픽** — 즉 **`/` · `/index.html` · `/api/v1/` · `/health` · `/docs` · `/openapi.json` · `/ide/`** — 의 업스트림은 **오직 로컬 우회(§2.1 패턴 B)** 만을 운영 표준으로 한다.
 
 | 고정 | 설명 |
 |------|------|
@@ -31,25 +31,35 @@
 
 즉 **서브도메인을 나누어 “규칙만 다른 사이트”를 두는 설계가 아니라**, **동일 호스트에서 경로(prefix)만 나눈다.**
 
+### 1.1 이미 `https://lis…/` 데모가 떠 있는 배포에서 «라우트»의 뜻
+
+**사용자·강의 쪽에서 말하는 방향**과 정본은 같다.
+
+- **한 호스트** `https://lis.qk54r71z.freeddns.org` 에 **이미** 강의 데모(정적 `index.html` 등)가 올라가 있으면, 그 위에서 **URL 경로만** 바꿔 **`/ide/docs/rules/`** 로 교육생용 AI 규칙 가이드(HTML)를 연다. **별도 서브도메인·별도 사이트가 아니다.**
+- **엣지 nginx**는 `location /ide/`(및 `/api/v1/` 등)로 해당 경로를 **하나의 FastAPI 프로세스**에 `proxy_pass` 하면 된다 — 이것이 곧 **라우팅**이다.
+- **502** 는 «라우트 블록이 없어서»가 아니라, **`proxy_pass` 가 가리킨 주소에 실제로 HTTP 서버가 없을 때**(예: 호스트 `8000`에 리스너 없음) nginx가 업스트림에 붙지 못해 난다. **배포 스택에 이미 `idr-fastapi` 같은 API 컨테이너가 있다면**, 그 주소로 통일하고 그 프로세스가 **`/ide` 마운트·`demo/ide`** 를 갖추면 **같은 `lis.*` 배포만으로** `/ide/docs/rules/` 가 열린다(§2.1 **패턴 A**·팀에서 배포 일체형으로 합의한 경우).
+
+**§0과의 관계**: 팀 **운영 표준**은 여전히 **패턴 B(로컬 터널)** 이다. 다만 **«동일 호스트 + 라우트로 교육생 페이지를 연다»** 는 서술은 패턴 B·A **공통**이며, A일 때는 업스트림이 **`idr-fastapi:8000`** 등 **이미 올라간 컨테이너**가 된다.
+
 ---
 
 ## 2. 경로 → 업스트림 (엣지 nginx 관점)
 
-리포의 예시 스니펫은 **`infra/remote-proxy/ga-server-append-lis.qk54r71z.conf.snippet`** 와 동일한 뜻을 가진다. 실제 `DEV_IP`·포트·`LIS_DEMO_ROOT` 는 배포 환경에 맞게 바뀔 수 있다.
+리포의 예시 스니펫은 **`infra/remote-proxy/ga-server-append-lis.qk54r71z.conf.snippet`** 와 동일한 뜻을 가진다. 실제 `DEV_IP`·포트는 배포 환경에 맞게 바뀔 수 있다. **루트 `/` 는 더 이상 nginx 디스크 정적(`LIS_DEMO_ROOT`)이 아니라**, 엣지에서 **API와 동일 업스트림**으로 프록시하고 FastAPI가 `demo/index.html` 을 `StaticFiles` 로 서빙한다(`idr_analytics/app/main.py`).
 
 | 브라우저 경로(접두) | 사용자에게 보이는 것 | 일반적인 업스트림 | 비고 |
 |---------------------|----------------------|-------------------|------|
-| **`GET /`** (정확히 루트) | 데모 `index.html` | **nginx `root`** (`LIS_DEMO_ROOT` 등) — 리포 `demo/` 동기화본 | FastAPI가 아닐 수 있음(스니펫 기준). |
+| **`GET /`** (정확히 루트) | 데모 `index.html` | **FastAPI** `:8000` (`app.mount("/", StaticFiles(demo))`) | **`/api/v1/`·`/ide/` 와 같은 프로세스** — 엣지는 `proxy_pass` 로만 맞춘다. |
 | **`GET /api/v1/`** | JSON API | **FastAPI** `:8000` | |
 | **`GET /health`**, **`/docs`**, **`/openapi.json`** | 헬스·Swagger·스펙 | **FastAPI** `:8000` | |
 | **`GET /ide/`** (하위 전체) | 규칙 HTML·ZIP 등 | **FastAPI** `:8000` 의 `app.mount("/ide", StaticFiles(demo/ide))` | **`/api/v1/` 과 같은 프로세스**로 프록시하는 것이 정상. |
 | **`GET /apps`**, **`/console`**, 그 외 `/` 아래 (루트 제외) | Dify UI | **Dify** (예: `:8080`) | `location /` 캐치올이 담당. **`location /ide/` 는 반드시 이 블록보다 위**에 둔다. |
 
-**헷갈리기 쉬운 점**: 디스크 상으로는 `demo/index.html`(데모)과 `demo/ide/…`(규칙)이 **형제 디렉터리**이지만, **공인 URL에서는** 루트 `/`는 **정적 nginx**, `/ide/`는 **FastAPI 마운트**로 갈 수 있다. “데모만 배포했다 = `/ide`도 된다”가 **자동으로 성립하지 않는다.**
+**헷갈리기 쉬운 점**: 디스크 상으로는 `demo/index.html`(데모)과 `demo/ide/…`(규칙)이 **형제 디렉터리**이며, **공인 URL에서도** 둘 다 **동일 FastAPI**가 서빙한다. 엣지 nginx는 **`/`·`/index.html`·`/api/v1/`·`/ide/`** 를 **같은 업스트림**으로 `proxy_pass` 하면 된다. 예전처럼 **`/` 만 호스트 디렉터리 정적**으로 두면 리포 `demo/` 와 공인 데모가 **어긋날 수 있다.**
 
 ### 2.1 업스트림 FastAPI — 패턴 B(운영 표준) vs 패턴 A(예외·참고)
 
-브라우저는 항상 **`https://lis…`** 만 본다. 차이는 **엣지 nginx가 `/api/v1/`·`/health`·`/docs`·`/openapi.json`·`/ide/` 를 어디로 `proxy_pass` 하느냐**뿐이다.
+브라우저는 항상 **`https://lis…`** 만 본다. 차이는 **엣지 nginx가 `/`·`/index.html`·`/api/v1/`·`/health`·`/docs`·`/openapi.json`·`/ide/` 를 어디로 `proxy_pass` 하느냐**뿐이다.
 
 | 패턴 | 운영에서의 위치 | `proxy_pass` 대상(개념) | `demo/ide` |
 |------|-----------------|---------------------------|------------|
@@ -80,7 +90,7 @@
 | 잘못된 전제 | 왜 틀리는가 |
 |-------------|-------------|
 | “`/ide`는 별도 도메인·별도 제품 배포가 원칙이다” | **아니다.** 단일 호스트·경로 분리가 원칙이다. |
-| “루트 데모가 공인에 떴으니 `/ide`도 같은 방식으로 이미 해결됐다” | 루트는 **nginx 정적**, `/ide`는 **FastAPI**일 수 있어 **별도 조건**이 필요하다. |
+| “루트 데모가 공인에 떴으니 `/ide`도 같은 방식으로 이미 해결됐다” | 루트·`/ide` 모두 **FastAPI**이므로 업스트림만 일치하면 된다. 다만 **엣지가 `/` 를 여전히 디스크 정적으로 두면** 리포와 불일치한다. |
 | “nginx에 HTML 하나 더 두면 `/ide` 완료” | 규칙 페이지·ZIP·링크 일관성은 **`demo/ide` + FastAPI 마운트**가 정본이다. 엣지에 수동 미러는 재현성·버전 관리에 불리하다. |
 | “MCP로 `idr-fastapi`에 파일 넣어 `/ide` 고친다” | **금지.** MCP는 **ga-nginx conf** 범위만. |
 | “공인 404 → ga-server에서 `idr-fastapi` 이미지·compose·`demo/ide` 부터 손본다” | **§0 비표준.** 표준은 **로컬 우회 끝점·로컬 `demo/ide`·nginx `proxy_pass` 일치**다. |
@@ -90,7 +100,7 @@
 
 ## 5. 참고 링크
 
-- **단계별 실행 체크리스트(MCP·§0·터널)**: `docs/CURRENT_WORK_SESSION.md` — 「공인 `lis.*` — `/ide/docs/rules/` 교육생 AI 세팅 가이드 노출 (상세 계획)」
+- **상세 계획·실행 순서·DoD·MCP·§0·터널 체크리스트(정본)**: `docs/CURRENT_WORK_SESSION.md` — 절 「공인 `lis.*` — `/ide/docs/rules/` … (상세 계획)」. *(세션 상세는 `docs/plans/` 신설 금지 — `workflow_gates.md`.)*
 - 엣지 스니펫: `infra/remote-proxy/ga-server-location-ide.snippet.conf`, `ga-server-append-lis.qk54r71z.conf.snippet`
 - MCP·분기: `docs/rules/project_context.md` §ga-server·공인 URL
 - 스택·볼륨: `infra/deploy/public-edge/README.md`, `docker-compose.idr-stack.yml`
@@ -110,7 +120,7 @@
 | (예외) 패턴 A | 별도 합의 시에만 ga-server API 컨테이너 | 이미지·`demo/ide` 볼륨 등 — **§0 기본 절차 아님** |
 | 3 | 로컬 한 포트 검증 | `uvicorn` 8010 + 선택 `nginx-local-demo.conf` 9080 → `curl -f …/ide/docs/rules/` · ZIP URL (`make prod-smoke-ide`) |
 | 4 | ga-nginx `lis` 블록 | `location = /ide` → 301 `/ide/` , `location /ide/` → **API와 동일** `proxy_pass …/ide/` , **Dify용 `location /` 보다 위** |
-| 5 | 루트 데모 정적 | `location = /` → `demo/index.html` (스니펫의 `LIS_DEMO_ROOT` 등) — `/ide` 와 혼동 금지 |
+| 5 | 루트 데모 | `location = /`·`location = /index.html` → **API와 동일** `proxy_pass` (FastAPI가 `demo/index.html` 서빙). 구 `LIS_DEMO_ROOT` 디스크 정적 방식은 폐기. 원격 일회 치환: `infra/remote-proxy/patch_lis_root_to_fastapi_proxy.py` |
 | 6 | 공인 스모크 | 브라우저: `/` 데모 · `/apps` Dify · `/ide/docs/rules/` HTML · ZIP 저장 |
 
 원격 `lis` 블록 일괄 교체 예시는 `infra/remote-proxy/patch_lis_nginx_remote.py` 이다. **팀 운영(§0)** 에 맞게 `FASTAPI_UPSTREAM` 은 **호스트의 터널 포트**에 닿는 주소 — 보통 `docker exec ga-nginx ip route show default` 의 게이트웨이(예: docker0 **172.17.0.1**, `ga-api-platform` 등 사용자 브리지 **172.18.0.1**)에 `:8000`. **패턴 A 예외** 시에만 `http://idr-fastapi:8000` 로 바꾼 뒤 실행.

@@ -6,10 +6,11 @@
 # 정본(표·잘못된 방향 정리): docs/plans/lis_public_url_path_map.md
 #
 # 목표:
-#   https://lis.qk54r71z.freeddns.org/     → IDR 데모 정적 (demo/index.html)
+#   https://lis.qk54r71z.freeddns.org/     → IDR 데모 (FastAPI StaticFiles demo/index.html — §0 동일 업스트림)
+#   https://lis.../index.html             → 동일 FastAPI (직링크 진입)
 #   https://lis.../api/v1/...             → IDR FastAPI
-#   https://lis.../health, /docs, /ide/…  → FastAPI (로컬에서 뜬 동일 프로세스) — /ide = 교육생 규칙·ZIP
-#   그 외 (/apps, /console 등)            → Dify (기존과 같이 루트 패스로 프록시)
+#   https://lis.../health, /docs, /ide/…  → FastAPI (로컬 터널 또는 idr-fastapi 동일 프로세스)
+#   그 외 (/apps, /console 등)            → Dify (location / 캐치올)
 #
 # 배포: 실제 편집 파일 저장 후
 #   docker exec ga-nginx nginx -t && docker exec ga-nginx nginx -s reload
@@ -19,7 +20,7 @@
 #   예: docker0 → 172.17.0.1 / ga-api-platform 브리지 → 172.18.0.1 (현재 ga-server 후자에 맞춤 가능)
 #   예외(패턴 A·별도 합의): **http://idr-fastapi:8000** 으로 일괄 치환.
 #   **100.82.189.32:8080** = Dify 예시 — 실제 호스트로 수정.
-#   LIS_DEMO_ROOT: 데모 index.html 정적 경로
+#   (구) LIS_DEMO_ROOT nginx 정적 — 폐기. 루트는 FastAPI 로만 맞춘다.
 #
 # 선행: DNS A 레코드, certbot 등 TLS (기존 lis 인증서 경로와 맞출 것)
 
@@ -108,10 +109,23 @@ server {
         proxy_read_timeout 300s;
     }
 
-    # ── 루트만 IDR 데모 HTML (브라우저 기본 진입) ──
+    # ── 루트·index.html = IDR 데모 HTML (FastAPI demo/ — /api/v1·/ide 와 동일 업스트림) ──
     location = / {
-        root LIS_DEMO_ROOT;
-        try_files /index.html =404;
+        proxy_pass http://172.18.0.1:8000/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /index.html {
+        proxy_pass http://172.18.0.1:8000/index.html;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     # ── Dify (Studio·앱 등 — /apps, /console …) — FastAPI 와 별도 호스트(예시 IP 수정) ──

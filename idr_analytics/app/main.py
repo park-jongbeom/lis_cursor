@@ -95,3 +95,24 @@ else:
 )
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# 강의 데모 `demo/index.html` — 공인 `/` 는 엣지 nginx 가 동일 FastAPI 업스트림으로 프록시 (ga-server 정적 root 제거).
+# Starlette 는 먼저 등록된 라우트가 우선이므로 `/api/v1`·`/ide`·`/health`·`/docs` 등 이후에 `/` 마운트.
+_DEMO_CANDIDATES: tuple[Path, ...] = (_pkg_root.parent / "demo", _pkg_root / "demo")
+_DEMO_STATIC_ROOT = next(
+    (p for p in _DEMO_CANDIDATES if p.is_dir() and (p / "index.html").is_file()),
+    None,
+)
+if _DEMO_STATIC_ROOT is not None:
+    app.mount(
+        "/",
+        StaticFiles(directory=str(_DEMO_STATIC_ROOT), html=True),
+        name="demo",
+    )
+    logger.info("강의 데모 정적 마운트: / -> %s", _DEMO_STATIC_ROOT)
+else:
+    logger.warning(
+        "강의 데모 정적 비활성: demo/index.html 없음 (후보 %s)",
+        [str(p) for p in _DEMO_CANDIDATES],
+    )

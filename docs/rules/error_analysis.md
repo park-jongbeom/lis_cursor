@@ -315,3 +315,37 @@
 3. AI는 공인 장애 시 **`idr-fastapi` 재빌드를 운영 표준 처방으로 제시하지 않는다.**
 
 **관련 파일**: `docs/plans/lis_public_url_path_map.md` §0, `infra/remote-proxy/patch_lis_nginx_remote.py`, `infra/deploy/public-edge/README.md`, `docs/rules/project_context.md`, `.cursor/skills/idr-session-workflow/SKILL.md`
+
+---
+
+### [2026-03-27] 세션 상세 계획을 `docs/plans/<신규>.md`에 작성 — `CURRENT` 규칙 위반
+
+**오류 유형**: 프로세스 위반 / 문서 체계 오판
+
+**발생 상황**: 사용자가 「동일 배포에서 교육생 가이드」 등 **상세 계획** 작성을 요청했을 때, `docs/rules/workflow_gates.md`·`.cursorrules`에 정한 **`docs/CURRENT_WORK_SESSION.md` 단일 기록**을 따르지 않고 `docs/plans/lis_trainee_ai_guide_same_host_plan.md` 같은 **새 plans 파일**을 만들었다.
+
+**근본 원인**: (1) `docs/plans/`가 WBS·참조용인지 **세션 Gate A 상세용인지** 구분을 하지 않음. (2) `CURRENT`에 이미 동일 주제 절이 있어도 **중복·분산**이 낫다고 잘못 판단함.
+
+**재발 방지 규칙**:
+1. Gate A·C **상세**(실행 순서, Phase 표, DoD, 체크리스트)는 **`docs/CURRENT_WORK_SESSION.md`에만** 쓴다.
+2. **`docs/plans/`에 세션 전용 상세 계획 마크다운을 신설하지 않는다** — 허용되는 것은 `plan.md`, 경로 정본, 강의·패키지 등 **배경·참조** 문서뿐이다.
+3. 기존 내용 보강은 **`CURRENT` 해당 절 편집** 또는 Gate E 후 `WORK_HISTORY.md`로 이전한다.
+4. 규정 강화 단일 원본: `workflow_gates.md` Gate A·Gate C·AI 금지, `SKILL.md` 「상세 계획 문서 위치」, `.cursorrules` `CURRENT` 항목.
+
+**관련 파일**: `docs/CURRENT_WORK_SESSION.md`, `docs/rules/workflow_gates.md`, `.cursor/skills/idr-session-workflow/SKILL.md`, `.cursorrules`, `docs/rules/project_context.md`
+
+---
+
+### [2026-03-28] 공인 `agent/query` 502를 nginx 단절로만 해석·`env.example` 키 “누락”으로 오해
+
+**오류 유형**: 운영 진단 오판 / 문서·환경 혼동
+
+**발생 상황**: 브라우저에서 `POST /api/v1/agent/query` 만 502인데 `GET` regional-heatmap 등은 200. 또는 `curl /v1/workflows/run` 이 401·HTML 400. 사용자가 `DIFY_API_KEY` 가 사라졌다고 느꼈으나 실제는 `.env`에 있고 Git 추적 `env.example` 만 플레이스홀더.
+
+**근본 원인**: (1) **502 본문 JSON**(`DIFY_HTTP_ERROR` 등)을 확인하지 않고 엣지 장애로 단정. (2) **Tier2만 Dify**를 타므로 Tier1 성공이 곧 Dify 설정 정상을 뜻하지 않음. (3) **표시 이름**을 `DIFY_WORKFLOW_ID`에 넣거나, **셸에서 `source .env`/`ALLOWED_ORIGINS` export**로 uvicorn 기동 실패.
+
+**재발 방지 규칙**:
+1. 동일 증상 시 **`docs/rules/lis_dify_public_troubleshooting.md`** 의 표로 분기한다.
+2. `DIFY_API_BASE_URL`·UUID·API 키·`verify_dify_upstream.py`·mixed 데이터셋·8010 DB 비밀번호 정합은 그 문서 절차를 따른다.
+
+**관련 파일**: `docs/rules/lis_dify_public_troubleshooting.md`, `docs/rules/dify_integration.md` §7, `scripts/verify_dify_upstream.py`, `idr_analytics/app/api/v1/endpoints/agent.py`

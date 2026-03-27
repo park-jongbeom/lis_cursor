@@ -78,6 +78,8 @@ make dify-fastapi-jwt-bearer
 
 `Makefile`은 `.env`를 자동으로 읽지 않으므로, 같은 셸에서 `export IDR_LOGIN_USERNAME=...` 하거나 `set -a && . ./.env && set +a`(`.env` 문법 주의) 후 실행하세요. 스크립트: [`scripts/fetch_fastapi_jwt.py`](scripts/fetch_fastapi_jwt.py).
 
+**Tier2가 502·404일 때**: `.env`의 `DIFY_API_BASE_URL`·키·워크플로 ID를 맞춘 뒤 `make verify-dify-upstream ARGS='--dataset-id <업로드로 생긴 UUID>'` 등으로 진단합니다(`dataset_id`는 인자로 — [`workflows/README.md`](workflows/README.md) 「workflows/run」·failed 절).
+
 ## 업그레이드 (0.15.x → 1.13.x) 시 주의
 
 - 이전 `docker-compose.dify.yml` 스택의 **이름 있는 볼륨(`dify-pgdata` 등)과 데이터 경로가 다릅니다.**  

@@ -18,6 +18,7 @@
 4. **마이그레이션**: `set -a && source .env.prod && set +a && make migrate-prod` (Makefile 목표) 또는 동일 내용을 수동 실행.
 5. **admin 사용자**: `demo/README.md` 스니펫.
 6. **API**: `set -a && source .env.prod && set +a && PYTHONPATH=idr_analytics poetry run uvicorn app.main:app --host 127.0.0.1 --port 8010`
+   - 일상 개발 포트 **8000**은 보통 `source` 없이 리포 루트에서 uvicorn만 실행하고 Pydantic이 `.env`를 읽는다. 셸에 잘못된 `ALLOWED_ORIGINS`가 export되어 있으면 기동 실패할 수 있어, **`docs/rules/lis_dify_public_troubleshooting.md`** 를 참고한다.
    - **`/ide/docs/rules/`** (교육용 규칙 HTML)는 FastAPI `StaticFiles`로 위 uvicorn이 서빙한다. `main.py`·`demo/ide/`·`IDE_STATIC_ROOT` 를 바꾼 뒤에는 **uvicorn을 재시작**해야 공인 URL·9080 경유 요청에 반영된다.
    - `.env.prod`에 `IDE_STATIC_ROOT`(리포의 `demo/ide` 절대 경로)를 두면 자동 경로 탐색과 무관하게 고정할 수 있다(`env.prod.example` 주석 참고).
    - 기동 확인: `make prod-smoke-ide` (8010이 떠 있을 때 HTTP 코드 출력).

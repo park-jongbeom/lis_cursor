@@ -4,13 +4,13 @@
 
 **운영 표준(필독)**: 공인 `lis.*` 의 IDR **FastAPI** 업스트림은 **`docs/plans/lis_public_url_path_map.md` §0** — **오직 로컬 우회(터널 등)**. `idr-fastapi` 컨테이너를 공인 기본 업스트림으로 두는 설명·스크립트 기본값은 **예외(합의 시)** 로만 취급한다.
 
-**경로 의미(정본)**: 동일 호스트에서 **`/` = 데모**, **`/apps` = Dify**, **`/ide/…` = 교육용 규칙·다운로드(FastAPI `demo/ide`)** — 상세는 **`docs/plans/lis_public_url_path_map.md`**.
+**경로 의미(정본)**: 동일 호스트에서 **`/`·`/index.html` = 데모**(FastAPI `StaticFiles(demo)`), **`/apps` = Dify**, **`/ide/…` = 교육용 규칙·다운로드(FastAPI `demo/ide`)** — 상세는 **`docs/plans/lis_public_url_path_map.md`**. 엣지 nginx는 **`/` 도 `/api/v1/` 과 같은 업스트림**으로 프록시한다(구 `LIS_DEMO_ROOT` 디스크 정적 폐기).
 
 ## 단일 FastAPI `proxy_pass` (§0·§2.1)
 
-- **`/api/v1/` · `/health` · `/docs` · `/openapi.json` · `/ide/`** 는 **같은 업스트림**(로컬 터널 끝점). **경로마다 다른 업스트림 금지.**
+- **`/` · `/index.html` · `/api/v1/` · `/health` · `/docs` · `/openapi.json` · `/ide/`** 는 **같은 업스트림**(로컬 터널 끝점). **경로마다 다른 업스트림 금지.**
 - ga-nginx가 **Docker**이면 `127.0.0.1:8000` 은 컨테이너 자신 — **호스트 게이트웨이**로 터널 포트에 연결한다. 게이트웨이는 네트워크마다 다름: `docker exec ga-nginx ip route show default` 의 `via` (예: docker0 **172.17.0.1**, compose 브리지 **172.18.0.1** — 현재 ga-server는 후자).
-- **Dify**는 별도 URL — `ga-server-append-lis.qk54r71z.conf.snippet`·`patch_lis_nginx_remote.py` 참고.
+- **Dify**는 별도 URL — `ga-server-append-lis.qk54r71z.conf.snippet`·`patch_lis_nginx_remote.py` 참고. 구 배포에 남은 루트 디스크 정적(`lis-demo`)만 치환할 때는 `patch_lis_root_to_fastapi_proxy.py`(ga-server에서 실행).
 
 ## Cursor MCP (`user-ga-server-ssh`) — **ga-nginx(Docker)만**
 

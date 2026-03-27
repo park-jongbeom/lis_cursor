@@ -34,3 +34,18 @@ def test_build_dify_http_error_detail_auth_error() -> None:
     detail = _build_dify_http_error_detail(err)
     assert detail["code"] == "DIFY_AUTH_ERROR"
     assert detail["status_code"] == 401
+
+
+def test_build_dify_http_error_detail_404_adds_hint() -> None:
+    request = httpx.Request("POST", "http://localhost:8080/v1/workflows/run")
+    response = httpx.Response(
+        status_code=404,
+        request=request,
+        text="404 page not found\n",
+    )
+    err = httpx.HTTPStatusError("not found", request=request, response=response)
+    detail = _build_dify_http_error_detail(err)
+    assert detail["code"] == "DIFY_HTTP_ERROR"
+    assert detail["status_code"] == 404
+    assert "hint" in detail
+    assert "DIFY_API_BASE_URL" in detail["hint"]

@@ -68,6 +68,10 @@ SAMPLE_FILES: dict[str, str] = {
     "crm_from_lis.csv": "crm",
     "scm_from_lis.csv": "scm",
     "mixed_from_lis.csv": "mixed",
+    # 문서·통합 테스트·구 데모 HTML 습관과 동일 파일명 (리포 demo/sample_data 에 존재)
+    "scm_sample.csv": "scm",
+    "crm_sample.csv": "crm",
+    "bi_sample.csv": "bi",
 }
 
 

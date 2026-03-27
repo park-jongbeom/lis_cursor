@@ -113,6 +113,11 @@ prod-smoke-ide:
 package-student-rules:
 	@bash scripts/package_student_rules.sh
 
+.PHONY: verify-lis-public
+## 공인 lis.* 스모크(§0 터널·uvicorn 가동 시). Tier2는 `--with-agent` + Dify 설정 필요
+verify-lis-public:
+	python3 scripts/verify_lis_public_smoke.py
+
 .PHONY: open-lis
 ## 기본 브라우저에서 `LIS_DEMO_URL` 열기 (Linux: xdg-open)
 open-lis:
@@ -176,6 +181,11 @@ dify-fastapi-jwt:
 ## 위와 동일 + `Authorization: Bearer <token>` 한 줄 출력
 dify-fastapi-jwt-bearer:
 	@poetry run python infra/dify/scripts/fetch_fastapi_jwt.py --bearer
+
+.PHONY: verify-dify-upstream
+## Tier2 진단: `.env`의 DIFY_API_* 로 workflows/run 호출. 동적 dataset은 인자로: make verify-dify-upstream ARGS='--dataset-id UUID'
+verify-dify-upstream:
+	@poetry run python scripts/verify_dify_upstream.py $(ARGS)
 
 .PHONY: ollama-dify-host-bind
 ## 호스트 Ollama를 0.0.0.0:11434에 바인딩 (systemd drop-in, sudo 필요) — Dify 모델 공급자 검증용

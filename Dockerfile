@@ -29,8 +29,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY idr_analytics/ ./
-COPY demo/sample_data/ ./demo/sample_data/
-COPY demo/ide/ ./demo/ide/
+# 강의 데모 `/`·`/ide`·샘플 CSV — FastAPI StaticFiles 단일 소스
+COPY demo/ ./demo/
 
 EXPOSE 8000
 

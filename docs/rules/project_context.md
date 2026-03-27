@@ -138,6 +138,8 @@ idr_analytics/
 
 표·오해 시 정리·“잘못된 방향” 제거는 **`docs/plans/lis_public_url_path_map.md`** 가 단일 정본이다. “데모(`/`)만 되면 `/ide`도 자동”은 **성립하지 않을 수 있음**(루트 정적 vs `/ide`는 FastAPI `StaticFiles` 마운트).
 
+**공인에서 Tier1은 되고 Tier2(`POST /api/v1/agent/query`)만 502**, Dify `workflows/run` 401/404, `DIFY_*`·uvicorn(8000/8010) 재기동 등은 **`docs/rules/lis_dify_public_troubleshooting.md`** 에 증상별 절차를 모아 두었다.
+
 ### `user-ga-server-ssh`(MCP) 로 **할 수 있는 것** (최우선·좁게 해석)
 
 | 허용 | 설명 |
@@ -167,6 +169,8 @@ idr_analytics/
 ## 작업 프로토콜 (반드시 준수)
 
 어떤 태스크를 받더라도 아래 Gate 순서를 지키고, **각 Gate 전환 전 개발자 승인**을 받는다. 절차 전문·금지 사항·`CURRENT` 표준 섹션은 **`docs/rules/workflow_gates.md`** 가 단일 원본이다. Cursor 에이전트용 요약은 **`.cursor/skills/idr-session-workflow/SKILL.md`** 를 참고한다. `docs/CURRENT_WORK_SESSION.md`의 워크플로 표와 동일하다.
+
+**세션 상세 계획의 기록 위치**: Gate A·C의 실행 순서·체크리스트·DoD는 **`docs/CURRENT_WORK_SESSION.md`에만** 둔다. **`docs/plans/`에 세션 전용 상세 계획 파일을 신설하지 않는다** — `docs/plans/`는 WBS·경로 정본·참조 문서용이다.
 
 | 단계 | Gate |
 |------|------|

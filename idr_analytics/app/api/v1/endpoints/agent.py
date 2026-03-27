@@ -142,6 +142,18 @@ def _build_dify_http_error_detail(exc: httpx.HTTPStatusError) -> dict[str, Any]:
         except Exception:
             detail["upstream"] = exc.response.text
 
+    up_text = ""
+    if isinstance(detail.get("upstream"), str):
+        up_text = detail["upstream"].lower()
+    if status_code == 404 or "page not found" in up_text or "404" in up_text[:80]:
+        detail["hint"] = (
+            "Dify가 404를 반환했습니다. (1) `DIFY_API_BASE_URL`은 `http(s)://호스트:포트/v1` 형태 — "
+            "브라우저 주소창의 `/apps` URL을 그대로 넣지 말 것. (2) Dify가 다른 머신이면 "
+            "uvicorn 호스트에서 닿는 Tailscale·LAN IP + 포트(예 `:8080/v1`). "
+            "(3) `DIFY_WORKFLOW_ID`는 Studio/API에서 확인한 UUID만. "
+            "(4) `poetry run python scripts/verify_dify_upstream.py --dataset-id <UUID>` 로 동일 요청 재현."
+        )
+
     if status_code in (401, 403):
         detail["code"] = "DIFY_AUTH_ERROR"
         detail["message"] = "Dify authentication/authorization failed"
@@ -253,14 +265,15 @@ async def agent_query(
             value_col=body.value_column or "value",
         )
 
-    ai_inputs: dict[str, str] | None = None
+    # Tier2 Dify 워크플로 입력에 `period` 필수인 경우가 많음 — CSV에서 못 추론하면 UTC 기준 당월로 보강
     period = (body.aggregation_period or "").strip()
     if not period and df is not None:
         inferred = _infer_period(df)
         if inferred:
             period = inferred
-    if period:
-        ai_inputs = {"period": period}
+    if not period:
+        period = datetime.now(UTC).strftime("%Y-%m")
+    ai_inputs: dict[str, str] = {"period": period}
 
     try:
         exec_result = await routing_service.route(
@@ -284,7 +297,17 @@ async def agent_query(
         code = "DIFY_TIMEOUT_ERROR" if isinstance(exc, httpx.TimeoutException) else "DIFY_REQUEST_ERROR"
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"code": code, "message": str(exc)},
+            detail={
+                "code": code,
+                "message": str(exc),
+                "hint": (
+                    "Dify API에 연결하지 못했습니다. 공인 lis(§0)는 uvicorn이 돌아가는 **같은 PC**에서 "
+                    "Dify로 HTTP 요청을 보냅니다. `DIFY_API_BASE_URL`은 그 PC에서 "
+                    "`curl`로 열리는 주소여야 합니다. `http://localhost:8080/v1`은 **그 PC에** "
+                    "Dify compose가 떠 있을 때만 유효하고, Dify가 원격만 있으면 "
+                    "Tailscale·내부 IP·공인 API URL로 바꾸세요."
+                ),
+            },
         ) from exc
 
     out_sid = body.session_id or uuid.uuid4()

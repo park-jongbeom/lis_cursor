@@ -113,8 +113,21 @@ new_server = f"""server {{
     }}
 
     location = / {{
-        root /var/www/static/lis-demo;
-        try_files /index.html =404;
+        proxy_pass {FASTAPI_UPSTREAM}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }}
+
+    location = /index.html {{
+        proxy_pass {FASTAPI_UPSTREAM}/index.html;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }}
 
     location / {{

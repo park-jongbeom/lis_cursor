@@ -9,6 +9,7 @@ ARQ(예측·클러스터 폴링)는 본 파일에서 다루지 않는다.
 
 from __future__ import annotations
 
+import csv
 import uuid
 from pathlib import Path
 
@@ -28,12 +29,20 @@ def _sample_path(name: str) -> Path:
     return p
 
 
+def _csv_data_row_count(path: Path) -> int:
+    """헤더 제외 데이터 행 수 — `demo/sample_data` 확장 시 하드코딩 대신 사용."""
+    with path.open(newline="", encoding="utf-8") as f:
+        rows = sum(1 for _ in csv.reader(f))
+    return max(rows - 1, 0)
+
+
 @pytest.mark.asyncio
 async def test_demo_scm_sample_upload_db_and_restock(
     client: AsyncClient,
     auth_headers: dict[str, str],
 ) -> None:
     csv_path = _sample_path("scm_sample.csv")
+    expect_rows = _csv_data_row_count(csv_path)
     r = await client.post(
         "/api/v1/datasets/upload",
         files={"file": ("scm_sample.csv", csv_path.read_bytes(), "text/csv")},
@@ -42,14 +51,14 @@ async def test_demo_scm_sample_upload_db_and_restock(
     )
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["row_count"] == 30
+    assert body["row_count"] == expect_rows
     assert {"order_date", "test_code", "order_qty"} <= set(body["columns"])
 
     ds_id = uuid.UUID(body["dataset_id"])
     r_pf = await client.get(f"/api/v1/datasets/{ds_id}/profile", headers=auth_headers)
     assert r_pf.status_code == 200, r_pf.text
     prof = r_pf.json()
-    assert prof["row_count"] == 30
+    assert prof["row_count"] == expect_rows
     assert prof["dataset_name"] == "integration_scm_sample"
 
     r2 = await client.get(
@@ -74,6 +83,7 @@ async def test_demo_crm_sample_upload_db_and_churn(
     auth_headers: dict[str, str],
 ) -> None:
     csv_path = _sample_path("crm_sample.csv")
+    expect_rows = _csv_data_row_count(csv_path)
     r = await client.post(
         "/api/v1/datasets/upload",
         files={"file": ("crm_sample.csv", csv_path.read_bytes(), "text/csv")},
@@ -82,7 +92,7 @@ async def test_demo_crm_sample_upload_db_and_churn(
     )
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["row_count"] == 24
+    assert body["row_count"] == expect_rows
     assert "customer_code" in body["columns"]
     assert "order_date" in body["columns"]
     assert "order_amount" in body["columns"]
@@ -90,7 +100,7 @@ async def test_demo_crm_sample_upload_db_and_churn(
     ds_id = uuid.UUID(body["dataset_id"])
     r_pf = await client.get(f"/api/v1/datasets/{ds_id}/profile", headers=auth_headers)
     assert r_pf.status_code == 200
-    assert r_pf.json()["row_count"] == 24
+    assert r_pf.json()["row_count"] == expect_rows
 
     r2 = await client.get(
         f"/api/v1/crm/churn-risk?dataset_id={ds_id}&compact=false",
@@ -108,6 +118,7 @@ async def test_demo_bi_sample_upload_db_heatmap_yoy(
     auth_headers: dict[str, str],
 ) -> None:
     csv_path = _sample_path("bi_sample.csv")
+    expect_rows = _csv_data_row_count(csv_path)
     r = await client.post(
         "/api/v1/datasets/upload",
         files={"file": ("bi_sample.csv", csv_path.read_bytes(), "text/csv")},
@@ -116,13 +127,13 @@ async def test_demo_bi_sample_upload_db_heatmap_yoy(
     )
     assert r.status_code == 201, r.text
     body = r.json()
-    assert body["row_count"] == 36
+    assert body["row_count"] == expect_rows
     assert {"period", "region", "test_code", "value", "year"} <= set(body["columns"])
 
     ds_id = uuid.UUID(body["dataset_id"])
     r_pf = await client.get(f"/api/v1/datasets/{ds_id}/profile", headers=auth_headers)
     assert r_pf.status_code == 200
-    assert r_pf.json()["row_count"] == 36
+    assert r_pf.json()["row_count"] == expect_rows
 
     r_h = await client.get(
         "/api/v1/bi/regional-heatmap",
