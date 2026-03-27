@@ -18,7 +18,10 @@
 4. **마이그레이션**: `set -a && source .env.prod && set +a && make migrate-prod` (Makefile 목표) 또는 동일 내용을 수동 실행.
 5. **admin 사용자**: `demo/README.md` 스니펫.
 6. **API**: `set -a && source .env.prod && set +a && PYTHONPATH=idr_analytics poetry run uvicorn app.main:app --host 127.0.0.1 --port 8010`
-7. **한 URL로 데모+API**(선택): `nginx-local-demo.conf` 를 시스템 nginx 에 넣거나, 포함 경로만 맞춰 `sudo cp` 후 reload. 브라우저에서 **`http://127.0.0.1:9080/`** — JWT 로그인(`demo/index.html`) 후 사용. API 베이스는 자동으로 `http://127.0.0.1:9080/api/v1`.
+   - **`/ide/docs/rules/`** (교육용 규칙 HTML)는 FastAPI `StaticFiles`로 위 uvicorn이 서빙한다. `main.py`·`demo/ide/`·`IDE_STATIC_ROOT` 를 바꾼 뒤에는 **uvicorn을 재시작**해야 공인 URL·9080 경유 요청에 반영된다.
+   - `.env.prod`에 `IDE_STATIC_ROOT`(리포의 `demo/ide` 절대 경로)를 두면 자동 경로 탐색과 무관하게 고정할 수 있다(`env.prod.example` 주석 참고).
+   - 기동 확인: `make prod-smoke-ide` (8010이 떠 있을 때 HTTP 코드 출력).
+7. **한 URL로 데모+API+교육 `/ide/`**(선택): `nginx-local-demo.conf` 를 시스템 nginx 에 넣거나, 포함 경로만 맞춰 `sudo cp` 후 reload. 브라우저에서 **`http://127.0.0.1:9080/`** — JWT 로그인(`demo/index.html`) 후 사용. API 베이스는 자동으로 `http://127.0.0.1:9080/api/v1`. **`/ide/`** 는 동일 파일의 `location /ide/` → **8010 uvicorn** 프록시( **`/api/v1/` 과 같은 FastAPI** ). 공인 `lis.*` 에서의 **`/`·`/apps`·`/ide/`** 역할 표·재구축 순서는 **`docs/plans/lis_public_url_path_map.md`** §6. (참고: 9080 스택에는 Dify **`/apps`** 가 없을 수 있음 — 로컬은 데모+API+`/ide` 검증용.)
 8. **ARQ**(SCM/CRM 잡): 별도 터미널에서 `set -a && source .env.prod && set +a && PYTHONPATH=idr_analytics poetry run arq app.workers.arq_worker.WorkerSettings`.
 
 ## systemd (선택)

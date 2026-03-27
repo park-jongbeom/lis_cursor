@@ -27,9 +27,28 @@
 
 이번 강의 리허설/시연은 **로컬호스트 직접 연동이 아니라 공인 URL 경로를 기본값으로 사용**합니다.
 
-- 데모 UI: `https://lis.qk54r71z.freeddns.org/`
+**동일 호스트 `https://lis.qk54r71z.freeddns.org` — 경로만 다르다**(서브도메인으로 규칙 사이트를 쪼개는 설계가 **아님**). 정본 표·“잘못된 방향” 제거는 **`docs/plans/lis_public_url_path_map.md`**.
+
+**운영 표준(필독)**: 공인에서 **`/api/v1/`·`/docs`·`/ide/`** 등 IDR FastAPI 는 **§0 — 오직 로컬 우회(터널 등)**. `ga-server` 의 `idr-fastapi` 컨테이너를 공인 기본 업스트림으로 가정해 설명하지 않는다.
+
+| 공인 경로 | 역할 | 업스트림(개념) |
+|-----------|------|----------------|
+| **`/`** | IDR Analytics **강의 데모** UI | nginx 정적 `demo/` 동기화본 |
+| **`/apps`** 등 | **Dify** (Studio·앱) | Dify (예: Tailscale `:8080`) |
+| **`/api/v1/`**, **`/docs`**, **`/ide/…`** | API·Swagger·교육생 규칙·ZIP | **동일 로컬 uvicorn**(터널로 엣지에 노출) — `demo/ide` 는 **로컬 리포** |
+
 - API 베이스 URL: 데모 페이지의 API 입력 칸에서 공인 URL 기준으로 확인
 - Bearer: 개발 우회 토큰 또는 로그인으로 발급한 JWT 사용
+
+### 교육생 전용 · 규칙 요약 웹 페이지(강의 동선)
+
+- **배포 목적(강조)**: 공인 `/ide/…` 는 **강사 화면만 보여주기**가 아니라, 교육생이 **직접 접속해 교육용 규칙 패키지를 다운로드·로컬에 적용**할 수 있게 하는 것이 목표다. ZIP·다운로드 경로·README 절차는 **`docs/plans/student_rules_download_lis_plan.md`** 에 정리한다.
+- **목표 URL(공인)**: `https://lis.qk54r71z.freeddns.org/ide/docs/rules/`  
+  - FastAPI가 리포의 `demo/ide` 를 마운트한 **업스트림 프로세스**가 살아 있어야 HTML·ZIP이 뜬다. 엣지 nginx(`ga-nginx`)는 `/ide/` 를 **데모(`/`)나 Dify(`/apps`)와 같은 호스트에서** 그 FastAPI로 넘기는 역할만 한다. **루트 데모가 된다고 `/ide`가 자동 완료되는 것은 아니다.**
+- **공인 URL이 404·JSON(`{"detail":"Not Found"}`)일 때** (엣지 설정은 맞는데 앱에 정적 파일이 없는 경우가 흔함):
+  1. **로컬 운영형 API**가 떠 있다면 동일 경로를 로컬로: `http://127.0.0.1:8010/ide/docs/rules/` (`infra/deploy/local-prod/README.md` 절차 6 — `.env.prod`·`IDE_STATIC_ROOT`·uvicorn 재시작).
+  2. 또는 브라우저에서 리포 파일 직접: `demo/ide/docs/rules/index.html` (절대 경로로 `file://...` 열기 가능).
+- **Cursor MCP(`user-ga-server-ssh`)**: **ga-nginx 컨테이너 안 설정 확인·(명시 시) 수정만**. 앱 컨테이너 배포·호스트에 파일 올리기로 이 페이지를 «고치려» 하지 않는다. 앱 반영은 리포·담당 배포 절차. (`docs/rules/project_context.md`, `infra/remote-proxy/README.md` 참고)
 
 공인 URL에서 실제 확인 가능한 API 문서 경로(검증됨):
 
@@ -40,7 +59,7 @@
 
 - `https://lis.qk54r71z.freeddns.org/api/v1/health` 는 현재 404일 수 있으므로, 헬스 체크는 데모 UI API 호출 성공 여부 또는 Swagger/OpenAPI 접근으로 대체해도 됩니다.
 
-발표 자료의 화면 캡처/체크리스트/멘트도 위 공인 URL 기준으로 통일합니다.
+발표 자료의 화면 캡처/체크리스트/멘트도 위 공인 URL 기준으로 통일합니다. **다만 `/ide/docs/rules/` 캡처는 공인이 안 될 때 위 폴백(8010 또는 `index.html`)으로 동일 화면을 확보**하면 된다.
 
 ---
 
@@ -48,6 +67,7 @@
 
 1. 화면 캡처 준비
    - `https://lis.qk54r71z.freeddns.org/` 메인 데모 화면 1장
+   - **규칙 요약(교육생용)**: `/ide/docs/rules/` — 공인 실패 시 `http://127.0.0.1:8010/ide/docs/rules/` 또는 `demo/ide/docs/rules/index.html` 1장
    - Swagger/API 구조 화면 1장(공인 URL 경로 기준으로 열리는 화면)
    - 데이터분석 탭 화면 3장(SCM/CRM/BI 탭 중 최소 2개)
 2. 발표 시간 확보

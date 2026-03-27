@@ -77,13 +77,13 @@ HTML 파일을 **파일 경로로 직접 연 경우**(`file://`) 브라우저는
 
 **운영 인프라(IDR FastAPI·Postgres·Redis·Dify 등)는 로컬**에서 `docker-compose.prod.yml`·`.env.prod`·호스트 uvicorn 으로 띄운다. [`infra/deploy/local-prod/README.md`](../infra/deploy/local-prod/README.md) 가 단일 원본이다.
 
-공인 도메인으로 브라우저에서 열기만 할 때는, DNS/TLS 가 묶인 **역프록시 한 대(ga-server 의 `ga-nginx`)** 가 있고, 여기서만:
+공인 도메인으로 브라우저에서 열기만 할 때는, DNS/TLS 가 묶인 **역프록시 한 대(ga-server 의 `ga-nginx`)** 가 있고, 여기서만 **동일 호스트에서 경로만** 나눈다(정본: **`docs/plans/lis_public_url_path_map.md`**).
 
-- `/` → 데모 정적(`index.html` 사본),
-- `/api/v1/` 등 → **Tailscale(또는 LAN) 너머의 로컬** FastAPI 포트,
-- 나머지 → 같은 맥락의 Dify 포트
+- **`/`** → 데모 정적(`index.html` 사본),
+- **`/api/v1/`**, **`/health`**, **`/docs`**, **`/ide/`** → **같은 FastAPI** 업스트림(교육용 규칙·ZIP은 `demo/ide` → `StaticFiles` 마운트),
+- **`/apps`** 등 그 외 → **Dify**
 
-로 **URL 접근 경로만** 나눈다. API 본체는 ga-server 위 **`idr-fastapi`(Docker)** 나, 순수 로컬이면 로컬 uvicorn 중 하나에 맞춘다.
+데모 페이지 **제목 바로 아래**와 하단에 **`/ide/docs/rules/`** 교육생 가이드 링크가 있다. ZIP 갱신 후 배포하려면 `make package-student-rules` → 공인/엣지에 동기화된 `demo/ide` 포함 여부 확인(정본 §6 체크리스트).
 
 브라우저 열기: **`make open-lis`** 또는 Cursor 작업 **「LIS 데모 URL 브라우저 열기」**.  
 엣지 설정·정적 사본 동기화 참고: [`infra/remote-proxy/`](../infra/remote-proxy/) (`patch_lis_nginx_remote.py`, `ga-server-append-lis.qk54r71z.conf.snippet` — **공인 URL용으로만** 사용).
@@ -100,7 +100,7 @@ CORS: 로컬 `.env` / `.env.prod`에 `https://lis.qk54r71z.freeddns.org` 포함(
 
 ### 로그인·API 가 안 될 때 (502 / 네트워크 오류)
 
-**공인 `https://lis…/`** 는 ga-nginx 가 **`idr-fastapi:8000`** Docker 스택([`infra/deploy/public-edge/`](../infra/deploy/public-edge/README.md))으로 넘긴다. 502 면 `idr-fastapi`·Postgres·Redis 컨테이너와 `docker exec ga-nginx wget -qO- http://idr-fastapi:8000/health` 를 확인한다.
+**공인 `https://lis…/`** 의 API·`/ide/` 업스트림은 [`docs/plans/lis_public_url_path_map.md`](../docs/plans/lis_public_url_path_map.md) **§0** — **운영 표준은 오직 로컬 우회(터널)** 이다. ga-nginx Docker 는 호스트 게이트웨이 + 터널 포트(게이트웨이는 `docker exec ga-nginx ip route show default` 로 실측; 예: **172.18.0.1**)로 **동일 업스트림**을 쓴다. **패턴 A**(`idr-fastapi:8000`)는 문서상 예외·합의 시에만. 502 면 터널·로컬 uvicorn 가동 여부를 먼저 본다.
 
 로컬만(역프록시 없이) 쓸 때는 [`infra/deploy/local-prod/`](../infra/deploy/local-prod/README.md) 의 `make prod-up`·uvicorn.
 

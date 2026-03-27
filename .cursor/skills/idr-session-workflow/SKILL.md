@@ -38,6 +38,19 @@ description: >-
 
 이 단계를 건너뛰면 `docs/rules/error_analysis.md` 「Gate B 직후 멈춤 없이…」 항목에 해당하는 위반이다.
 
+## ga-server MCP (`user-ga-server-ssh`) — **ga-nginx(Docker) 설정만**
+
+**사용자가 문서로 고정한 뜻**: ga-server MCP는 **서버 위 Docker로 떠 있는 엣지 nginx(예: `ga-nginx`) 안의 설정**을 **확인**하고, 사용자가 **명시적으로** nginx 설정 수정을 요청한 경우에만 **그 범위**를 손본다.
+
+| 하지 않음 (반복 오류) | 하기 |
+|----------------------|------|
+| `idr-fastapi`·Postgres·Redis 등 **다른 컨테이너** `docker exec` 로 404 «해결» | `docker exec ga-nginx …` 로 **conf 읽기**만 (기본) |
+| 호스트 `lis_cursor` 경로에 파일 업로드·compose·빌드 | 앱·정적 문제는 **리포 + 로컬 운영형 / public-edge 절차** |
+| nginx가 이미 맞는데 스니펫만 반복 수정 | `{"detail":"Not Found"}` → **§0** 기준 로컬 터널·로컬 **`demo/ide`** |
+| 공인 404 를 **`idr-fastapi` 재빌드·compose** 가 기본 해결로 안내 | **금지** — 운영 표준은 **`lis_public_url_path_map.md` §0** (오직 로컬 우회) |
+
+상세: `docs/rules/project_context.md` 「ga-server·공인 URL·MCP」. **§0·경로 표**: `docs/plans/lis_public_url_path_map.md`. 사례: `docs/rules/error_analysis.md` MCP·§0 항목.
+
 ## AI 금지 (요약)
 
 - A 승인 없이 구현 시작.

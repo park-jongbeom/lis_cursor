@@ -100,6 +100,19 @@ migrate-prod:
 	@test -f .env.prod || (echo "오류: .env.prod 없음"; exit 1)
 	bash -lc 'set -a && source ./.env.prod && set +a && $(ALEMBIC) upgrade head'
 
+.PHONY: prod-smoke-ide
+## 로컬 운영형 uvicorn(127.0.0.1:8010) 기준 /ide/docs/rules/·교육생 ZIP HTTP 상태 코드 (미기동 시 안내만)
+prod-smoke-ide:
+	@curl -fsS -o /dev/null -w "%{http_code}\n" --connect-timeout 2 http://127.0.0.1:8010/ide/docs/rules/ 2>/dev/null || \
+		(echo "8010 연결 실패 또는 /ide/docs/rules/ 비정상(4xx/5xx) — infra/deploy/local-prod/README.md 절차 6으로 API 기동·경로 확인 후 재실행"; exit 1)
+	@curl -fsS -o /dev/null -w "%{http_code}\n" --connect-timeout 2 http://127.0.0.1:8010/ide/downloads/idr-cursor-rules-student.zip 2>/dev/null || \
+		(echo "8010 연결 실패 또는 교육생 ZIP 경로 비정상 — demo/ide/downloads·IDE_STATIC_ROOT 확인"; exit 1)
+
+.PHONY: package-student-rules
+## 교육생용 규칙 ZIP·SHA256 생성 → demo/ide/downloads/
+package-student-rules:
+	@bash scripts/package_student_rules.sh
+
 .PHONY: open-lis
 ## 기본 브라우저에서 `LIS_DEMO_URL` 열기 (Linux: xdg-open)
 open-lis:

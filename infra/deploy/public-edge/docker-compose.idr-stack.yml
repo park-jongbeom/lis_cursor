@@ -5,7 +5,7 @@
 #   docker exec idr-fastapi alembic -c alembic/alembic.ini upgrade head
 # (admin 시드는 README)
 #
-# ga-nginx 의 lis 블록에서 FastAPI 업스트림은 http://idr-fastapi:8000 으로 둔다.
+# 공인 lis.* FastAPI 업스트림 표준은 §0(로컬 터널·호스트 게이트웨이). 이 compose 의 idr-fastapi 는 DB/워커·(선택) 예외 업스트림용.
 
 services:
   idr-postgres:
@@ -50,6 +50,8 @@ services:
       REDIS_URL: redis://idr-redis:6379/0
     volumes:
       - idr_edge_uploads:/app/data/uploads
+      # 이미지에 demo/ide 가 없어도 호스트 동기화본으로 /ide 정적 가이드 제공
+      - ../../../demo/ide:/app/demo/ide:ro
     depends_on:
       idr-postgres:
         condition: service_healthy

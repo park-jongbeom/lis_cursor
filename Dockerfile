@@ -1,4 +1,4 @@
-# IDR Analytics — 운영 이미지 (Python 3.12, ga-server Docker)
+# IDR Analytics — 운영/로컬 Docker 이미지 (Python 3.12)
 FROM python:3.12-slim AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,6 +30,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY idr_analytics/ ./
 COPY demo/sample_data/ ./demo/sample_data/
+COPY demo/ide/ ./demo/ide/
 
 EXPOSE 8000
 

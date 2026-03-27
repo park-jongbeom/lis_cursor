@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # File uploads (dataset CSV 저장 경로)
     DATA_UPLOAD_DIR: str = "./data/uploads"
 
+    # 교육용 /ide 정적 가이드 — 비우면 main.py 가 repo/demo/ide·/app/demo/ide 를 자동 탐색
+    IDE_STATIC_ROOT: str | None = Field(default=None, description="demo/ide 절대 경로(선택)")
+
     # Analysis routing
     AI_ESCALATION_THRESHOLD: int = 70
     PANDAS_MAX_ROWS: int = 2_000_000
@@ -56,6 +59,15 @@ class Settings(BaseSettings):
     FORECAST_DEFAULT_DAYS: int = 30
     KMEANS_DEFAULT_CLUSTERS: int = 4
     CHURN_RECENCY_THRESHOLD_DAYS: int = 90
+
+    @field_validator("IDE_STATIC_ROOT", mode="before")
+    @classmethod
+    def empty_ide_root_to_none(cls, v: Any) -> str | None:
+        if v is None or v == "":
+            return None
+        if isinstance(v, str) and not v.strip():
+            return None
+        return str(v).strip()
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

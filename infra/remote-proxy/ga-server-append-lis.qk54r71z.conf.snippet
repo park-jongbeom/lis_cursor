@@ -3,19 +3,23 @@
 # FastAPI·Dify 는 사용자 로컬(또는 Tailscale IP)에서 기동한다. 이 파일은 원격에 앱을 올리지 않고
 # 브라우저가 `https://lis.../` 로 들어올 때만 쓰는 역프록시 예시다.
 #
+# 정본(표·잘못된 방향 정리): docs/plans/lis_public_url_path_map.md
+#
 # 목표:
 #   https://lis.qk54r71z.freeddns.org/     → IDR 데모 정적 (demo/index.html)
 #   https://lis.../api/v1/...             → IDR FastAPI
-#   https://lis.../health, /docs, …      → FastAPI
+#   https://lis.../health, /docs, /ide/…  → FastAPI (로컬에서 뜬 동일 프로세스) — /ide = 교육생 규칙·ZIP
 #   그 외 (/apps, /console 등)            → Dify (기존과 같이 루트 패스로 프록시)
 #
 # 배포: 실제 편집 파일 저장 후
 #   docker exec ga-nginx nginx -t && docker exec ga-nginx nginx -s reload
 #
-# 반드시 채욄 것:
-#   - DEV_IP: IDR FastAPI·Dify 가 떠 있는 호스트(ga-server 가 TCP 로 접근 가능)
-#   - LIS_DEMO_ROOT: 서버(또는 마운트 볼륨) 위 IDR 리포의 demo 디렉터리 절대 경로
-#     예: /home/ubuntu/lis_cursor/demo  (rsync/git 으로 동기화된 경로)
+# §0 운영 표준: 공인 FastAPI 는 **로컬 우회(터널)** 만 — docs/plans/lis_public_url_path_map.md §0
+#   게이트웨이 실측: docker exec ga-nginx ip route show default → via 주소 + :8000(터널 바인딩 포트)
+#   예: docker0 → 172.17.0.1 / ga-api-platform 브리지 → 172.18.0.1 (현재 ga-server 후자에 맞춤 가능)
+#   예외(패턴 A·별도 합의): **http://idr-fastapi:8000** 으로 일괄 치환.
+#   **100.82.189.32:8080** = Dify 예시 — 실제 호스트로 수정.
+#   LIS_DEMO_ROOT: 데모 index.html 정적 경로
 #
 # 선행: DNS A 레코드, certbot 등 TLS (기존 lis 인증서 경로와 맞출 것)
 
@@ -48,10 +52,10 @@ server {
 
     client_max_body_size 80m;
 
-    # ── IDR FastAPI ──
+    # ── IDR FastAPI (§0: 호스트 터널 — 아래 IP는 ip route 게이트웨이 예시; ga-server는 172.18.0.1 사용) ──
     location /api/v1/ {
         proxy_connect_timeout 10s;
-        proxy_pass http://DEV_IP:8000/api/v1/;
+        proxy_pass http://172.18.0.1:8000/api/v1/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -61,7 +65,7 @@ server {
     }
 
     location = /health {
-        proxy_pass http://DEV_IP:8000/health;
+        proxy_pass http://172.18.0.1:8000/health;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -70,7 +74,7 @@ server {
     }
 
     location /docs {
-        proxy_pass http://DEV_IP:8000/docs;
+        proxy_pass http://172.18.0.1:8000/docs;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -79,12 +83,29 @@ server {
     }
 
     location = /openapi.json {
-        proxy_pass http://DEV_IP:8000/openapi.json;
+        proxy_pass http://172.18.0.1:8000/openapi.json;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # 교육용 규칙 가이드 — /api/v1 과 동일 업스트림(로컬 FastAPI)
+    # location /ide/ 는 Dify용 location / 보다 위에 둘 것. 없으면 /ide/… 가 8080 으로 가서 JSON 404 가 난다.
+    # 잘못된 예: proxy_pass http://<게이트웨이>:8000/;  → /ide/docs/rules 가 업스트림 /docs/rules 로 바뀌어 FastAPI 404
+    location = /ide {
+        return 301 /ide/;
+    }
+
+    location /ide/ {
+        proxy_pass http://172.18.0.1:8000/ide/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
     }
 
     # ── 루트만 IDR 데모 HTML (브라우저 기본 진입) ──
@@ -93,10 +114,10 @@ server {
         try_files /index.html =404;
     }
 
-    # ── Dify (Studio·앱 등 — /apps, /console …) ──
+    # ── Dify (Studio·앱 등 — /apps, /console …) — FastAPI 와 별도 호스트(예시 IP 수정) ──
     location / {
         proxy_connect_timeout 10s;
-        proxy_pass http://DEV_IP:8080;
+        proxy_pass http://100.82.189.32:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

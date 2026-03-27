@@ -1,16 +1,21 @@
 """FastAPI 애플리케이션 진입점."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.db.session import engine
+
+logger = logging.getLogger(__name__)
 
 _OPENAPI_TAGS: list[dict[str, str]] = [
     {"name": "auth", "description": "JWT 로그인·토큰 갱신"},
@@ -55,6 +60,31 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+# 교육용 정적 가이드: .env 의 IDE_STATIC_ROOT 우선, 없으면 repo/demo/ide·Docker /app/demo/ide 자동 탐색
+_pkg_root = Path(__file__).resolve().parent.parent
+_IDE_CANDIDATES: tuple[Path, ...] = tuple(
+    p
+    for p in (
+        Path(settings.IDE_STATIC_ROOT).expanduser().resolve() if settings.IDE_STATIC_ROOT else None,
+        _pkg_root.parent / "demo" / "ide",  # .../idr_analytics/app/main.py → repo/demo/ide
+        _pkg_root / "demo" / "ide",  # /app/app/main.py → /app/demo/ide
+    )
+    if p is not None
+)
+_IDE_STATIC_ROOT = next((p for p in _IDE_CANDIDATES if p.is_dir()), None)
+if _IDE_STATIC_ROOT is not None:
+    app.mount(
+        "/ide",
+        StaticFiles(directory=str(_IDE_STATIC_ROOT), html=True),
+        name="ide",
+    )
+    logger.info("IDE 정적 가이드 마운트: /ide -> %s", _IDE_STATIC_ROOT)
+else:
+    logger.warning(
+        "IDE 정적 가이드 비활성: demo/ide 없음 (후보 %s)",
+        [str(p) for p in _IDE_CANDIDATES],
+    )
 
 
 @app.get(

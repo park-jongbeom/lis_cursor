@@ -114,6 +114,56 @@ idr_analytics/
 
 ---
 
+## ga-server·공인 URL(`lis.*`)·MCP — 범위 (반복 오류 방지)
+
+**맥락**: 공인 `https://lis.qk54r71z.freeddns.org/` 등은 엣지(예: **`ga-nginx` Docker 컨테이너** 안의 nginx)가 **로컬/사설망에서 뜬 FastAPI·Dify**로 넘기는 **역프록시**일 뿐이다.
+
+### 공인 `lis.*` FastAPI — 운영 표준은 **로컬 우회만**
+
+**단일 원본**: `docs/plans/lis_public_url_path_map.md` **§0**.
+
+- 공인 **`/api/v1/`·`/health`·`/docs`·`/openapi.json`·`/ide/`** 는 **터널·사설망으로 노출된 로컬 uvicorn** 한 업스트림을 본다. **`idr-fastapi` 를 공인 기본 업스트림으로 두는 것은 팀 운영 표준이 아니다** (예외는 별도 합의·문서).
+- ga-nginx Docker 에서 그 업스트림 주소는 **`docker exec ga-nginx ip route show default`** 의 게이트웨이 + 터널 포트(예: **172.18.0.1:8000** — `ga-api-platform` 브리지; docker0 만 쓰는 호스트는 **172.17.0.1** 일 수 있음).
+- 장애 시 **먼저** nginx `proxy_pass` 일치·로컬 `demo/ide`·터널. **ga-server `idr-fastapi` 이미지 재빌드를 표준 처방으로 제시하지 않는다.**
+
+### 공인 단일 호스트 — 경로 역할(정본)
+
+**의도된 사용자 경험**(서브도메인 분리가 아니라 **동일 호스트·경로만 구분**):
+
+| 경로 | 역할 |
+|------|------|
+| `/` | IDR Analytics **강의 데모** (브라우저 기본 진입 — 구성에 따라 nginx 정적 `demo/` 또는 동일 호스트의 다른 서빙) |
+| `/apps` 등 | **Dify** (Studio·앱) |
+| `/ide/…` | **교육생 규칙 가이드 HTML·ZIP** — **`/api/v1/` 과 같은 FastAPI 업스트림**으로 `proxy_pass` 되어야 함 |
+
+표·오해 시 정리·“잘못된 방향” 제거는 **`docs/plans/lis_public_url_path_map.md`** 가 단일 정본이다. “데모(`/`)만 되면 `/ide`도 자동”은 **성립하지 않을 수 있음**(루트 정적 vs `/ide`는 FastAPI `StaticFiles` 마운트).
+
+### `user-ga-server-ssh`(MCP) 로 **할 수 있는 것** (최우선·좁게 해석)
+
+| 허용 | 설명 |
+|------|------|
+| **ga-nginx(또는 동일 역할의 엣지 nginx 컨테이너) 안 설정만** | `docker exec ga-nginx …` 로 **마운트된 `conf.d`·`nginx.conf` 등을 읽기**(cat/grep/sed -n). `location`·`proxy_pass`·`server_name` 이 의도와 맞는지 확인. |
+| **사용자가 문구로 명시한 경우에 한해 같은 범위의 수정** | 예: 「ga-server Docker nginx 설정만 고쳐라」「`lis` 서버 블록의 `proxy_pass` 를 바꿔라」처럼 **엣지 nginx 설정 파일** 편집·`nginx -t`·reload 절차 **안내 또는 사용자가 승인한 편집**. |
+
+### 동일 MCP로 **하면 안 되는 것** (같은 오류 반복 금지)
+
+| 금지 | 이유 |
+|------|------|
+| **`idr-fastapi`·Postgres·Redis·Dify·기타 앱 컨테이너**에 `docker exec` 로 들어가 파일 쓰기·패키지 설치·재기동 | 앱·데이터 계층은 **엣지 nginx MCP 범위 밖**. |
+| ga-server **호스트**의 `/home/…/lis_cursor` 등에 정적 파일·스크립트 업로드 | 배포·동기화는 담당자·CI·git, AI MCP 아님. |
+| **`docker compose` / 이미지 빌드 / 바이너리·HTML 청크 전송**으로 404 «해결» 시도 | 증상이 앱 쪽이면 **리포·로컬 운영형·엣지 스택 담당 절차**로 처리. |
+| nginx가 이미 올바른데 **반복적으로 스니펫만 수정** | `{"detail":"Not Found"}` 는 **업스트림 FastAPI** 응답일 수 있음. |
+
+### 증상 분기 (짧게)
+
+| **`/ide/…` → `{"detail":"Not Found"}`** | (1) **ga-nginx**에서 `/ide/` 가 **`/api/v1/` 과 동일 업스트림**인지 확인(`docs/plans/lis_public_url_path_map.md` §0·§2.1). (2) **§0 표준**이면 **로컬** `demo/ide`·uvicorn·터널. **`idr-fastapi` 컨테이너는 예외 합의 시에만** 1차 원인으로 본다. |
+
+**AI 오판 사례**: `docs/rules/error_analysis.md` MCP·ga-server 관련 항목(2026-03-27 이후 누적).
+
+**엣지 nginx 스니펫·예시**: `infra/remote-proxy/README.md`, `infra/deploy/public-edge/README.md`.
+
+---
+
 ## 작업 프로토콜 (반드시 준수)
 
 어떤 태스크를 받더라도 아래 Gate 순서를 지키고, **각 Gate 전환 전 개발자 승인**을 받는다. 절차 전문·금지 사항·`CURRENT` 표준 섹션은 **`docs/rules/workflow_gates.md`** 가 단일 원본이다. Cursor 에이전트용 요약은 **`.cursor/skills/idr-session-workflow/SKILL.md`** 를 참고한다. `docs/CURRENT_WORK_SESSION.md`의 워크플로 표와 동일하다.

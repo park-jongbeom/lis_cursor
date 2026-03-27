@@ -27,7 +27,8 @@
 | 14 | 2026-03-27 | 운영 안정화: OpenAPI 보강·ARQ 잡 통합 테스트(`test_arq_worker_integration_suite`) | post-7 |
 | 15 | 2026-03-27 | 운영 안정화: `0003_timestamptz`·운영 점검 `production_checklist.md` | post-7 |
 | **16** | 2026-03-27 | **Gate E 완료** — Phase 9 데모(`demo/*`)·`env.example`·`make test` 134+15·이력 `WORK_HISTORY` 이전 | 9 |
-| **17** | — | **진행 예정** — 강의 전 P9-1·브라우저 E2E 수동 검증(`demo/DEMO_SCRIPT.md`)·Phase 9 완료 기준 충족 확인 | 9 |
+| **17** | 2026-03-28 | **Gate E 완료** — pytest **152 passed**·샘플 CSV 통합·공인 `/ide` 계획 `CURRENT` 통합·데모 링크·`error_analysis`/remote-proxy 보강·ga-nginx 검증 기록(`WORK_HISTORY`) | 9 |
+| **18** | — | **진행 예정** — P9-1 브라우저(C-1.2~)·`DEMO_SCRIPT.md`·공인 `/ide` Phase B·E(터널/담당)·Phase 9 완료 확정 | 9 |
 
 ---
 
@@ -44,7 +45,7 @@
 | 6 Dify 인프라·연동 | 완료 | `DIFY_*` 실값 반영, `workflows/run`·Tier2 실연동 검증 완료 (Session 06·08) |
 | 7 테스트·검증 | 완료 | §7-3(통합 확장) + §7-4(커버리지·pre-commit) 완료 (Session 07·08) |
 | **운영 안정화** | **진행 중** | Phase 7 이후 후속 개선 — Session 09~15 완료, 이후는 Session 16+ (`plan.md` §Phase 8) |
-| **강의 데모 UI** | **진행 중** | 산출물 반영 완(Session 16) — **강의 전** P9-1·E2E 리허설만 남음(Session 17·`demo/DEMO_SCRIPT.md`) |
+| **강의 데모 UI** | **진행 중** | Session 17 마감 — **강의 전** P9-1 브라우저·리허설 + 공인 `/ide` 운영(§0) **Session 18**·`demo/DEMO_SCRIPT.md` |
 
 ---
 
@@ -53,7 +54,7 @@
 | 항목 | 내용 |
 |------|------|
 | **서비스명** | `idr_analytics` — IDR 시스템 데이터 분석 AI 에이전트 백엔드 |
-| **현재 상태** | Phase 7 완료 + Session 15 운영 안정화(`TIMESTAMPTZ`·`production_checklist.md`·`make test` 134+15) |
+| **현재 상태** | Phase 7 완료 + Phase 9 진행 중 — **`docs/CURRENT_WORK_SESSION.md` Session 18** (`make test` Session 17 기준 **152 passed**, P9-1 브라우저·공인 `/ide` 남음) |
 | **런타임** | RHEL 8 + rootless podman-compose / 호스트 miniconda Python 3.13 |
 | **핵심 패턴** | 2-Tier 하이브리드 라우팅 (Pandas Tier 1 vs Dify+LLM Tier 2) |
 
@@ -432,7 +433,8 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 
 > **배경**: 2026-03-28(토) 김희원 강사 강의에서 보조강사로 이 프로젝트를 시연한다. 강사님의 이론 강의(4주차·5주차) + 데이터 분석 시연 후, 보조강사가 실제 동작하는 화면을 보여준다.  
 > **강의 계획서 참조**: `ref_files/컨설팅계획서_김희원_IDR시스템즈_전문가_양식.md` — 4주차(AI 도구 기반 SW 개발 프로세스), 5주차(데이터 과학 AI 도구 활용), 6주차(분석 결과 비즈니스 기획)  
-> **강사 지시**: "데이터분석 보여주고 → 밥먹고 → 코드 샘플 보여주고 → 보조강사가 한 거 보여주면"
+> **강사 지시**: "데이터분석 보여주고 → 밥먹고 → 코드 샘플 보여주고 → 보조강사가 한 거 보여주면"  
+> **공인 URL 경로(강의·교육생 안내)**: 동일 호스트에서 **`/` = 데모**, **`/apps` = Dify**, **`/ide/…` = 규칙 가이드·ZIP** — 표·오해 제거는 **`docs/plans/lis_public_url_path_map.md`**.
 
 ---
 
@@ -589,9 +591,10 @@ Phase 4 서비스가 `dataset_id`로 DB에서 `AnalysisDataset`을 읽어야 하
 | Session | 내용 | 연계 |
 |---------|------|------|
 | 16 | P9-2 `demo/index.html`·README·P9-3 `DEMO_SCRIPT.md`·`env.example` + Gate A~E | Phase 9 |
-| 17 | P9-1 강의 직전 환경 점검 + 브라우저 E2E·리허설(수동) | Phase 9 |
+| 17 | P9-1·pytest·샘플 CSV·공인 `/ide` 문서·Gate E | Phase 9 |
+| 18 | P9-1 브라우저 나머지·리허설·공인 `/ide` Phase B·E·Phase 9 확정 | Phase 9 |
 
-> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 17**.
+> 현재 세션: `docs/CURRENT_WORK_SESSION.md` **Session 18**.
 
 ---
 

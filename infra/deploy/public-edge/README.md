@@ -1,6 +1,10 @@
 # 공개 URL 엣지용 IDR 스택 (ga-server Docker)
 
-`lis` 도메인의 nginx 는 **같은 Docker 네트워크** `ga-api-platform_ga-network` 안의 컨테이너 `idr-fastapi:8000` 으로 `/api/v1`·`/health` 등을 넘길 수 있다. (Tailscale 에만 떠 있는 로컬 uvicorn 은 꺼지면 502)
+**공인 `lis.*` 운영 표준**: FastAPI 업스트림은 **`docs/plans/lis_public_url_path_map.md` §0** — **오직 로컬 우회(터널)**. ga-server 에 `idr-fastapi` 컨테이너를 두는 본 compose 는 **DB·워커·(선택) 예외 업스트림** 용이며, **공인 트래픽의 기본 대상으로 삼는다고 문서에 적지 않는다.**
+
+**단일 호스트 경로 정본**: `https://lis…/` 데모·`/apps` Dify·`/ide/…` — 같은 파일 §1·§2. 엣지 nginx 의 `proxy_pass` 는 **§0에 맞는 단일 주소**(로컬 터널 끝점 등)로 `/api`·`/ide` 를 **같이** 넘긴다.
+
+**참고(패턴 A 예외)**: 같은 Docker 네트워크에서 `idr-fastapi:8000` 으로 넘기는 구성은 **합의된 예외**일 때만 해당한다.
 
 ## 절차
 
@@ -36,7 +40,7 @@
    asyncio.run(main())
    "
    ```
-6. **nginx**: `lis` 서버 블록의 FastAPI `proxy_pass` 를 `http://idr-fastapi:8000` 으로 맞춘 뒤 `docker exec ga-nginx nginx -t && docker exec ga-nginx nginx -s reload`. (`infra/remote-proxy/patch_lis_nginx_remote.py` 참고)
+6. **nginx(공인 `lis.*`)**: 팀 표준(§0)은 **호스트 터널 끝점**이다. `ga-nginx` 컨테이너에서 `ip route show default` 로 **게이트웨이 IP**를 확인한 뒤, `lis` 블록의 `/api/v1/`·`/health`·`/docs`·`/openapi.json`·`/ide/` 가 **모두** `http://<게이트웨이>:8000/…` (또는 터널 포트에 맞게)로 **동일**한지 맞춘다. `docker exec ga-nginx nginx -t && docker exec ga-nginx nginx -s reload`. (`infra/remote-proxy/patch_lis_nginx_remote.py` — 예외 시에만 `idr-fastapi:8000`)
 7. **워커 확인**:
    ```bash
    docker ps --format '{{.Names}}' | grep -E 'idr-fastapi|idr-arq-worker|idr-edge-redis'
@@ -49,3 +53,17 @@
 ## Dify
 
 `location /` 나머지는 기존처럼 Tailscale 등 Dify 호스트로 둘 수 있다. `DIFY_API_BASE_URL` 은 컨테이너에서 도달 가능한 주소여야 한다.
+
+## `/ide/…` 가 `{"detail":"Not Found"}` 일 때 (§0 기준)
+
+1. **ga-nginx**: `location /ide/` + `proxy_pass …/ide/` 가 **`/api/v1/` 과 동일 업스트림**인지, Dify용 `location /` 보다 **위**인지 확인한다.
+2. **운영 표준(§0)**: 업스트림은 **로컬**에서 띄운 uvicorn + 리포 `demo/ide` + SSH `-R`(또는 동등) 터널. JSON 404면 **로컬 프로세스**에 `curl http://127.0.0.1:8000/ide/docs/rules/` 등으로 먼저 재현한다.
+3. **패턴 A 예외**(합의로 nginx가 `idr-fastapi:8000` 을 볼 때만): 그때는 컨테이너 안 `/app/demo/ide`·이미지·마운트를 본다.
+
+```bash
+# 예외(패턴 A) 합의 시에만 — 컨테이너 쪽 정적 확인
+docker exec idr-fastapi ls -la /app/demo/ide/docs/rules
+docker exec idr-fastapi ls -la /app/demo/ide/downloads
+```
+
+`docker-compose.idr-stack.yml` 의 `demo/ide` 마운트·`idr-fastapi` 재기동은 **서버 측 API 스택** 절차이지, **§0 공인 URL의 기본 운영 절차가 아니다.**

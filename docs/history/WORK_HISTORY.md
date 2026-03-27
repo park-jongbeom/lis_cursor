@@ -441,3 +441,86 @@
 
 **특이사항**: 기존 `plan.md`의 “Session 17 = DEMO_SCRIPT 전용”은 Session 16에서 문서까지 반영됨. Session 17은 **강의 전 리허설·E2E 수동 검증**에 맞춘다.
 
+### [2026-03-28] 교육생 규칙 패키지 ZIP·다운로드 경로 (Phase 9 보조)
+
+**완료 내용**: `docs/plans/student_rules_download_lis_plan.md` WBS에 따라 교육생용 규칙을 ZIP으로 묶는 스크립트·`make package-student-rules`·`demo/ide/downloads/` 산출물·규칙 HTML에 다운로드 CTA를 추가했다. `prod-smoke-ide`가 교육생 ZIP URL도 확인한다.
+
+**변경 파일**:
+- `scripts/package_student_rules.sh` — 신규
+- `demo/ide/student_package_template/README_교육생.md` — 신규
+- `demo/ide/downloads/idr-cursor-rules-student.zip`, `idr-cursor-rules-student.zip.sha256` — 스크립트 생성물(커밋 대상)
+- `demo/ide/docs/rules/index.html` — §다운로드·스타일
+- `Makefile` — `package-student-rules`, `prod-smoke-ide` ZIP 확인
+- `docs/plans/student_rules_download_lis_plan.md` — §9·§10 구현 상태 반영
+- `docs/history/WORK_HISTORY.md` — 본 항목
+
+**결정 사항**:
+1. **A안(정적 ZIP)**: `StaticFiles` 루트 `demo/ide` 아래 `downloads/`에 두어 별도 라우트 없이 서빙한다(`Dockerfile` 기존 `COPY demo/ide/`에 포함).
+2. 패키지에 `docs/rules/` 5종 전문·`git-commit-korean.mdc`·`idr-session-workflow/SKILL.md`·`cursorrules.example`·`VERSION.txt`를 넣는다.
+
+**특이사항**: 공인 URL E2E는 업스트림 배포·`demo/ide` 마운트와 함께 담당자가 검증한다.
+
+### [2026-03-28] 공인 `lis.*` 단일 호스트 경로 정본 문서화 (`/`·`/apps`·`/ide/`)
+
+**완료 내용**: 사용자 확인대로 **동일 호스트에서 경로만 구분**하는 것이 맞음을 명시하고, `/ide/docs/rules/` 가 “다른 제품 방향”이 아니라 **FastAPI `demo/ide`** 로 가야 함을 정본으로 고정했다. `docs/plans/lis_public_url_path_map.md` 신설 및 `project_context.md`·`ppt_aux_instructor_build_guide.md`·`student_rules_download_lis_plan.md`·`infra/remote-proxy/*`·`public-edge/README.md`·`plan.md` Phase 9·`SKILL.md`·`.cursorrules`·`error_analysis.md` 를 정본과 정합.
+
+**변경 파일**: 위 경로 일괄(신규 `docs/plans/lis_public_url_path_map.md`).
+
+**결정 사항**: 문서 간 표현이 `/ide` 를 분리 배포처럼 읽히지 않도록 **단일 경로 표**를 두고 상호 링크한다.
+
+**특이사항**: 동작 변경 없음(문서·운영 이해만).
+
+### [2026-03-28] 계획 정본에 맞춘 재구축 — ZIP·nginx 패치·데모 링크·§6 체크리스트
+
+**완료 내용**: `lis_public_url_path_map.md` §6 배포 체크리스트 추가, 교육생 ZIP 누락분 `scripts/package_student_rules.sh` 로 재생성, `patch_lis_nginx_remote.py`에 `location = /ide` → 301 `/ide/` 추가(슬래시 없는 `/ide` 가 Dify로 떨어지는 경우 방지), `demo/index.html` 하단에 동일 호스트 `/ide/docs/rules/` 안내 링크, `demo/README.md`·`infra/deploy/local-prod/README.md` 를 경로 정본과 정합.
+
+**변경 파일**:
+- `docs/plans/lis_public_url_path_map.md` — §6
+- `demo/ide/downloads/idr-cursor-rules-student.zip`, `.sha256`
+- `infra/remote-proxy/patch_lis_nginx_remote.py`
+- `demo/index.html`, `demo/README.md`
+- `infra/deploy/local-prod/README.md`
+- `docs/history/WORK_HISTORY.md` — 본 항목
+
+**결정 사항**: 공인 반영은 담당자가 ga-nginx reload·정적 데모 `scp` 등으로 수행한다. (§0 이후: FastAPI 공인 경로는 **터널·호스트 게이트웨이**가 표준 — `idr-fastapi` 이미지 갱신은 패턴 A 예외 시에만 1차로 둔다.)
+
+**특이사항**: 로컬 9080 nginx는 Dify `/apps` 를 포함하지 않을 수 있음 — 문서에 명시.
+
+### [2026-03-28] §2.1 단일 업스트림에 맞춘 remote-proxy 재설정
+
+**완료 내용**: `patch_lis_nginx_remote.py` 기본 `FASTAPI_UPSTREAM` 을 패턴 B 예시 `http://172.17.0.1:8000` 로 통일하고, Dify 는 별도 `DIFY_UPSTREAM` 유지. `ga-server-append-lis.qk54r71z.conf.snippet` 은 FastAPI·Dify 호스트를 분리(예시 `172.17.0.1:8000`·`100.82.189.32:8080`)하고 주석으로 패턴 A/B·Docker 127.0.0.1 함정 명시. `infra/remote-proxy/README.md`·`ga-server-location-ide.snippet.conf`·`demo/README.md`·`project_context.md` 정합.
+
+**변경 파일**: 위 경로.
+
+**특이사항**: ga-server 에 실제 반영하려면 편집된 스니펫·패치 스크립트로 conf 갱신 후 `nginx -t`/reload 및 터널·게이트웨이 IP 실측 필요.
+
+### [2026-03-28] 공인 `lis.*` 운영 §0 명시 — 오직 로컬 우회(반복 오판 방지)
+
+**완료 내용**: 팀 운영이 **로컬 터널 우회만**임을 `lis_public_url_path_map.md` §0 로 고정하고, `project_context.md`·`infra/remote-proxy/*`·`patch_lis_nginx_remote.py` 기본값(터널 게이트웨이)·`public-edge/README.md`·`ppt_aux_instructor_build_guide.md`·`student_rules_download_lis_plan.md`·`.cursorrules`·`SKILL.md`·`error_analysis.md` 를 정합했다.
+
+**변경 파일**: 위 경로.
+
+**특이사항**: 패턴 A(`idr-fastapi`)는 문서상 **예외·합의 시**로만 명시.
+
+### [2026-03-27] MCP ga-server: `lis` nginx 업스트림 §0 정렬(호스트 게이트웨이) 및 리포 검증
+
+**완료 내용**: `user-ga-server-ssh` MCP로 `/home/ubuntu/ga-api-platform/docs/nginx/go-almond.swagger.conf` 백업(`*.bak-20260328-lis-tunnel`) 후, `lis.qk54r71z.freeddns.org` 블록의 FastAPI `proxy_pass` 5곳을 `http://idr-fastapi:8000` → **`http://172.18.0.1:8000`** 으로 통일(`ga-nginx` 컨테이너 `default via 172.18.0.1` 실측). `docker exec ga-nginx nginx -t`·`reload` 후 공인 `https://lis…/health` 200 확인.
+
+**리포 정합**: `patch_lis_nginx_remote.py` 기본 `FASTAPI_UPSTREAM`·게이트웨이 실측 주석, `infra/remote-proxy/README.md`·`ga-server-append-lis.qk54r71z.conf.snippet`(예시 IP 172.18.0.1)·`ga-server-location-ide.snippet.conf`·`docs/plans/lis_public_url_path_map.md` §6, `infra/deploy/public-edge/README.md`·`docker-compose.idr-stack.yml` 헤더, `demo/README.md`, 과거 `WORK_HISTORY` 결정 사항(§0와 충돌 문구) 수정.
+
+**특이사항**: 호스트 `:8000` 에 터널만 붙는 환경이면 터널 미가동 시 502. 호스트에 동일 포트로 컨테이너 publish 가 있으면 그 경로로도 응답할 수 있으나, **nginx 설정상 Docker 서비스명(`idr-fastapi`) 의존은 제거**함.
+
+### [2026-03-28] Session 17 Gate E — Phase 9 후속·공인 `/ide` 문서·데모 UX·엣지 검증
+
+**완료 내용**:
+- **`docs/CURRENT_WORK_SESSION.md`**: 공인 `lis.*` `/ide/docs/rules/` 교육생 가이드 **상세 계획**(Phase A~E·mermaid·검증 스냅샷) 유지·갱신; Session 17 **Gate D**까지의 pytest·C-1.1 스모크 기록은 본 이력으로 이전 관점에서 보존(파일 내 §테스트 검증 결과).
+- **데모·교육용 HTML**: `demo/index.html` — `/ide/docs/rules/` 링크(제목 아래); `demo/ide/docs/rules/index.html` — ZIP 구역 404 안내를 §0·엣지 우선으로 정정; `demo/README.md` — 링크 위치 설명.
+- **운영 문서**: `docs/rules/error_analysis.md` — ga-nginx 호스트·컨테이너 `default.conf` **md5 불일치** 재발 방지; `infra/remote-proxy/README.md` — md5 확인·`ga-nginx` 재시작 안내; `docs/plans/lis_public_url_path_map.md` §5 — 실행 체크리스트를 `CURRENT` 로 링크.
+- **원격(엣지, MCP 범위)**: `ga-nginx` **재시작**으로 bind 마운트와 호스트 `go-almond.swagger.conf` 불일치 해소 후 `nginx -t`·reload; 공인 `/ide/docs/rules/` 는 업스트림 `172.18.0.1:8000` 미리슨으로 **502**(§0 전제). **`idr-fastapi` 이미지 재빌드·compose는 수행하지 않음**(문서화만).
+
+**변경 파일**: `docs/CURRENT_WORK_SESSION.md`, `demo/index.html`, `demo/ide/docs/rules/index.html`, `demo/README.md`, `docs/rules/error_analysis.md`, `infra/remote-proxy/README.md`, `docs/plans/lis_public_url_path_map.md`, `docs/history/WORK_HISTORY.md`(본 항목).
+
+**결정 사항**: 공인 `/ide` 200 은 **터널·로컬 uvicorn**(또는 예외 합의 시 담당자 이미지 재빌드)로 달성; AI MCP는 **ga-nginx conf** 범위만.
+
+**특이사항**: **P9-1** 브라우저 리허설(C-1.2~)·`demo/DEMO_SCRIPT.md` 전항·Phase 9 완료 표 최종 확정은 **강의일 사용자 확인** 후 Session 18에서 이어감. Session 17 Gate B·C·D·pytest **152 passed** 등 상세는 Git 이력의 `CURRENT_WORK_SESSION.md`(마감 직전 커밋)를 참고.
+

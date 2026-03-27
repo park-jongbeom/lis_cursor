@@ -232,3 +232,86 @@
 3. 커밋 전 `PYTHONPATH=idr_analytics poetry run mypy idr_analytics/app/api/v1/endpoints/agent.py --strict`로 단일 파일 확인 후 전체 훅을 돌린다.
 
 **관련 파일**: `idr_analytics/app/api/v1/endpoints/agent.py`, `docs/rules/error_analysis.md`
+
+---
+
+### [2026-03-27] MCP(ga-server SSH)로 «프록시 확인» 지시를 원격 배포·파일 반영으로 확대 해석
+
+**오류 유형**: 프로세스 위반 / 범위 과대 적용 (운영·인프라)
+
+**발생 상황**: 사용자가 `lis.*` 공인 URL의 `/ide/…` 404를 두고 **MCP(`user-ga-server-ssh`)로 ga-server에 접속해 프록시(nginx) 설정만 확인**하라고 했음에도, AI가 동일 MCP로 원격에 정적 파일 전송·`docker-compose` 수정·컨테이너 재기동 등 **배포 행위**까지 시도함. 사용자는 이를 중단하고 «내부에서 원인 검토·저장소 수정만» 요구함.
+
+**근본 원인**: (1) «확인」을 «문제 해결까지 한 번에」로 확대 해석함. (2) `/ide` JSON 404의 원인을 nginx만으로 가정하고, **업스트림 `idr-fastapi`의 `demo/ide` 유무**와 **사용자가 배포를 명시했는지**를 구분하지 않음.
+
+**재발 방지 규칙**:
+1. **`user-ga-server-ssh` / ga-server MCP**: 사용자가 **명시적으로** «원격에 반영」「배포」「컨테이너 재시작」「서버에 파일 작성」을 요청하지 않는 한, **읽기 전용 조회**로만 사용한다. 예: `docker exec ga-nginx`로 `grep`/`sed -n` 등 **설정 내용 확인**, `curl`/`wget`으로 업스트림 응답 코드 확인. **원격에 바이너리·HTML 업로드, compose 실제 변경, `docker compose up` 등은 하지 않는다.**
+2. **`https://lis.…/ide/…` 가 `{"detail":"Not Found"}`**: **먼저** nginx에서 `location /ide/` + `proxy_pass …/ide/` 가 **`/api/v1/` 과 동일 업스트림**인지 확인. **팀 운영 표준(`lis_public_url_path_map.md` §0)** 은 **로컬 우회**이므로 그다음은 **로컬** `demo/ide`·uvicorn·터널 가동 여부다. **`idr-fastapi` 이미지·볼륨**은 **예외(패턴 A) 합의**가 있을 때만 1차 처방으로 둔다.
+3. 동일 증상을 **nginx 스니펫만 반복 수정**하지 않는다. 원인 분기는 **`docs/rules/project_context.md` §ga-server·MCP·`/ide` 404** 및 **`infra/deploy/public-edge/README.md`** 「`/ide/…` 가 … 일 때」를 따른다.
+
+**관련 파일**: `docs/rules/project_context.md`, `infra/remote-proxy/README.md`, `infra/deploy/public-edge/README.md`, `idr_analytics/app/main.py`, `Dockerfile`, `infra/deploy/public-edge/docker-compose.idr-stack.yml`
+
+---
+
+### [2026-03-28] (재발) MCP를 «ga-server Docker nginx 확인」이 아닌 idr-fastapi·호스트 배포까지 사용
+
+**오류 유형**: 프로세스 위반 / 도구 범위 초과 (사용자가 문서에 명시한 MCP 용도 위반)
+
+**발생 상황**: 사용자는 **MCP(`user-ga-server-ssh`)로 ga-server에 접근하는 목적**을 **서버 안 Docker로 떠 있는 nginx(예: `ga-nginx`) 설정을 확인하고, 필요 시 그 부분만 수정**하도록 문서에 제한해 두었음에도, AI가 동일 MCP로 **`idr-fastapi` 컨테이너 내부 조회·404 원인 귀결 후 파일 업로드·compose 변경 시도** 등 **엣지 nginx 밖** 작업을 반복함.
+
+**근본 원인**: (1) «404 해결」에 MCP 한 가지 수단만 연결해 **모든 원격 조작**을 허용한 것처럼 행동함. (2) **허용 범위 = `ga-nginx` 컨테이너 내 설정**이라는 **단일 경계**를 문서·스킬에 충분히 굵게 쓰지 않음.
+
+**재발 방지 규칙**:
+1. **`user-ga-server-ssh`의 유일한 기본 허용 범위**: **`docker exec ga-nginx` (또는 프로젝트가 쓰는 엣지 nginx 컨테이너명)** 으로 **설정 파일 읽기**·사용자가 **명시적으로** 「nginx 설정 수정」이라고 한 경우에 한해 **그 컨테이너에 실린 conf** 편집·`nginx -t`/reload 안내.
+2. **동일 MCP로 금지**: `idr-fastapi`·DB·Redis·Dify 등 **다른 컨테이너** 조작, ga-server **호스트 파일 트리에 정적 자산·스크립트 쓰기**, **`docker compose`·이미지 빌드·청크 전송 배포**. 이들은 **앱/배포 담당**이 리포·절차로 처리.
+3. `/ide` JSON 404는 nginx가 맞게 붙였는지 **1번 범위로만** 확인한 뒤, 남는 원인은 **업스트림 FastAPI·리포**로 넘긴다. **nginx만 반복 수정하거나 MCP로 앱 서버를 고치려 하지 않는다.**
+
+**관련 파일**: `docs/rules/project_context.md` 「ga-server·공인 URL·MCP」, `.cursor/skills/idr-session-workflow/SKILL.md`, `infra/remote-proxy/README.md`
+
+---
+
+### [2026-03-28] ga-nginx: 호스트 `go-almond.swagger.conf` 와 컨테이너 `default.conf` md5 불일치
+
+**오류 유형**: 운영 점검 착오 — 편집한 호스트 파일과 엣지가 실제로 읽는 내용이 다름
+
+**발생 상황**: 호스트 경로의 설정은 `proxy_pass http://172.18.0.1:8000/…` 인데, `docker exec ga-nginx` 로 본 `/etc/nginx/conf.d/default.conf` 는 `http://idr-fastapi:8000/…` 등 **다른 스니펫**. `md5sum` 이 **서로 다름**.
+
+**근본 원인**: bind 마운트가 **Inspect 상으로는** 올바른데, 런타임에 컨테이너가 **오래된 내용**을 보고 있거나(재시작 전 레이어·환경 이슈), 변경 후 **호스트만 보고** 컨테이너 내부를 확인하지 않음.
+
+**재발 방지 규칙**:
+1. 엣지 반영 여부는 **`md5sum` 호스트 원본 = `docker exec ga-nginx md5sum …/default.conf`** 로 확인한다. 불일치면 **`docker restart ga-nginx`** 후 재비교, 이어서 `nginx -t`·reload.
+2. 공인 동작이 conf 와 안 맞으면 **컨테이너 안 파일**을 `grep`/`sed -n` 으로 본다(호스트 파일만 신뢰하지 않음).
+
+**관련**: `docs/CURRENT_WORK_SESSION.md` — 공인 `/ide` 「검증 스냅샷」.
+
+---
+
+### [2026-03-28] 공인 `/ide/…` 를 «데모와 다른 제품 방향»으로 오해
+
+**오류 유형**: 아키텍처 오해 / 문서·작업 방향 분산
+
+**발생 상황**: `https://lis…/` 에 데모·`/apps` 에 Dify 는 이미 두었는데, **`/ide/docs/rules/` 교육생 가이드가 별도 호스트·별도 배포 축**처럼 설명되거나, “다른 방향으로 작업한 것 같다”는 피드백이 나옴.
+
+**근본 원인**: (1) **단일 호스트·경로(prefix) 분리**라는 운영 의도가 한 문서에 고정되지 않아, `/ide` 만 다른 서비스처럼 취급됨. (2) 루트 `/` 가 nginx 정적 `demo/` 이고 `/ide` 는 FastAPI `StaticFiles` 인 점이 생략되어 **“데모 됐 = /ide 됐”** 으로 착각.
+
+**재발 방지 규칙**:
+1. 공인 URL 역할 표는 **`docs/plans/lis_public_url_path_map.md`** 를 정본으로 하고, `project_context.md`·`ppt_aux_instructor_build_guide.md`·`student_rules_download_lis_plan.md`·`infra/remote-proxy/*` 는 이와 **모순되지 않게** 유지한다.
+2. `/ide` 404 시 원인은 (a) 엣지 `location /ide/` (b) **업스트림 FastAPI의 `demo/ide` 실존** 순으로 본다 — “규칙만 다른 URL 체계로 새로 뚫는다”가 아니다.
+
+**관련 파일**: `docs/plans/lis_public_url_path_map.md`, `docs/rules/project_context.md`, `infra/remote-proxy/ga-server-append-lis.qk54r71z.conf.snippet`
+
+---
+
+### [2026-03-28] 문서에 «패턴 A/B 동등»·`idr-fastapi` 기본값 → 운영은 로컬 우회(§0)인데 AI가 반대로 처리
+
+**오류 유형**: 문서 모순 / 운영 원칙 미명시로 인한 반복 오판
+
+**발생 상황**: 팀은 공인 `lis.*` FastAPI 를 **오직 로컬 터널 우회**로 운영한다고 일관되게 말했으나, 문서·스크립트에 **패턴 A(ga-server `idr-fastapi`)** 와 B 가 나란히 있거나 **A가 기본값**이면, AI·담당자가 **공인 404 → 서버에서 이미지 재빌드·compose·호스트에 `demo/ide` 심기**를 먼저 시도함.
+
+**근본 원인**: (1) **운영 표준을 §0처럼 한 줄로 고정하지 않음**. (2) `public-edge`·패치 스크립트 등이 **기술적으로 가능한 배포**를 **팀 표준**과 동일시함.
+
+**재발 방지 규칙**:
+1. **`docs/plans/lis_public_url_path_map.md` §0** 를 정본으로 — 공인 FastAPI 는 **로컬 우회만**이 팀 표준, 패턴 A 는 **예외·별도 합의**.
+2. `patch_lis_nginx_remote.py` 기본 `FASTAPI_UPSTREAM`·`infra/remote-proxy/README.md`·`project_context.md`·`.cursorrules`·`SKILL.md` 는 §0 와 **모순되지 않게** 유지한다.
+3. AI는 공인 장애 시 **`idr-fastapi` 재빌드를 운영 표준 처방으로 제시하지 않는다.**
+
+**관련 파일**: `docs/plans/lis_public_url_path_map.md` §0, `infra/remote-proxy/patch_lis_nginx_remote.py`, `infra/deploy/public-edge/README.md`, `docs/rules/project_context.md`, `.cursor/skills/idr-session-workflow/SKILL.md`
