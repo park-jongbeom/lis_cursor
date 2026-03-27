@@ -11,6 +11,7 @@
    docker-compose -p idr-edge -f infra/deploy/public-edge/docker-compose.idr-stack.yml --env-file .env.idr up -d --build
    ```
    (`docker compose` v2 플러그인 환경이면 동일 인자로 치환.)
+   이 스택에는 `idr-fastapi` 외에 ARQ 잡 소비용 `idr-arq-worker`가 포함되어야 하며, 없으면 SCM/CRM 폴링이 `pending`에 고착된다.
 4. **마이그레이션**:
    ```bash
    docker exec idr-fastapi alembic -c alembic/alembic.ini upgrade head
@@ -36,6 +37,12 @@
    "
    ```
 6. **nginx**: `lis` 서버 블록의 FastAPI `proxy_pass` 를 `http://idr-fastapi:8000` 으로 맞춘 뒤 `docker exec ga-nginx nginx -t && docker exec ga-nginx nginx -s reload`. (`infra/remote-proxy/patch_lis_nginx_remote.py` 참고)
+7. **워커 확인**:
+   ```bash
+   docker ps --format '{{.Names}}' | grep -E 'idr-fastapi|idr-arq-worker|idr-edge-redis'
+   docker logs --tail=50 idr-arq-worker
+   ```
+   `idr-arq-worker`가 없거나 오류로 반복 재시작하면, 데모 UI의 SCM/CRM "예측 실행→폴링/클러스터→폴링"은 완료되지 않는다.
 
 로그인: 데모 페이지에서 사용자 **`admin`**, 비밀번호는 시드 스크립트에 넣은 값(배포 담당자만 보관). **공개 전·강의 후 반드시 변경**한다.
 

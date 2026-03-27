@@ -52,10 +52,31 @@ class AgentService:
         outputs = data.get("data", {}).get("outputs", {}) if isinstance(data.get("data"), dict) else {}
         answer = ""
         if isinstance(outputs, dict):
-            raw = outputs.get("answer")
-            if raw is None:
-                raw = outputs.get("output")
-            answer = raw if isinstance(raw, str) else str(raw or "")
+            raw: Any = None
+            first_scalar: Any = None
+            for key in ("answer", "output", "text", "result", "summary"):
+                cand = outputs.get(key)
+                if isinstance(cand, str) and cand.strip():
+                    raw = cand
+                    break
+                if first_scalar is None and cand is not None and not isinstance(cand, (dict, list)):
+                    first_scalar = cand
+            if raw is None and outputs:
+                # 키가 고정되지 않은 워크플로를 위해 첫 스칼라 출력값을 보조 답변으로 사용
+                for _, v in outputs.items():
+                    if isinstance(v, str) and v.strip():
+                        raw = v
+                        break
+                    if first_scalar is None and v is not None and not isinstance(v, (dict, list)):
+                        first_scalar = v
+            if raw is None and first_scalar is not None:
+                raw = first_scalar
+            if isinstance(raw, str):
+                answer = raw
+            elif raw is None:
+                answer = ""
+            else:
+                answer = str(raw)
 
         out_sid = session_id or uuid.uuid4()
         meta = data.get("metadata") or data.get("data", {}).get("metadata", {})
@@ -68,8 +89,22 @@ class AgentService:
 
         wf_run = data.get("workflow_run_id") or data.get("id")
         supporting: dict[str, Any] | None = None
-        if wf_run is not None or outputs:
-            supporting = {"workflow_run_id": wf_run, "outputs": outputs}
+        workflow_data = data.get("data", {})
+        wf_status = workflow_data.get("status") if isinstance(workflow_data, dict) else None
+        wf_error = workflow_data.get("error") if isinstance(workflow_data, dict) else None
+        if wf_run is not None or outputs or wf_status is not None:
+            supporting = {
+                "workflow_run_id": wf_run,
+                "outputs": outputs,
+                "workflow_status": wf_status,
+                "workflow_error": wf_error,
+            }
+
+        if not answer:
+            if wf_run is not None:
+                answer = "Dify 워크플로 실행은 완료되었지만 출력 텍스트가 비어 있습니다. " f"workflow_run_id={wf_run}"
+            else:
+                answer = "Dify 워크플로가 빈 응답을 반환했습니다."
 
         elapsed_ms = int((time.perf_counter() - t0) * 1000)
         return AgentQueryResponse(

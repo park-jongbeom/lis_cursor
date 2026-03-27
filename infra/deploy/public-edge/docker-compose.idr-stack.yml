@@ -69,6 +69,29 @@ services:
       - ga-network
     restart: unless-stopped
 
+  idr-arq-worker:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    container_name: idr-arq-worker
+    env_file:
+      - ../../../.env.idr
+    environment:
+      DATABASE_URL: postgresql+asyncpg://idr:${POSTGRES_PASSWORD}@idr-postgres:5432/idr_analytics
+      REDIS_URL: redis://idr-redis:6379/0
+    volumes:
+      - idr_edge_uploads:/app/data/uploads
+    working_dir: /app
+    command: ["arq", "app.workers.arq_worker.WorkerSettings"]
+    depends_on:
+      idr-postgres:
+        condition: service_healthy
+      idr-redis:
+        condition: service_healthy
+    networks:
+      - ga-network
+    restart: unless-stopped
+
 networks:
   ga-network:
     external: true

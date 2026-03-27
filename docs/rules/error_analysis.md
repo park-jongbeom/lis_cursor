@@ -215,3 +215,20 @@
 4. 필요하면 `git diff --staged -- <파일>` 와 `git diff -- <파일>` 를 둘 다 확인해 staged/unstaged 차이를 먼저 없앤다.
 
 **관련 파일**: `infra/remote-proxy/patch_lis_nginx_remote.py`, `.pre-commit-config.yaml`, `Makefile`, `docs/rules/error_analysis.md`
+
+---
+
+### [2026-03-27] pre-commit mypy `redundant-cast` (`agent.py:43`)로 커밋 차단
+
+**오류 유형**: 정적 분석 / 타입 힌트 과잉 (mypy `redundant-cast`)
+
+**발생 상황**: VSCode Git 커밋에서 `ruff`, `ruff-format`은 통과했지만 mypy가 `idr_analytics/app/api/v1/endpoints/agent.py:43`에 대해 `Redundant cast to "str"`를 보고해 커밋이 실패함.
+
+**근본 원인**: `strftime("%Y-%m")`는 이미 `str` 반환인데, 안전을 위해 추가한 `cast(str, ...)`가 오히려 불필요한 캐스트로 판정됨.
+
+**재발 방지 규칙**:
+1. mypy strict 환경에서 표준 라이브러리 함수(`strftime`, `str()`, `json.dumps` 등)가 이미 구체 타입을 보장하면 `cast`를 추가하지 않는다.
+2. `cast`는 외부 라이브러리 스텁이 `Any`일 때처럼 **타입 정보가 실제로 부족한 지점에만** 제한적으로 사용한다.
+3. 커밋 전 `PYTHONPATH=idr_analytics poetry run mypy idr_analytics/app/api/v1/endpoints/agent.py --strict`로 단일 파일 확인 후 전체 훅을 돌린다.
+
+**관련 파일**: `idr_analytics/app/api/v1/endpoints/agent.py`, `docs/rules/error_analysis.md`

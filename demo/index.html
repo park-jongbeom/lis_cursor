@@ -319,6 +319,17 @@
 
     function fmtErr(err) {
       if (err.response && err.response.status === 502) {
+        var d502 = err.response.data || {};
+        var detail502 = d502.detail || {};
+        if (detail502 && typeof detail502 === "object" && detail502.code && String(detail502.code).indexOf("DIFY_") === 0) {
+          var msg = String(detail502.message || "Dify 요청 실패");
+          var up = detail502.upstream;
+          if (up && typeof up === "object") {
+            var upMsg = up.message || up.detail || "";
+            if (upMsg) msg += "\nupstream: " + String(upMsg);
+          }
+          return msg;
+        }
         return (
           "게이트웨이 502: 역프록시 뒤 IDR FastAPI(로컬 :8000 등)에 연결되지 않았습니다. " +
           "로컬에서 DB·Redis·uvicorn 기동 및 Tailscale/LAN 이 ga-server 에서 도달 가능한지 확인하세요."

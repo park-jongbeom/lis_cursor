@@ -89,8 +89,20 @@ def _forecast_item_from_arima(test_code: str, prep: pd.DataFrame, periods: int) 
     fc = res.get_forecast(steps=periods)
     mean = fc.predicted_mean
     conf = fc.conf_int(alpha=0.2)
-    lower = conf.iloc[:, 0].to_numpy(dtype=float)
-    upper = conf.iloc[:, 1].to_numpy(dtype=float)
+    # statsmodels 버전에 따라 conf_int 반환 타입이 DataFrame 또는 ndarray일 수 있다.
+    if isinstance(conf, pd.DataFrame):
+        lower = conf.iloc[:, 0].to_numpy(dtype=float)
+        upper = conf.iloc[:, 1].to_numpy(dtype=float)
+    else:
+        conf_arr = np.asarray(conf, dtype=float)
+        if conf_arr.ndim != 2 or conf_arr.shape[1] < 2:
+            msg = "ARIMA conf_int result shape is invalid"
+            raise ValueError(msg)
+        if conf_arr.shape[0] < periods:
+            msg = "ARIMA conf_int result length is shorter than forecast periods"
+            raise ValueError(msg)
+        lower = conf_arr[:, 0]
+        upper = conf_arr[:, 1]
     predictions: list[PredictionPoint] = []
     for i in range(periods):
         ds = last_ts + timedelta(days=i + 1)

@@ -15,16 +15,48 @@
 - `scm_sample.csv`
   - 탭: SCM 수요예측
   - 기본 매핑: `target_column=order_qty`, `date_column=order_date`, `group_by=test_code`
-  - 품목당 10행·그룹당 &lt;60행(ARIMA 경로), `test_code` 3종 §3.1
+  - 품목당 24행(총 72행)·완만한 추세/변동 포함, `test_code` 3종 §3.1
 - `crm_sample.csv`
   - 탭: CRM 이탈·클러스터
   - **필수** (`crm_service.CRM_REQUIRED`): `customer_code`, `order_date`, `order_amount`
   - **권장**: `customer_name` (표·차트 가독성) §3.2
-  - 고객 수 ≥4, 마지막 주문이 임계(기본 90일)보다 과거인 거래처 포함 §3.2
+  - 15고객 x 3주문(총 45행), 마지막 주문일 분산으로 이탈 위험군/활성군 동시 노출 §3.2
 - `bi_sample.csv`
   - 탭: BI 트렌드
   - 기본 매핑: `period_col=period`, `region_col=region`, `value_col=value`, `year_col=year`
-  - **`period` 문자열**은 `demo/index.html` 기본값 **`2024-01`** 과 동일한 행이 있음 §3.3
+  - 5지역 x 2검사 x 9기간(총 90행), **`period=2024-01`** 포함 §3.3
+- `lis_orders_sample.csv`
+  - 용도: **실제 LIS 화면 컬럼형** 원본 샘플 (`ref_files/idr_screenshots/검사의뢰조회.png` 기반)
+  - 주요 컬럼: `request_date`, `request_no`, `customer_code`, `customer_name`, `region`, `test_code`, `test_name`, `specimen_code`, `specimen_name`, `department_code`, `sales_amount`
+  - 분석 전처리 예시(필드 매핑):
+    - SCM: `request_date -> order_date`, `test_code -> test_code`, `sales_amount -> order_qty(또는 수량 대체지표)`
+    - CRM: `customer_code/customer_name` 유지, `request_date -> order_date`, `sales_amount -> order_amount`
+    - BI: `request_date -> period(YYYY-MM)`, `region -> region`, `test_code -> test_code`, `sales_amount -> value`
+
+## 원본형 -> 데모형 자동 변환
+
+`lis_orders_sample.csv`를 기준으로 데모용 CSV 3종을 자동 생성할 수 있습니다.
+
+```bash
+PYTHONPATH=idr_analytics poetry run python demo/sample_data/transform_lis_to_demo.py
+```
+
+생성 파일:
+
+- `demo/sample_data/scm_from_lis.csv`
+- `demo/sample_data/crm_from_lis.csv`
+- `demo/sample_data/bi_from_lis.csv`
+
+SCM 변환 규칙:
+
+- `test_code` 매출 합계 상위 4개 코드만 사용
+- 주간(`W-SUN` 기반, 월요일 시작) 매출 합계로 `order_qty` 생성
+- 코드별 누락 주차는 `0`으로 채워 예측 시계열 안정화
+
+SCM 실행 팁( `scm_from_lis.csv` ):
+
+- 데모 UI의 `test_codes` 입력에 `A002,A003,OS002,S003` 를 넣으면
+  폴링 결과에서 예측 시리즈가 안정적으로 표시된다.
 
 ## 빠른 시연 순서
 
