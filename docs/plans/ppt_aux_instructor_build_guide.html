@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PPT 보조강사 가이드 — HTML 뷰</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --paper: #fdfcfa;
+      --ink: #1e2422;
+      --muted: #5c6562;
+      --accent: #1a5f5a;
+      --accent-soft: #e3f0ef;
+      --border: #d4cfc4;
+      --code-bg: #ebe6dc;
+      --shadow: 0 1px 3px rgba(30, 36, 34, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .shell {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+      }
+      .toc-wrap {
+        position: static !important;
+        order: -1;
+      }
+    }
+    .banner {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, var(--accent-soft) 0%, var(--paper) 55%);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+    .banner strong { color: var(--accent); }
+    article.doc {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem 2rem 2.5rem;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .doc h1 {
+      font-family: "Source Serif 4", "Noto Sans KR", serif;
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+    }
+    .doc h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 2rem 0 0.75rem;
+      color: var(--accent);
+    }
+    .doc h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.35rem 0 0.5rem;
+      color: var(--ink);
+    }
+    .doc h4 {
+      font-size: 0.98rem;
+      font-weight: 600;
+      margin: 1rem 0 0.4rem;
+    }
+    .doc p { margin: 0.65rem 0; }
+    .doc ul, .doc ol { margin: 0.5rem 0 0.75rem; padding-left: 1.35rem; }
+    .doc li { margin: 0.25rem 0; }
+    .doc blockquote {
+      margin: 1rem 0;
+      padding: 0.65rem 1rem;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .doc blockquote p { margin: 0.4rem 0; }
+    .doc hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.75rem 0;
+    }
+    .doc a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+    .doc a:hover { opacity: 0.85; }
+    .doc code {
+      font-family: ui-monospace, "Cascadia Code", monospace;
+      font-size: 0.86em;
+      background: var(--code-bg);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+    }
+    .doc pre {
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+      background: #2b2d2c;
+      color: #e8e6e1;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.84rem;
+      line-height: 1.5;
+    }
+    .doc pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+    .doc table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .doc th, .doc td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .doc th {
+      background: var(--accent-soft);
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .doc tr:nth-child(even) td { background: #f9f7f3; }
+    .toc-wrap {
+      position: sticky;
+      top: 1rem;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .toc-inner {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1rem 1.1rem;
+      box-shadow: var(--shadow);
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+    .toc-inner .label {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .toc ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .toc ul ul { padding-left: 0.85rem; margin-top: 0.25rem; }
+    .toc li { margin: 0.2rem 0; }
+    .toc a {
+      color: var(--muted);
+      text-decoration: none;
+      display: block;
+      border-radius: 4px;
+      padding: 0.15rem 0.25rem;
+    }
+    .toc a:hover { background: var(--accent-soft); color: var(--accent); }
+    footer.gen {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="banner">
+      <strong>원본</strong> <code>docs/plans/ppt_aux_instructor_build_guide.md</code> —
+      갱신 시
+      <code>python3 docs/plans/scripts/render_ppt_aux_instructor_build_guide_html.py</code>
+      로 이 HTML을 다시 생성하세요.
+    </div>
+    <article class="doc" id="top">
+<h1 id="ppt">내일 보조강사 실습용 PPT 제작 가이드(슬라이드별, 하나씩)</h1>
+<blockquote>
+<p>용도: <code>demo/index.html</code> + Dify 워크플로 + FastAPI Swagger를 연결해, “프론트(화면) → 백엔드(계산) → LLM(요약)” 흐름을 청중이 한 번에 이해하도록 PPT를 만듭니다.</p>
+<p>기준 문서
+- 프로세스/게이트: <code>docs/rules/workflow_gates.md</code>, <code>docs/CURRENT_WORK_SESSION.md</code>
+- 프로젝트 개요/목표: <code>docs/plans/plan.md</code>, <code>docs/rules/project_context.md</code>
+- 데모 동선: <code>demo/DEMO_SCRIPT.md</code>, <code>demo/README.md</code>
+- 교육 일정/KPI: <code>ref_files/컨설팅계획서_김희원_IDR시스템즈_전문가_양식.md</code></p>
+</blockquote>
+<hr />
+<h2 id="_1">문서 보강 작업 기록 (이어하기용)</h2>
+<p><strong>역할</strong>: 이 절만 최신 상태로 유지하면, 작업이 중간에 끊겨도 다음 세션(또는 다른 편집자)이 <strong>어디까지 했는지·무엇을 남겼는지</strong>를 읽고 바로 이어갈 수 있다. 보강 내용이 본문(슬라이드별 절·스크립트)에 반영되면, 아래 <strong>변경 이력</strong>에 한 줄 추가하고 <strong>다음 작업</strong>을 고친다.</p>
+<p><strong>마지막 갱신</strong>: 2026-03-28</p>
+<p><strong>다음에 할 일 (한 줄 요약)</strong><br />
+슬라이드 8 이후 실덱 본문·스크립트·캡처 목록 보강 시 <code>lecture_talk_track</code>·Apps Script <code>DECK</code> 순서와 정합 점검</p>
+<p><strong>동기화 단서</strong> (본 문서를 고치면 함께 점검할 것)</p>
+<table>
+<thead>
+<tr>
+<th>연동 산출물</th>
+<th>경로</th>
+<th>비고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Apps Script 덱</td>
+<td><code>docs/plans/ppt_google_slides_autogen_script.md</code></td>
+<td>제목·불릿·노트 변경 시 <code>DECK</code>와 순서(id) 정합</td>
+</tr>
+<tr>
+<td>강의 제작 워크플로</td>
+<td><code>docs/plans/lecture_script_build_workflow_guide.md</code></td>
+<td>단계·체크리스트 문구가 본 가이드와 어긋나면 수정</td>
+</tr>
+<tr>
+<td>일일 대본 트랙</td>
+<td><code>docs/plans/lecture_talk_track_2026_03_28.md</code></td>
+<td>슬라이드 ID/순서 변경 시 해당 문서 규칙 준수</td>
+</tr>
+</tbody>
+</table>
+<p><strong>보강 백로그</strong> (필요 시 항목 추가·삭제; 완료 시 <code>[x]</code>)</p>
+<ul>
+<li>[ ] 슬라이드 8 이후: 실제 덱 기준 본문·스크립트·캡처 목록 추가</li>
+<li>[x] 슬라이드 11: 마무리 <strong><code>R01</code>·WRAPUP</strong> — 도메인 계약·RAG/에이전트·(선택) GraphRAG 권장안·§2 스크립트</li>
+<li>[x] 슬라이드 7: 2-Tier 재확인 + 기술 스택 실명 (<code>A02</code>)</li>
+<li>[x] 슬라이드 6: 데모 동선 한 장 — <code>demo/index.html</code> 기준 상세 절 추가 (<code>A01</code>)</li>
+<li>[x] 슬라이드 6: 스토리라인·전제(도메인·3~4일·AI·성숙 방향) 상세 + §2 슬라이드 6 통합 스크립트</li>
+<li>[x] 덱·트랙 정본: <strong>슬라이드 5 = Swagger·OpenAPI — 트랙 <code>M05</code></strong> (<code>ppt_aux</code>·<code>lecture_talk_track</code> 동일)</li>
+<li>[ ] <strong>실행 환경 고정</strong> 절: 공인 URL·폴백(8010·<code>file://</code>)·<code>lis_public_url_path_map.md</code> 정본과 불일치 시 수정</li>
+<li>[ ] 교육생 동선(<code>/ide/docs/rules/</code>·ZIP): <code>student_rules_download_lis_plan.md</code>·<code>demo/ide/docs/rules/index.html</code> 변경 반영</li>
+</ul>
+<p><strong>세션별 변경 이력</strong> (최신이 위에 오게 쌓는다)</p>
+<table>
+<thead>
+<tr>
+<th>일자</th>
+<th>구간 (슬라이드·절)</th>
+<th>변경 요약</th>
+<th>연동 문서 처리</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 11·<code>R01</code></td>
+<td>마무리: <strong>(구) KPI·3축 중심</strong> 대신 <strong>도메인 규칙·스키마 재정립 + RAG/Agent/GraphRAG 확장 준비</strong> 권장;「실제 작성 덱 — 슬라이드 11」을 <strong>§2 앞</strong>(슬라이드 6·7과 동일 배치)으로 이동</td>
+<td><code>lecture_talk_track</code> <code>R01</code>·<code>ppt_google_slides</code> 수동 정본 한 줄</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 6·B-1</td>
+<td>Dify 앱 <strong>「IDR CRM·BI Tier2」</strong> 워크플로 DSL 기준 시연 가이드(노드 순서·입력·compact·Ollama·프롬프트)·<strong>JWT 비밀 금지</strong></td>
+<td><code>demo/DEMO_SCRIPT.md</code> 4번과 병행</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 7</td>
+<td><strong>Dify vs Ollama 3.2</strong> — Dify=오케스트레이션·Ollama=추론 표·멘트; Tier2 불릿·<code>A02</code> 60초 보강; <code>dify_integration.md</code> §1 참조</td>
+<td><code>lecture_talk_track</code> <code>A02</code></td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 7</td>
+<td><strong>2-Tier 재확인</strong> — 데모 다이어그램과 중복 판서 금지, <strong>기술 스택 실명</strong> 불릿·§2 스크립트; 트랙 <strong><code>A02</code></strong></td>
+<td><code>lecture_talk_track</code> <code>A02</code>·<code>A03</code> 브리지 재배치</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 6</td>
+<td>§「6)」<strong>Dify AI 요약 탭 입력용 질의 리스트</strong>(A~H)·선행 조건 — 교육생 Q&amp;A 아님</td>
+<td>에이전트 시연·<code>A01</code> 덱 트랙(동선)과 병행</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 6·대본</td>
+<td><strong>트랙 매핑 정리</strong>: 슬라이드 6 ↔ 브라우저·<code>A01</code> 도입 등; <strong><code>A02</code>는 슬라이드 7</strong> 전용(혼동 제거)·§2 슬라이드 6→7 전환 멘트</td>
+<td><code>lecture_talk_track</code> 헤더 매핑·<code>A03</code> 문구 정리</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 6</td>
+<td><strong>스토리라인·전제</strong> 절 추가: 도메인 비전문·AI 보조·약 3~4일 1차 축·도메인 규칙 재정립 후 보강 로드맵·20초/60초/2분 멘트·하지 말 것</td>
+<td><code>lecture_talk_track</code> <code>A01</code> 도입과 연계 권장</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 6</td>
+<td><strong>데모 동선 한 장 정리</strong> — <code>demo/index.html</code> 화면 기준 상세(업로드·탭·<code>/agent/query</code>·Dify Studio 구분)</td>
+<td><code>lecture_talk_track</code> <code>A01</code>/<code>A03</code>과 병행</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>덱·트랙 정본</td>
+<td><strong>슬라이드 5 = Swagger·OpenAPI (<code>M05</code>)</strong> 로 고정; Gate는 <strong>슬라이드 4</strong>·트랙 <strong>M04</strong> 후반(대본 파일 참고)</td>
+<td><code>lecture_talk_track</code> M04·M05</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>Swagger 슬라이드</td>
+<td>슬라이드 5·M05: FastAPI 뼈대 + 설명=코드 메타데이터 + AI 초안·사람 검수·태그·<code>compact</code></td>
+<td><code>lecture_talk_track</code> M05</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>(구) 커리큘럼 슬라이드</td>
+<td><strong>생략 권장</strong> — 구분용: 예전 ‘슬라이드 5’ 명칭과 혼동 시 본 표의 <strong>Swagger=슬라이드 5</strong> 정본을 따름</td>
+<td><code>lecture_talk_track</code> M06</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 4</td>
+<td>Gate A~E 문구 검토·스크립트·3→4 재설명 이유</td>
+<td><code>lecture_talk_track</code> M04 (Gate 멘트)</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>슬라이드 3 가이드</td>
+<td><strong>판서형 데모 순서 제거</strong> → 「핵심 네 가지·화면 최소 4칸·통합 스크립트」로 압축; 지시→통제 상세는 말미 <strong>참고(심화)</strong> 로 이동</td>
+<td><code>ppt_aux</code>만 갱신</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>규칙 웹·강사 가이드</td>
+<td><code>#c-shift</code> 보강 절: 지시→통제 <strong>전환 근거·error_analysis 사례·멘트</strong>; 데모 3-보충·슬라이드 3 스크립트 확장</td>
+<td><code>ppt_aux</code>만 갱신</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>규칙 웹·강사 가이드</td>
+<td><code>#c-harness</code>(에이전트 하네스)·<code>#c-stories</code>(error_analysis 기반 사례) 추가; 직링크 시 Cursor 탭 유지하도록 스크립트 보강</td>
+<td><code>ppt_aux</code>에 앵커·데모 멘트 보충</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>전체 구조</td>
+<td>슬라이드 4번 이후 가이드 본문·스크립트 제거(사용자 보강 전제). 슬라이드 3 데모 루트를 규칙 웹 5·6절 개편에 맞춤</td>
+<td><code>demo/ide/docs/rules/index.html</code> 5·6절 환경설정 중심으로 수정</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>실제 작성 덱 슬라이드 3</td>
+<td><code>AI 규칙/스킬/문서 체계</code> + 공인 <code>/ide/docs/rules/</code> 브라우저 데모용 상세 스크립트·섹션별 멘트 추가</td>
+<td>필요 시 <code>ppt_google_slides_autogen_script.md</code> 수동 덱과 병기</td>
+</tr>
+<tr>
+<td>2026-03-28</td>
+<td>문서 보강 작업 기록 절</td>
+<td>이어하기용 기록 절 신설; 백로그·이력 표 템플릿 추가</td>
+<td>autogen 스크립트 가이드에 마스터 로그 위치 안내 반영</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="328">강사님 전달사항 반영(3/28 운영 시나리오)</h2>
+<p>강사님 메시지 요약:</p>
+<ul>
+<li>오전: 강사님이 기존 강의 내용으로 <strong>이론 진행</strong></li>
+<li>이어서: 보조강사 파트에서 <strong>데이터분석 시연</strong></li>
+<li>점심 후: <strong>코드 샘플</strong> 설명</li>
+<li>마무리: <strong>종범이 준비한 자료 시연</strong> + 포함된 <strong>머신러닝 알고리즘 설명</strong></li>
+</ul>
+<p>이 문서는 위 순서를 그대로 따르도록 설계합니다. 즉, “이론 보조”보다 “시연 연결”이 보조강사 PPT의 핵심입니다.</p>
+<hr />
+<h2 id="_2">실행 환경 고정(중요)</h2>
+<p>이번 강의 리허설/시연은 <strong>로컬호스트 직접 연동이 아니라 공인 URL 경로를 기본값으로 사용</strong>합니다.</p>
+<p><strong>동일 호스트 <code>https://lis.qk54r71z.freeddns.org</code> — 경로만 다르다</strong>(서브도메인으로 규칙 사이트를 쪼개는 설계가 <strong>아님</strong>). 정본 표·“잘못된 방향” 제거는 <strong><code>docs/plans/lis_public_url_path_map.md</code></strong>.</p>
+<p><strong>운영 표준(필독)</strong>: 공인에서 <strong><code>/api/v1/</code>·<code>/docs</code>·<code>/ide/</code></strong> 등 IDR FastAPI 는 <strong><code>lis_public_url_path_map.md</code> 맨 앞 운영 원칙</strong>대로 <strong>오직 로컬 우회(터널 등)</strong>. <code>ga-server</code> 의 <code>idr-fastapi</code> 컨테이너를 공인 기본 업스트림으로 가정해 설명하지 않는다.</p>
+<table>
+<thead>
+<tr>
+<th>공인 경로</th>
+<th>역할</th>
+<th>업스트림(개념)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>/</code></strong></td>
+<td>IDR Analytics <strong>강의 데모</strong> UI</td>
+<td>nginx 정적 <code>demo/</code> 동기화본</td>
+</tr>
+<tr>
+<td><strong><code>/apps</code></strong> 등</td>
+<td><strong>Dify</strong> (Studio·앱)</td>
+<td>Dify (예: Tailscale <code>:8080</code>)</td>
+</tr>
+<tr>
+<td><strong><code>/api/v1/</code></strong>, <strong><code>/docs</code></strong>, <strong><code>/ide/…</code></strong></td>
+<td>API·Swagger·교육생 규칙·ZIP</td>
+<td><strong>동일 로컬 uvicorn</strong>(터널로 엣지에 노출) — <code>demo/ide</code> 는 <strong>로컬 리포</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>API 베이스 URL: 데모 페이지의 API 입력 칸에서 공인 URL 기준으로 확인</li>
+<li>Bearer: 개발 우회 토큰 또는 로그인으로 발급한 JWT 사용</li>
+</ul>
+<h3 id="_3">교육생 전용 · 규칙 요약 웹 페이지(강의 동선)</h3>
+<ul>
+<li><strong>배포 목적(강조)</strong>: 공인 <code>/ide/…</code> 는 <strong>강사 화면만 보여주기</strong>가 아니라, 교육생이 <strong>직접 접속해 교육용 규칙 패키지를 다운로드·로컬에 적용</strong>할 수 있게 하는 것이 목표다. ZIP·다운로드 경로·README 절차는 <strong><code>docs/plans/student_rules_download_lis_plan.md</code></strong> 에 정리한다.</li>
+<li><strong>목표 URL(공인)</strong>: <code>https://lis.qk54r71z.freeddns.org/ide/docs/rules/</code>  </li>
+<li>FastAPI가 리포의 <code>demo/ide</code> 를 마운트한 <strong>업스트림 프로세스</strong>가 살아 있어야 HTML·ZIP이 뜬다. 엣지 nginx(<code>ga-nginx</code>)는 <code>/ide/</code> 를 <strong>데모(<code>/</code>)나 Dify(<code>/apps</code>)와 같은 호스트에서</strong> 그 FastAPI로 넘기는 역할만 한다. <strong>루트 데모가 된다고 <code>/ide</code>가 자동 완료되는 것은 아니다.</strong></li>
+<li><strong>공인 URL이 404·JSON(<code>{"detail":"Not Found"}</code>)일 때</strong> (엣지 설정은 맞는데 앱에 정적 파일이 없는 경우가 흔함):</li>
+<li><strong>로컬 운영형 API</strong>가 떠 있다면 동일 경로를 로컬로: <code>http://127.0.0.1:8010/ide/docs/rules/</code> (<code>infra/deploy/local-prod/README.md</code> 절차 6 — <code>.env.prod</code>·<code>IDE_STATIC_ROOT</code>·uvicorn 재시작).</li>
+<li>또는 브라우저에서 리포 파일 직접: <code>demo/ide/docs/rules/index.html</code> (절대 경로로 <code>file://...</code> 열기 가능).</li>
+<li><strong>Cursor MCP(<code>user-ga-server-ssh</code>)</strong>: <strong>ga-nginx 컨테이너 안 설정 확인·(명시 시) 수정만</strong>. 앱 컨테이너 배포·호스트에 파일 올리기로 이 페이지를 «고치려» 하지 않는다. 앱 반영은 리포·담당 배포 절차. (<code>docs/rules/project_context.md</code>, <code>infra/remote-proxy/README.md</code> 참고)</li>
+</ul>
+<p>공인 URL에서 실제 확인 가능한 API 문서 경로(검증됨):</p>
+<ul>
+<li>Swagger UI: <code>https://lis.qk54r71z.freeddns.org/docs</code></li>
+<li>OpenAPI JSON: <code>https://lis.qk54r71z.freeddns.org/openapi.json</code></li>
+</ul>
+<p>참고:</p>
+<ul>
+<li><code>https://lis.qk54r71z.freeddns.org/api/v1/health</code> 는 현재 404일 수 있으므로, 헬스 체크는 데모 UI API 호출 성공 여부 또는 Swagger/OpenAPI 접근으로 대체해도 됩니다.</li>
+</ul>
+<p>발표 자료의 화면 캡처/체크리스트/멘트도 위 공인 URL 기준으로 통일합니다. <strong>다만 <code>/ide/docs/rules/</code> 캡처는 공인이 안 될 때 위 폴백(8010 또는 <code>index.html</code>)으로 동일 화면을 확보</strong>하면 된다.</p>
+<h3 id="_4">교육생용 규칙 웹(참고)</h3>
+<p><code>demo/ide/docs/rules/index.html</code>에는 보충 절(<code>#c-shift</code>, <code>#c-harness</code>, <code>#c-stories</code> 등)이 더 있으나, <strong>강의 본편에서는 아래 「슬라이드 3 — 핵심만」에 적은 것만 말한다.</strong> 심화 질문이 나오면 목차로 해당 앵커만 열어 카드 한두 개를 보여 주면 된다. 원전은 <code>docs/rules/error_analysis.md</code>. VS Code 탭 사용자는 목차 링크가 Cursor 탭으로 전환되도록 되어 있다.</p>
+<hr />
+<h2 id="3-ai">실제 작성 덱 — 슬라이드 3. AI 규칙/스킬/문서 체계 (브라우저 데모)</h2>
+<blockquote>
+<p><strong>슬라이드에 올린 문구(확정)</strong><br />
+제목: <strong>AI 규칙/스킬/문서 체계</strong><br />
+불릿:
+- <code>.cursorrules</code> + <code>docs/rules/*</code> + session 문서<br />
+- 문서(계약) + Gate(상태) + 테스트(증적)<br />
+- 목표: AI 사용이 아니라 <strong>AI 변경 통제</strong></p>
+</blockquote>
+<p><strong>데모 URL(공인)</strong>: <a href="https://lis.qk54r71z.freeddns.org/ide/docs/rules/">https://lis.qk54r71z.freeddns.org/ide/docs/rules/</a> — 폴백·터널·8010은 위 <strong>「실행 환경 고정」</strong> 절.<br />
+페이지 제목은 <strong>「AI 변경 통제 개발 환경 — 규칙 가이드」</strong> 로 슬라이드 세 번째 불릿과 맞춘다.</p>
+<h3 id="_5">데모 태도 (판서 금지)</h3>
+<ul>
+<li>이 페이지는 <strong>교육생이 나중에 혼자 읽는 요약 사이트</strong>다. 강의에서 <strong>0절부터 8절까지 위에서 아래로 읽어 내려가지 않는다.</strong></li>
+<li>브라우저는 <strong>슬라이드 세 불릿을 뒷받침하는 증거</strong>로만 쓴다. <strong>말할 메시지는 아래 「핵심 네 가지」에 고정</strong>하고, 화면은 표 두 개(레이어·Gate) 중심으로만 스크롤한다.</li>
+</ul>
+<h3 id="_6">핵심만 전달할 것 (말로 꼭 남겨야 하는 것)</h3>
+<ol>
+<li><strong>역할 나눔(슬라이드 1번 불릿)</strong>: <strong>최상위 계약</strong>(<code>L1</code>·<code>.cursorrules</code>) / <strong>도메인·워크플로 원문</strong>(<code>L4</code>·<code>docs/rules/</code>) / <strong>지금 작업 상태</strong>(<code>plan</code>·<code>CURRENT</code>·<code>WORK_HISTORY</code>). 세 가지가 <strong>다른 층</strong>이라는 점만 말한다. L2·L3 파일명까지 줄줄 읽을 필요 없음.</li>
+<li><strong>삼각형(슬라이드 2번 불릿)</strong>: <strong>문서 = 계약</strong>, <strong>Gate = 지금 어느 단계인지(상태 머신)</strong>, <strong>린트·테스트·훅 = 증적</strong>. 제품 아키텍처(2-Tier, 엔드포인트 패턴 등)는 <strong>이 슬라이드에서 다루지 않는다</strong> — 웹 <strong>6절(심화)</strong> 도 열지 않는다.</li>
+<li><strong>Gate 표 한 장(슬라이드 2번의 심장)</strong>: A~E를 <strong>한 줄씩 설명하지 말고</strong>, “계획 승인 전엔 코드 금지 → 구현 끝나면 사람 확인 → 그다음에 테스트 계획” 흐름과 <strong>표의 「승인 전 금지」 열</strong>만 짚는다. Spring 트랜잭션 경계 비유는 여기까지.</li>
+<li><strong>통제가 목표(슬라이드 3번 불릿)</strong>: 속도가 아니라 <strong>통제 가능한 공정</strong>. 질문이 “왜 규칙이 많나?”로 가면 <strong>짧게</strong>: 긴 프롬프트만으로는 같은 실수가 반복되기 쉬워, <strong>금지·게이트·<code>error_analysis</code> 누적</strong>으로 옮겼다 — 필요 시 목차 <code>#c-shift</code> 또는 <code>#c-stories</code>에서 <strong>카드 1장만</strong> 보여 주고, 상세는 본 문서 말미 <strong>「참고 — 지시→통제 전환」</strong> 을 발표자가 읽는다.</li>
+</ol>
+<h3 id="_7">화면에서 짚을 위치 (최소 스크롤)</h3>
+<table>
+<thead>
+<tr>
+<th>순서</th>
+<th>화면</th>
+<th>할 말(한 줄)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>①</td>
+<td>상단(제목·ZIP)</td>
+<td>“강의 후 교육생은 여기서 ZIP 받아 로컬에 옮길 수 있다. 지금은 구조만.”</td>
+</tr>
+<tr>
+<td>②</td>
+<td><strong>「1. 규칙이 쌓이는 5개 레이어」</strong> 표 (<code>#c-layers</code>)</td>
+<td>“L1 진입 계약, L4 원문, L5는 도구로 증적. 슬라이드의 <code>.cursorrules</code>·<code>docs/rules</code>·세션 문서가 여기에 대응한다.”</td>
+</tr>
+<tr>
+<td>③</td>
+<td><strong>「4. Gate A~E」</strong> 표 (<code>#c-gates</code>)</td>
+<td>“문서가 계약이면 Gate는 깃발. 금지 열이 AI 통제의 핵심.”</td>
+</tr>
+<tr>
+<td>④ (선택)</td>
+<td><code>#c-stories</code> 카드 1장</td>
+<td>“실제로 깨진 적이 있어서 문장이 쌓인 것” — 30초</td>
+</tr>
+</tbody>
+</table>
+<p><strong>이후 바로 클로징</strong>: “나머지 절은 교육생이 시간 날 때 읽는 참고용. 슬라이드 세 줄이 요약이다.”</p>
+<h3 id="_8">시간·리허설</h3>
+<ul>
+<li><strong>3~4분(압축)</strong>: 슬라이드 15초 + ①②③ + 클로징.  </li>
+<li><strong>5~6분(권장)</strong>: 위 + ④ 또는 <code>#c-shift</code>로 “지시→통제” 1분.  </li>
+<li><strong>리허설</strong>: 표 두 개만 부드럽게 찾을 수 있으면 된다. 절 번호 외울 필요 없음.</li>
+</ul>
+<h3 id="_9">캡처</h3>
+<ul>
+<li><strong>1장</strong>이면 충분: 상단 또는 <strong>레이어 표 + Gate 표</strong>가 같이 보이게.</li>
+</ul>
+<h3 id="4">슬라이드 4번 이후(다른 슬라이드)</h3>
+<p>Gate 전용 설명은 아래 <strong>「슬라이드 4 — Gate A~E」</strong> 절. 그 밖(2-Tier·데모·Swagger 등)은 실제 덱 번호에 맞춰 절을 추가한다.</p>
+<hr />
+<h2 id="4-gate-ae">실제 작성 덱 — 슬라이드 4. Gate A~E (승인 경계)</h2>
+<blockquote>
+<p><strong>덱 번호 · 트랙 (정본)</strong><br />
+- <strong>슬라이드 4</strong> = 본 절(Gate A~E).<br />
+- 일일 대본 <strong><code>M04</code></strong> 후반에서 Gate 멘트를 연다(같은 <code>M04</code> 안에서 슬라이드 3 규칙 체계에 이어짐).<br />
+- <strong>슬라이드 5 · Swagger·OpenAPI</strong> = 트랙 <strong><code>M05</code></strong> — 아래 「슬라이드 5 — Swagger / OpenAPI」절.</p>
+</blockquote>
+<h3 id="docsrulesworkflow_gatesmd">슬라이드 초안 검토 (정본: <code>docs/rules/workflow_gates.md</code>)</h3>
+<p>초안:</p>
+<ul>
+<li>제목: <strong>Gate A~E로 승인 경계 분리</strong></li>
+<li>A: 구현 계획 승인  </li>
+<li>B: 구현 완료 후 강제 정지  </li>
+<li>C/D/E: 테스트 계획 / 실행 / 이력 전환  </li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>판단</th>
+<th>권장</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>전체 구조</strong></td>
+<td>맞다. 구현 권한과 테스트 권한을 <strong>승인 단계로 쪼개는</strong> 요지가 정본 다이어그램과 같다.</td>
+<td>유지.</td>
+</tr>
+<tr>
+<td><strong>A</strong></td>
+<td>“구현 계획”만 있으면 <strong>코딩 전인지·어디에 쓰는지</strong>가 빠지기 쉽다. 정본은 <strong>Gate A = <code>CURRENT</code>에 구현 상세 계획</strong>을 쓰고 <strong>사용자 승인 전 코드 변경 금지</strong>다.</td>
+<td>슬라이드에 <strong>「코딩 전」</strong> 또는 <strong>「<code>CURRENT</code>에 상세 계획」</strong> 중 하나를 넣는 것이 좋다. (예: <strong>A: 코딩 전 — 구현 상세 계획 승인</strong>.)</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>“강제 정지”는 팀 용어로 <strong>Gate B 직후 멈춤</strong>(구현 끝 → 사용자 확인 → 그다음 C)과 잘 맞는다.</td>
+<td>유지. 발표에서 <strong>테스트로 바로 가지 않는다</strong>를 한 번 더 말한다.</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>정본에서 C는 <strong>테스트 실행 전</strong> 단계다. “테스트 계획”만 있으면 <strong>승인 후에만 D(실행)</strong> 라는 점이 약해진다.</td>
+<td><strong>C: 테스트 상세 계획 승인</strong>(실행 전) 정도로 쓰면 AI 과대해석 방지 메시지와 맞는다.</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>“실행”에 <strong>결과 기록</strong>이 포함된다는 점을 슬라이드에 쓸 공간이 있으면 좋다.</td>
+<td>예: <strong>D: 테스트 실행·검증 결과 기록</strong>.</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td>“이력 전환”은 맞다. 정본은 <code>WORK_HISTORY</code> + <code>plan.md</code> 갱신 + <strong>다음 세션용 <code>CURRENT</code>로 교체</strong>까지 포함한다.</td>
+<td>필요 시 괄호로 <strong>「다음 세션 문서」</strong> 한 단어 추가.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>한 줄 정본 출처</strong> (발표자·슬라이드 각주용): <code>workflow_gates.md</code> 요약 다이어그램 — A·B·C 각각 <strong>사용자 승인(⏸)</strong> 이 있고, <strong>「Gate A 승인 = 구현 착수만」</strong> 이 테스트까지 포함하지 않는다는 점이 중요하다.</p>
+<h3 id="3-gate-4">왜 슬라이드 3에서 Gate를 짚은 뒤, 슬라이드 4에서 <strong>다시</strong> 설명하는가</h3>
+<p>슬라이드 3(규칙 웹·브라우저)에서는 <strong>의도적으로</strong> Gate를 <strong>표 한 장·흐름 몇 마디</strong>로만 끝낸다. 같은 날 오전 흐름에서 Gate를 두 번 다루는 것은 중복이 아니라 <strong>역할 분담</strong>이다.</p>
+<ol>
+<li>
+<p><strong>인지 부담 분리</strong><br />
+   슬라이드 3은 <strong>레이어(L1/L4/L5)·세션 문서·ZIP·통제 목표</strong>까지 한꺼번에 올라간다. 여기서 A~E를 <strong>글자 하나하나</strong>까지 풀면 청중은 “규칙 시스템 전체”와 “승인 상태 머신”이 한 덩어리로 뭉개져 기억하기 어렵다. 그래서 3에서는 <strong>「금지 열이 있고, 계획→구현→확인→테스트가 끊긴다」</strong> 수준만 남기고 끝낸다.</p>
+</li>
+<li>
+<p><strong>두 번째 슬라이드 = 추상 → 운영 규칙</strong><br />
+   3번은 <strong>지도(어디에 뭐가 있는지)</strong> 이고, 4번은 <strong>운전 매뉴얼(어떤 순서로 손대면 안 되는지)</strong> 에 가깝다. 특히 <strong>B에서 멈춤</strong>, <strong>A 승인이 테스트까지가 아님</strong>은 AI·사람 모두 <strong>자주 깨는 지점</strong>이라(<code>error_analysis</code>, <code>workflow_gates.md</code> 「승인 범위 해석」), 슬라이드 한 장을 <strong>통째로 할애</strong>하는 것이 교육 효과 대비 비용이 낮다.</p>
+</li>
+<li>
+<p><strong>오전 스크립트(M04 → M05)와의 정렬</strong><br />
+<strong><code>M04</code></strong>: 규칙 체계(슬라이드 3)에 이어 <strong>Gate</strong>(슬라이드 4) 멘트. <strong><code>M05</code></strong>: <strong>슬라이드 5 Swagger·OpenAPI</strong>. 덱에서 <strong>3번</strong>에 Gate 표를 잠깐 보여 준 것은 4번 <strong>승인 경계</strong>의 예고로 쓴다.</p>
+</li>
+<li>
+<p><strong>현장 질문 대비</strong><br />
+   “진행해라 한 마디로 테스트까지 돌린 적 있다”는 식의 질문은 3번 맥락만으로는 답이 길어진다. 4번에서 <strong>A/B/C에 각각 승인이 있다</strong>는 것을 한 번 더 박아 두면, 오후 실습·코드 시연으로 넘어갈 때 <strong>프로세스 논쟁</strong>이 줄어든다.</p>
+</li>
+<li>
+<p><strong>반복의 법칙</strong><br />
+   교육에서 <strong>핵심 안전 규칙</strong>은 “한 번에 크게 + 나중에 같은 주제만 좁혀서” 두 번 말하는 편이 유지된다. Gate는 <strong>품질·권한 사고</strong>와 직결되므로 의도적 반복으로 본다.</p>
+</li>
+</ol>
+<p><strong>정리 (발표자 한 줄)</strong>: “아까 웹에서는 Gate가 <strong>전체 그림 속 한 조각</strong>이었고, 지금 슬라이드는 <strong>승인만 잘라서</strong> 보여 드립니다.”</p>
+<h3 id="4_1">슬라이드 4 — 전달 순서·시간</h3>
+<ul>
+<li><strong>1분(압축)</strong>: 제목 + 불릿 읽기 + “A 승인은 구현만, B 끝나면 멈춤, 테스트는 C 이후” 한 문장.  </li>
+<li><strong>2~3분(권장)</strong>: 위 + <strong>승인 과대해석 금지</strong>(정본 한 줄: A 승인 ≠ C/D 자동 승인) + 질문 1회 받기.  </li>
+<li><strong>시각 자료</strong>: 가능하면 <code>workflow_gates.md</code>의 <strong>텍스트 다이어그램</strong>을 슬라이드에 옮기거나, 규칙 웹의 Gate 표(<code>#c-gates</code>)를 <strong>슬라이드 4에서만</strong> 다시 띄워 <strong>같은 표를 두 번째 관점</strong>으로 읽는다(“이번에는 열보다 <strong>멈춤 지점</strong>만”).</li>
+</ul>
+<h3 id="_10">캡처·자료</h3>
+<ul>
+<li>규칙 웹 Gate 표를 4번에서 재사용할 경우: 슬라이드 3과 <strong>동일 화면</strong>이어도 되며, 강조 박스만 B·C 사이에 그려도 된다.</li>
+</ul>
+<hr />
+<h2 id="_11">(구) 커리큘럼 매핑 슬라이드 — <strong>생략 권장</strong></h2>
+<p><strong>번호 정본</strong>: <strong>슬라이드 5 = Swagger·OpenAPI (<code>M05</code>)</strong> — 커리큘럼 일반론 전용 슬라이드는 <strong>넣지 않거나</strong>, 넣더라도 <strong>5번 자리를 차지하지 말 것</strong>. <strong>슬라이드 4(Gate) 다음은 바로 5(Swagger).</strong></p>
+<p><strong>트랙</strong>: 생략 브리지는 <code>lecture_talk_track_2026_03_28.md</code>의 <strong><code>M06</code></strong>.</p>
+<hr />
+<h2 id="5-swagger-openapi-api-fastapi">실제 작성 덱 — 슬라이드 5. Swagger / OpenAPI — API 계약 (FastAPI 자동 스펙)</h2>
+<blockquote>
+<p><strong>덱 · 트랙 (정본 — 사용자 덱 기준)</strong><br />
+- <strong>슬라이드 제목 예</strong>: <code>Swagger·OpenAPI — API 계약 (FastAPI 자동 스펙)</code><br />
+- <strong>슬라이드 번호</strong>: <strong>5</strong><br />
+- <strong>오전 대본 ID</strong>: <strong><code>M05</code></strong> (<code>lecture_talk_track_2026_03_28.md</code>의 <code>### M05</code>)<br />
+- <strong>직전 슬라이드</strong>: <strong>4</strong> (Gate A~E)<br />
+- <strong>URL</strong>: <code>https://lis.qk54r71z.freeddns.org/docs</code> · <code>https://lis.qk54r71z.freeddns.org/openapi.json</code></p>
+</blockquote>
+<h3 id="_12">목적에 대한 판단</h3>
+<p><strong>“AI로 프로젝트를 구축하면서 Swagger까지 자동으로 나온 것을 보여준다”</strong>는 방향은 <strong>맞다.</strong> 이 저장소는 <strong>FastAPI</strong>라서, 엔드포인트·Pydantic 스키마·태그 등이 잡히면 <strong><code>/docs</code>·<code>/openapi.json</code>이 코드에서 파생</strong>된다. 즉 <strong>별도 스펙 문서를 사람이 매번 맞춰 쓰지 않아도</strong> 계약 표면이 생긴다는 점을 오전 마무리로 쓰기 좋다.</p>
+<p><strong>정확한 한 줄</strong>: “AI가 <strong>OpenAPI YAML을 손으로 다 쓴</strong> 것”이 아니라, <strong>AI·사람이 쓴 라우트/모델 위에 FastAPI가 스펙을 생성</strong>한다. 그래도 청중 입장에서는 <strong>“코드 기반으로 스웨거가 따라왔다”</strong>는 인상 목적은 달성된다.</p>
+<p><strong>Swagger UI에 보이는 “설명”은 어디서 오나</strong><br />
+화면에 읽히는 <strong>요약·설명·파라미터 설명</strong>은 프레임워크가 공중에서 만드는 게 아니라, <strong>코드 안 메타데이터</strong>에서 온다. 예: 엔드포인트 <strong><code>summary</code> / docstring</strong>, Pydantic <strong><code>Field(description=...)</code></strong>, 라우터 <strong><code>tags</code></strong>, <strong><code>response_model</code></strong> 등. 이걸 비워 두면 경로·타입만 나오고 칸이 허전해진다.</p>
+<p><strong>이 프로젝트 서술 보강(권장)</strong><br />
+위 메타데이터는 <strong>사람이 전부 손으로만 채운 것도, 전부 자동도 아니다.</strong> 실제 흐름은 <strong>AI가 라우트·스키마와 함께 설명 문구 초안을 같이 쓰고</strong>, 규칙·리뷰·Gate·린트로 다듬은 뒤 코드에 남기므로 <strong>스웨거에도 그대로 반영</strong>된다고 말하면, “FastAPI가 알아서 다 해준다” 오해와 “설명은 따로 문서 팀이 써야 한다” 오해를 <strong>동시에</strong> 줄일 수 있다.</p>
+<p><strong>트랙 ID</strong>: 본 슬라이드는 일일 대본 <strong><code>M05</code></strong> 와 <strong>덱 슬라이드 5</strong>에 고정한다(이전에 문서에 적혀 있던 M07 표기는 폐기).</p>
+<h3 id="url">슬라이드에 두 URL 외로 <strong>첨언하면 좋은 것</strong></h3>
+<table>
+<thead>
+<tr>
+<th>첨언</th>
+<th>이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>FastAPI → OpenAPI 자동 생성</strong> (한 줄)</td>
+<td>경로·메서드·스키마 <strong>뼈대</strong>가 코드에서 파생된다는 프레임.</td>
+</tr>
+<tr>
+<td><strong>설명 문구는 코드 메타데이터</strong> — docstring · <code>summary</code> · <code>Field(description)</code> · 태그 등; <strong>비우면 스웨거가 허전</strong></td>
+<td>“짚을 부분이 스웨거 설명 아닌가?”에 대한 <strong>정직한 답</strong>.</td>
+</tr>
+<tr>
+<td><strong>이 리포에서는 그 메타데이터도 AI 보조로 함께 작성</strong> → 스웨거 가독성까지 같은 파이프라인</td>
+<td>사용자 제안 반영: <strong>자동 생성 + AI가 설명까지 같이 채운 사례</strong>.</td>
+</tr>
+<tr>
+<td><strong>태그로 도메인 묶음</strong> — <code>auth</code> · <code>datasets</code> · <code>scm</code> · <code>crm</code> · <code>bi</code> · <code>agent</code></td>
+<td>오후 SCM/CRM/BI 데모와 <strong>같은 말</strong>을 미리 깔아 둠 (<code>app/main.py</code> <code>openapi_tags</code>·라우터 구조와 일치).</td>
+</tr>
+<tr>
+<td><strong>오후 연결 한 줄</strong> — “데모 UI·Dify는 이 <code>/api/v1/</code> 계약을 부른다”</td>
+<td>규칙(Gate) 다음에 <strong>실제 산출물</strong>로 내려감.</td>
+</tr>
+<tr>
+<td>(선택) <strong><code>compact=true</code></strong></td>
+<td>이 프로젝트 규칙상 LLM·Dify용 요약 쿼리; 한 불릿 또는 발표자 노트만.</td>
+</tr>
+<tr>
+<td>(발표자 노트) 최종 문구는 <strong>사람이 승인·수정</strong>한 결과물 — Gate·리뷰와 연결 가능</td>
+<td>과장 방지.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_13">하지 말 것</h3>
+<ul>
+<li>엔드포인트를 <strong>하나하나 판서</strong>하지 않는다. <strong>태그 펼쳐서 구조만</strong> 30초~1분.  </li>
+<li>공인이 안 뜨면 <strong><code>실행 환경 고정</code></strong> 절의 폴백(로컬 <code>/docs</code> 등)으로 동일 메시지만 전달.</li>
+</ul>
+<h3 id="_14">데모 시간</h3>
+<ul>
+<li><strong>1~2분</strong>: 브라우저 <code>/docs</code> → 태그 2~3개만 펼침 → <code>openapi.json</code>은 “머신이 읽는 동일 계약” 한 마디.  </li>
+<li><strong>리허설</strong>: 네트워크·로그인 필요 여부만 확인(Swagger는 보통 공개, API 호출은 JWT 별도).</li>
+</ul>
+<hr />
+<h2 id="6">실제 작성 덱 — 슬라이드 6. 데모 동선 한 장 정리</h2>
+<blockquote>
+<p><strong>덱 · 트랙 (정본 — 통화·계획 반영)</strong><br />
+- <strong>슬라이드 제목 예</strong>: <code>데모 동선 한 장 정리</code><br />
+- <strong>불릿 예</strong><br />
+  - 데모 접속 → CSV 업로드 → dataset_id 확보<br />
+  - SCM/CRM/BI 탭 실행<br />
+  - Dify 워크플로로 요약/해석 연결<br />
+- <strong>슬라이드 번호</strong>: <strong>6</strong> (직전: <strong>5</strong> Swagger·<code>M05</code>)<br />
+- <strong>덱 메타(통화·계획)</strong>: 세그먼트 <strong><code>AFTERNOON</code></strong> · 출처 <strong>call + plan</strong> — <strong>일일 대본 ID</strong>는 아래 「9)」와 같이 <strong><code>A01</code>/<code>A03</code>과 이어 붙이는 구간</strong>으로 쓴다. (<strong><code>A02</code>는 슬라이드 7</strong> 전용 — 혼동 금지.)<br />
+- <strong>참고</strong>: <code>lecture_talk_track_2026_03_28.md</code>의 <strong><code>A01</code></strong> 은 오후 도입 멘트, <strong><code>A03</code></strong> 은 <strong>슬라이드 7 직후</strong> 탭 브리지다. <strong>슬라이드 6 브라우저 시연</strong>은 본 절 §2 스크립트·<strong>「6)」</strong>·UI 절 <strong>「1)~5)」</strong> 가 단일 원본이다.</p>
+</blockquote>
+<p>아래는 <strong>현재 저장소의 실제 데모 UI</strong>(<code>demo/index.html</code>)를 기준으로 한 <strong>강사용 상세 설명</strong>이다. 슬라이드에는 불릿만 두고, 발표자 노트·리허설에는 이 절을 붙인다.</p>
+<h3 id="ai">스토리라인·전제: 도메인 비전문 · AI 보조 단기 구축 · 향후 도메인 규칙으로 성숙</h3>
+<p>이 데모 저장소를 소개할 때 <strong>“SCM/CRM/BI 업무를 수십 년 해 온 도메인 전문가가 설계한 완성품”</strong>처럼 말하면 기대치가 어긋난다. 강사가 <strong>의도적으로</strong> 쓰기 좋은 전제는 다음과 같다.</p>
+<p><strong>1) 사실 관계(강조해도 되는 문장)</strong>  </p>
+<ul>
+<li>본인은 이 데모가 다루는 <strong>세부 도메인(예: 해당 업종 KPI·현장 의사결정 규칙)</strong> 에 대해 <strong>전문가 수준의 지식을 갖고 시작하지 않았다.</strong>  </li>
+<li>코드베이스·API·샘플 데이터·화면 흐름은 <strong>AI 도구를 활용해 시스템을 분석·설계하고</strong>, 짧은 기간(<strong>총 약 3~4일</strong> 정도의 오더) 안에 <strong>수직 슬라이스(업로드 → Tier1 분석 → Tier2 요약 연결)</strong> 를 <strong>동작 가능한 형태</strong>로 올린 사례다.  </li>
+<li>따라서 오늘 보여 주는 것은 <strong>“현장에 그대로 납품할 최종 솔루션”</strong>이라기보다, <strong>교육·시연·계약(API)·통제 축(Gate·규칙 문서)이 같이 깔린 1차 버전</strong>에 가깝다.</li>
+</ul>
+<p><strong>2) 왜 솔직한 전제가 유리한가</strong>  </p>
+<ul>
+<li>청중(실무 개발자)은 <strong>“AI로 빠르게 만들었다”</strong>는 말만 들으면 <strong>품질·책임</strong>을 의심하기 쉽다. <strong>도메인을 깊이 모른 채 시작했다</strong>고 말하면 오히려 <strong>과장이 아닌 투명성</strong>으로 읽힌다.  </li>
+<li>동시에 <strong>오전에 이미 설명한</strong> <code>.cursorrules</code>·<code>docs/rules</code>·Gate·테스트와 연결하면, “빠른 구축 = 아무 규칙 없이”가 아니라 <strong>“짧은 시간 안에도 계약·승인·증적 축을 같이 깔았다”</strong>는 메시지가 된다.  </li>
+<li><strong>속도만</strong> 강조하지 말고 반드시 <strong>한 짝</strong>을 붙인다: “그만큼 <strong>다음 레이어</strong>에서 <strong>실제 도메인</strong>으로 규칙과 지표를 다시 잡고 솔루션을 보강할 예정이다.”</li>
+</ul>
+<p><strong>3) “3~4일”이 의미하는 것·의미하지 않는 것</strong>  </p>
+<table>
+<thead>
+<tr>
+<th>의미해도 되는 해석</th>
+<th>피해야 하는 오해</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>교육용 수직 슬라이스</strong>를 API·UI·LLM 연동까지 <strong>한 흐름</strong>으로 만든 <strong>캘린더 기준 기간</strong></td>
+<td>“업계 표준 컨설팅 산출물 전부 완료”</td>
+</tr>
+<tr>
+<td><strong>샘플 CSV·기본 컬럼 가정</strong> 위에서 <strong>파이프라인·계약</strong>을 증명</td>
+<td>“특정 고객사 실데이터·법규·승인 프로세스까지 반영 완료”</td>
+</tr>
+<tr>
+<td>AI가 <strong>초안·반복 작업</strong>을 많이 맡고, 사람이 <strong>방향·승인·문서·린트</strong>로 다듬은 기간</td>
+<td>“버튼 한 번으로 전부 자동 완성”</td>
+</tr>
+</tbody>
+</table>
+<p><strong>4) AI가 한 일 vs 사람·저장소가 한 일 (발표에서 짧게 나누는 법)</strong>  </p>
+<ul>
+<li><strong>AI 쪽</strong>: 요구를 질문으로 쪼개기, 라우트·스키마·데모 HTML·Dify 연동 초안, 문서 초안, 반복 수정.  </li>
+<li><strong>사람·저장소 쪽</strong>: <code>plan</code>/<code>CURRENT</code>·Gate로 <strong>승인 경계</strong>, <code>docs/rules</code>로 <strong>아키텍처 계약</strong>, ruff·mypy·pre-commit·테스트로 <strong>증적</strong>, <code>error_analysis</code>로 <strong>실패 모드 축적</strong>.  </li>
+<li>한 줄 요약 예: “<strong>뼈대와 초안의 속도는 AI가</strong>, <strong>무엇을 하면 안 되는지와 언제 멈출지는 저장소가</strong> 잡는다.”</li>
+</ul>
+<p><strong>5) 다음 단계(로드맵) — 강사가 말하기 좋은 ‘올바른 성숙 방향’</strong>  </p>
+<ul>
+<li><strong>실제 도메인</strong>에서: 용어 정의, KPI·임계값, 데이터 품질 규칙, “이 지표로 무슨 결정을 하는가”를 <strong>원천</strong>으로 삼는다.  </li>
+<li>그에 맞춰 <strong>핵심 규칙을 재정립</strong>한다: 어떤 열이 필수인지, <code>compact</code>에 무엇을 넣을지, 어떤 분석은 Tier1에 남기고 어떤 해석은 Tier2에 둘지, Dify 프롬프트·검증 시나리오.  </li>
+<li>그다음 <strong>솔루션을 보강</strong>한다: 스키마·엔드포인트·잡 파라미터·샘플이 아닌 <strong>운영 데이터</strong> 경로, 모니터링, 접근 통제.  </li>
+<li>이 순서를 말하면 <strong>“AI로 때운 데모”</strong>가 아니라 <strong>“1차 계약을 깐 뒤 도메인으로 정식화한다”</strong>는 엔지니어링 서사가 된다.</li>
+</ul>
+<p><strong>6) 슬라이드에 넣을 수 있는 선택 불릿 (슬라이드 6에 한 줄 추가할 때)</strong>  </p>
+<ul>
+<li>(선택) “도메인 전문가로 시작하지 않았고, <strong>AI 보조로 약 3~4일</strong> 안에 <strong>동작하는 데모 축</strong>을 올린 사례”  </li>
+<li>(선택) “다음은 <strong>현장 도메인으로 규칙·지표를 재정의</strong>하고 그에 맞게 <strong>보강</strong>하는 단계”</li>
+</ul>
+<p><strong>7) 발표 시간별 멘트 예시 (발표자 노트에 그대로 써도 됨)</strong>  </p>
+<ul>
+<li><strong>20초</strong>: “이 데모는 해당 도메인을 깊게 알고 시작한 프로젝트는 아니고, AI로 시스템을 분석·구축하는 데 도움을 받아 며칠 안에 화면·API·요약까지 연결한 1차 버전입니다. 다음은 실제 도메인으로 규칙을 다시 잡고 솔루션을 보강하는 방향이 맞다고 봅니다.”  </li>
+<li><strong>60초</strong>: 위 20초 문장에 이어서: “3~4일은 교육용으로 끝까지 한 줄기를 만든 기간이지, 현장 납품 전 과정이 아닙니다. 빠른 만큼 오전에 말씀드린 문서·Gate·테스트로 통제 축을 같이 깔았고, 도메인이 들어오면 지표 정의·스키마·Dify 쪽을 그 규칙에 맞춰 고치는 게 정석입니다.”  </li>
+<li><strong>2분</strong>(오후 도입 + 슬라이드 6 불릿 짚기 직전): 60초 버전에 <strong>위 4) AI vs 저장소</strong> 요지를 한 번 더 짚은 뒤, “지금부터 보실 화면은 그렇게 올린 저장소의 실제 <code>demo/index.html</code>입니다”라고 하고 <strong>아래 UI 절「1)~5)」</strong> 로 넘어간다.</li>
+</ul>
+<p><strong>8) 하지 말 것</strong>  </p>
+<ul>
+<li>“<strong>전문가급 도메인 솔루션</strong>이다”, “<strong>현장에 바로 쓰면 된다</strong>”처럼 <strong>검증되지 않은 납품 수준</strong>으로 끌어올리지 않는다.  </li>
+<li><strong>3~4일</strong>만 내세우고 <strong>규칙·검증</strong>을 빼먹지 않는다 — 오전 메시지와 <strong>모순</strong>이 된다.  </li>
+<li>도메인을 모른다고 해서 <strong>임의 샘플·가짜 수치가 진짜 의사결정</strong>처럼 보이게 말하지 않는다 — <strong>교육·계약 시연용</strong>이라는 틀을 유지한다.</li>
+</ul>
+<p><strong>9) <code>lecture_talk_track</code>과의 역할 나누기</strong>  </p>
+<ul>
+<li><strong><code>A01</code></strong>: 오후 파트 <strong>도입</strong>(5~6주차 통합·실습 중심 등) — 직후에 <strong>슬라이드 6</strong>·브라우저 데모로 넘어가도 된다.  </li>
+<li><strong>슬라이드 6(브라우저)</strong>: 동선·스토리라인·<code>#demo-flow-overview</code>·Dify 탭 질의 — 본 절 <strong>§2 슬라이드 6 스크립트</strong>·<strong>「6)」</strong>.  </li>
+<li><strong><code>A02</code></strong>: <strong>슬라이드 7</strong> — 2-Tier 재확인·<strong>기술 스택 실명</strong> (<code>ppt_aux</code> 「실제 작성 덱 — 슬라이드 7」).  </li>
+<li><strong><code>A03</code></strong>: <strong>슬라이드 7 직후</strong> — SCM/CRM/BI 탭 시연으로 넘어가는 <strong>짧은 브리지</strong>.  </li>
+<li><strong>스토리라인(도메인·3~4일·향후)</strong> 은 <strong><code>A01</code> 60초 끝</strong>에 붙이거나, 슬라이드 6 스크립트 <strong>스토리라인 블록</strong>에서만 말해도 된다.</li>
+</ul>
+<h3 id="1">1) “데모 접속”이 가리키는 화면</h3>
+<ul>
+<li><strong>구현물</strong>: 단일 페이지 <strong><code>demo/index.html</code></strong> — FastAPI가 <strong>공인·로컬 모두</strong>에서 같은 파일을 서빙할 수 있다(<code>demo/README.md</code>, <code>lis_public_url_path_map.md</code> §0).  </li>
+<li><strong>시스템 흐름 그림</strong>: 제목·규칙 링크 바로 아래 <strong><code>#demo-flow-overview</code></strong> 패널에 <strong>2-Tier</strong>(브라우저 → Tier1 FastAPI/Pandas → Tier2 Dify/LLM)와 <strong>complexity 라우팅</strong> 개념을 <strong>SVG 다이어그램</strong>으로 넣어 두었음 — 슬라이드 없이 <strong>브라우저만</strong> 확대해 짚어도 됨.  </li>
+<li><strong>공인 강의 URL(예)</strong>: 사이트 루트 <strong><code>/</code></strong> 또는 <strong><code>/index.html</code></strong> — 브라우저 제목은 <strong>「IDR Analytics 데모」</strong>, 상단 부제는 개발/운영 시 Bearer·로그인 안내 한 줄.  </li>
+<li><strong>교육생 링크</strong>: 제목 아래·하단에 <strong><code>/ide/docs/rules/</code></strong> (규칙 가이드) — 이 슬라이드에서는 <strong>데모 동선만</strong> 말하고, 규칙 웹은 오전에 이미 다뤘으면 짚지 않아도 된다.  </li>
+<li><strong>로컬</strong>: VS Code Live Server 등으로 <code>demo/index.html</code>을 띄우되, 스크립트가 <strong>API 베이스를 <code>http://127.0.0.1:8000/api/v1</code></strong> 으로 잡는 경우가 많다(포트 5500·5173 등). <strong>HTML을 연 호스트와 API 호스트가 다를 수 있다</strong>는 점을 시연 전에 한 번 확인한다.  </li>
+<li><strong>로그인 UI</strong>: HTML에서 로그인·API 베이스·Bearer 입력 행은 <strong><code>demo-hidden</code></strong> 이라 <strong>강의 빌드에서는 숨겨진 채</strong> 쓰는 경우가 많다. 대신 <strong><code>DEMO_AUTO_LOGIN</code></strong> 이 켜져 있으면 페이지 로드 직후 <strong><code>/auth/login</code></strong> 으로 JWT를 받아 <strong><code>/datasets/sample-catalog</code></strong> 등 후속 호출이 동작한다. <strong>자동 로그인이 실패하면</strong> 빈 화면처럼 보이지 않더라도 샘플 목록이 안 뜨므로, 리허설에서 반드시 <strong><code>dataset_id</code> 줄까지</strong> 확인한다.</li>
+</ul>
+<h3 id="2-csv-dataset_id">2) CSV 업로드 → <code>dataset_id</code> 확보 (첫 번째 패널)</h3>
+<p>화면 <strong>맨 위 큰 패널</strong>이 전부다. 순서는 슬라이드 불릿과 동일하게 설명하면 된다.</p>
+<table>
+<thead>
+<tr>
+<th>UI 요소</th>
+<th>동작·의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CSV 파일</strong> + <strong>데이터셋 이름</strong> + <strong><code>dataset_type</code></strong> (<code>scm</code> / <code>crm</code> / <code>bi</code> / <code>mixed</code>) + <strong>업로드</strong></td>
+<td><code>POST /api/v1/datasets/upload</code> — 응답의 <strong><code>dataset_id</code></strong>(UUID)가 아래 줄에 <strong>녹색 굵게</strong> 표시된다. 업로드 실패 시 <code>(실패)</code> 및 첫 패널 하단 인접 <strong>상태 영역</strong>에 에러 문구.</td>
+</tr>
+<tr>
+<td><strong>내장 샘플 선택</strong> + <strong>선택 샘플 즉시 업로드</strong></td>
+<td><code>GET /datasets/sample-catalog</code>로 채워진 셀렉트 — <code>POST /datasets/upload-sample</code> 로 서버에 있는 <strong><code>demo/sample_data/*.csv</code></strong> 를 바로 올린다. <strong>강의 대기시간 줄이기에 유리</strong>.</td>
+</tr>
+<tr>
+<td>샘플 선택 시 <strong>회색 점선 박스</strong></td>
+<td>선택 파일의 <strong>컬럼 칩</strong> + 상위 3행 미리보기 테이블 — “이 CSV가 SCM인지 CRM인지”를 말로 설명하기 좋다.</td>
+</tr>
+<tr>
+<td><strong><code>현재 dataset_id:</code></strong></td>
+<td>모든 SCM·CRM·BI·에이전트 호출의 <strong>공통 키</strong>. 비어 있으면 탭에서 버튼을 눌렀을 때 <strong>“먼저 업로드”</strong> 류의 오류가 난다.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>발표 한 줄</strong>: “한 번 올린 <code>dataset_id</code>로 뒤 탭들이 <strong>같은 업로드 결과</strong>를 공유한다.”</p>
+<h3 id="3-scm-crm-bi">3) SCM / CRM / BI 탭 — 화면에 실제로 있는 버튼과 산출물</h3>
+<p>탭 바는 <strong>네 칸</strong>이다. 이름은 데모 HTML과 <strong>글자까지 맞출 것</strong>: <strong>「SCM 수요예측」</strong>, <strong>「CRM 이탈·클러스터」</strong>, <strong>「BI 트렌드」</strong>, <strong>「Dify AI 요약」</strong>(마지막 칸은 다음 소절).</p>
+<p><strong>SCM 수요예측</strong> (<code>#panel-scm</code>)</p>
+<ul>
+<li>입력: <code>target_column</code>, <code>date_column</code>, <code>group_by</code>, <code>test_codes</code>, <code>forecast_days</code> — 기본값은 <strong><code>scm_sample.csv</code></strong> 에 맞춰져 있다.  </li>
+<li><strong>예측 실행 → 폴링</strong>: <code>POST /scm/forecast</code> 후 <strong><code>/scm/forecast/{job_id}</code></strong> 를 최대 약 180초 폴링. 아래 <strong>라인 차트</strong>(Chart.js)에 상위 시리즈 예측이 그려진다.  </li>
+<li><strong>상태 줄</strong>(<code>#statusScm</code>): 잡 ID, 완료 시 모델명·시리즈 개수 등.  </li>
+<li><strong>주의</strong>: <strong>ARQ 워커</strong>가 없으면 잡이 <strong><code>pending</code></strong> 에서 멈출 수 있다 — <code>demo/DEMO_SCRIPT.md</code> 리허설 체크리스트와 동일.</li>
+</ul>
+<p><strong>CRM 이탈·클러스터</strong> (<code>#panel-crm</code>)</p>
+<ul>
+<li><strong>이탈 위험 분석</strong>: 동기 <strong><code>GET /crm/churn-risk</code></strong> — 바 차트 + <strong>코드/이름/경과일/위험/세그먼트</strong> 테이블.  </li>
+<li><strong>클러스터 실행 → 폴링</strong>: <code>POST /crm/cluster</code> + <strong><code>/crm/cluster/{job_id}</code></strong> — 차트·표가 <strong>클러스터 결과</strong>로 갱신됨. 여기도 <strong>워커 필요</strong>.  </li>
+<li>두 버튼 모두 <strong>같은 캔버스·표 영역</strong>을 쓰므로, 시연 순서를 정해 두면 청중이 덜 헷갈린다(예: 이탈만 또는 클러스터만).</li>
+</ul>
+<p><strong>BI 트렌드</strong> (<code>#panel-bi</code>)</p>
+<ul>
+<li><strong>지역 히트맵</strong>: <code>GET /bi/regional-heatmap</code> — <strong><code>period</code>는 CSV의 기간 값과 문자열이 정확히 같아야</strong> 한다(샘플 기본 <code>2024-01</code>). 표 + 막대 차트, 인사이트 문장.  </li>
+<li><strong>YoY 비교</strong>: <code>GET /bi/yoy-comparison</code> — 연도별 YoY 막대 차트.  </li>
+<li>둘 다 <strong>동기 호출</strong>이라 워커 없이도 동작하기 쉬워 <strong>시연 폴백</strong>으로 좋다.</li>
+</ul>
+<h3 id="4-dify">4) “Dify 워크플로로 요약/해석 연결” — 이 프로젝트에서의 두 층</h3>
+<p>슬라이드 불릿은 <strong>교육 계획(Dify Studio 워크플로)</strong> 과 <strong>이 HTML의 네 번째 탭</strong>을 한 줄에 묶은 것이다. 강사는 둘을 구분해 말해 주는 것이 좋다.</p>
+<p><strong>A. 데모 HTML 안: 「Dify AI 요약」 탭</strong> (<code>#panel-agent</code>)</p>
+<ul>
+<li><strong>질의</strong> 입력란(<code>#agentQuery</code>) + <strong>에이전트 실행</strong>. 기본 placeholder와 유사한 문장 외에, 시연용 복사 문장은 위 <strong>「6-3)」질의 리스트</strong> 참고.  </li>
+<li><strong><code>POST /api/v1/agent/query</code></strong> — 응답 <strong><code>answer</code></strong> 가 큰 <strong>textarea</strong>에 채워지고, 상태 줄에 <strong><code>route_used</code></strong>, <strong><code>session_id</code></strong> 가 찍힌다.  </li>
+<li><strong>의미</strong>: 브라우저는 <strong>여전히 Tier1 같은 호스트</strong>만 치고, <strong>Tier2(Dify)는 백엔드가 대신 호출</strong>하는 형태 — 오전에 말한 <strong>2-Tier</strong>와 연결 가능.  </li>
+<li>타임아웃 <strong>최대 3분</strong> — 네트워크·Dify 기동 여부에 따라 <strong>수십 초</strong> 걸릴 수 있음을 미리 알려 두면 좋다. 502 시 메시지에 <strong>Dify/역프록시</strong> 힌트가 붙는 경우가 있다(HTML <code>fmtErr</code>).</li>
+</ul>
+<p><strong>B. Dify Studio (<code>localhost:8080</code> 등) — 워크플로 캔버스</strong></p>
+<ul>
+<li><code>demo/DEMO_SCRIPT.md</code> <strong>4번</strong>: HTTP 노드로 CRM·BI 등을 붙이고 LLM까지 가는 <strong>블록 다이어그램</strong> 시연.  </li>
+<li>슬라이드 6 한 장에서는 <strong>“같은 백엔드를 HTML 버튼에서도, Studio 파이프라인에서도 부를 수 있다”</strong> 수준으로만 막고, <strong>캔버스를 노드별로 짚는 상세</strong>는 아래 <strong>「B-1」</strong> 을 따른다.</li>
+</ul>
+<h4 id="b-1-idr-crmbi-tier2-dsl">B-1) 앱 <strong>「IDR CRM·BI Tier2」</strong> 워크플로 — DSL 기준 시연 가이드</h4>
+<p>강의에서 <strong>Dify에 로그인 → 해당 앱(워크플로) → 실행/미리보기</strong>로 들어가 <strong>캔버스를 왼쪽에서 오른쪽으로</strong> 짚을 때 쓴다. 아래는 <strong>보낸 DSL</strong> 구조를 기준으로 한 <strong>노드·입력·주의</strong> 정리다. (DSL에 <strong>JWT·URL</strong> 이 박혀 있을 수 있으니, <strong>저장소·공유 문서에는 비밀을 붙이지 말 것</strong> — 노드에는 <strong><code>make dify-fastapi-jwt-bearer</code></strong> 등으로 받은 값을 <strong>강의 전에만</strong> 넣고, 유출 시 <strong>토큰 폐기·재발급</strong>.)</p>
+<p><strong>앱 메타 (DSL)</strong></p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>이름</strong></td>
+<td><code>IDR CRM·BI Tier2</code></td>
+</tr>
+<tr>
+<td><strong>모드</strong></td>
+<td><code>workflow</code></td>
+</tr>
+<tr>
+<td><strong>설명(앱)</strong></td>
+<td>FastAPI <strong><code>compact</code></strong> 엔드포인트 <strong>2건</strong> 호출 후 <strong>Ollama</strong> 로 한국어 인사이트 생성 (IDR Phase 6)</td>
+</tr>
+<tr>
+<td><strong>Tier2 플러그인</strong></td>
+<td>Marketplace <strong><code>langgenius/ollama</code></strong> (워크플로 LLM 노드에서 Ollama 제공자로 사용)</td>
+</tr>
+<tr>
+<td><strong>의도</strong></td>
+<td><strong>Tier1</strong>이 만든 JSON을 <strong>짧게(<code>compact=true</code>)</strong> 받아 <strong>한 번에 LLM 컨텍스트</strong>로 넘기고, <strong>사용자 질문</strong>과 합쳐 답을 쓴다.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>그래프 흐름 (실행 순서)</strong></p>
+<p>노드는 <strong>직렬</strong>이다. <strong>병렬 분기 없음</strong>.</p>
+<pre><code class="language-text">[시작] → [HTTP CRM churn-risk] → [HTTP BI regional-heatmap] → [변수 집계자] → [LLM (Ollama)] → [끝]
+</code></pre>
+<ul>
+<li><strong>의미</strong>: 먼저 <strong>CRM compact JSON</strong>을 받고, 이어서 <strong>BI compact JSON</strong>을 받은 뒤, <strong>집계 노드</strong>가 두 HTTP <strong>응답 body</strong>를 합쳐 문자열로 만든다. 그 문자열과 <strong>시작 노드의 <code>user_query</code></strong> 를 <strong>LLM</strong>에 넣어 최종 텍스트를 낸다.</li>
+</ul>
+<p><strong>1) 시작 노드 (<code>start</code>)</strong></p>
+<table>
+<thead>
+<tr>
+<th>변수</th>
+<th>타입</th>
+<th>필수</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>user_query</code></td>
+<td>paragraph</td>
+<td>예</td>
+<td>최종 LLM에 같이 넘어가는 <strong>자연어 질문</strong> (에이전트·앱 입력과 맞출 수 있음).</td>
+</tr>
+<tr>
+<td><code>dataset_id</code></td>
+<td>text</td>
+<td>예</td>
+<td>Tier1 <strong><code>GET /crm/churn-risk</code></strong>, <strong><code>GET /bi/regional-heatmap</code></strong> 에 공통으로 쓰는 UUID. <strong>데모 HTML의 녹색 <code>dataset_id</code></strong> 와 <strong>동일 값</strong>을 복사해 넣는다.</td>
+</tr>
+<tr>
+<td><code>period</code></td>
+<td>text</td>
+<td>예</td>
+<td><strong>BI 히트맵</strong> 쿼리용. <strong>CSV <code>period</code> 열 값과 문자열이 정확히 같아야</strong> 한다 (예: 샘플 <code>bi_sample.csv</code> 계열이면 <code>2024-01</code>). 노드 설명에도 “regional-heatmap 필수”라고 적혀 있는 맥락과 동일.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시연 멘트 예</strong>: “시작 노드에 <strong>API가 요구하는 키만</strong> 박아 두었습니다. <code>dataset_id</code>는 아까 업로드한 것과 같고, <code>period</code>는 BI 샘플과 <strong>글자 하나까지</strong> 맞춰야 합니다.”</p>
+<p><strong>2) HTTP 노드 ① — <code>CRM churn-risk</code></strong></p>
+<ul>
+<li><strong>메서드</strong>: <code>GET</code>  </li>
+<li><strong>경로 개념</strong>: <code>/api/v1/crm/churn-risk</code>  </li>
+<li><strong>쿼리 (DSL 패턴)</strong>: <code>dataset_id={{시작.dataset_id}}</code>, <strong><code>compact=true</code></strong>, <code>top_n=10</code> (또는 DSL에 맞춘 값).  </li>
+<li><strong>인증</strong>: 헤더 <strong><code>Authorization: Bearer &lt;JWT&gt;</code></strong> — <strong>Dify UI에서만 설정</strong>. 문서·채팅·DSL Git 커밋에 <strong>실토큰을 넣지 말 것</strong>.  </li>
+<li><strong>역할</strong>: <strong>이탈 위험 상위 N</strong> 등 <strong>CRM 요약 JSON</strong>을 Tier1에서 가져온다 — <strong>계산은 전부 FastAPI</strong>.</li>
+</ul>
+<p><strong>3) HTTP 노드 ② — <code>BI regional-heatmap</code></strong></p>
+<ul>
+<li><strong>메서드</strong>: <code>GET</code>  </li>
+<li><strong>경로 개념</strong>: <code>/api/v1/bi/regional-heatmap</code>  </li>
+<li><strong>쿼리 (DSL 패턴)</strong>: <code>dataset_id={{시작.dataset_id}}</code>, <strong><code>period={{시작.period}}</code></strong>, <strong><code>compact=true</code></strong>.  </li>
+<li><strong>인증</strong>: 동일하게 <strong>Bearer JWT</strong>.  </li>
+<li><strong>역할</strong>: <strong>지역·기간</strong> 관점 <strong>BI 요약 JSON</strong>을 가져온다. <strong><code>period</code> 불일치 시 404/에러</strong>가 나기 쉬움 — 리허설 필수.</li>
+</ul>
+<p><strong>4) 변수 집계자 (<code>variable-aggregator</code>)</strong></p>
+<ul>
+<li><strong>입력</strong>: 위 <strong>두 HTTP 노드의 <code>body</code></strong> (응답 본문).  </li>
+<li><strong>출력</strong>: 하나의 <strong>문자열</strong>(<code>output</code>)로 이어 붙인 뒤 <strong>LLM 노드</strong>로 전달.  </li>
+<li><strong>시연 멘트 예</strong>: “여기서 <strong>두 번의 Tier1 호출 결과</strong>를 <strong>한 덩어리 텍스트</strong>로 합칩니다. LLM은 <strong>원시 CSV를 안 보고</strong>, <strong>이미 압축된 JSON 문자열</strong>만 봅니다 — 그래서 <code>compact=true</code>가 규칙으로 박혀 있습니다.”</li>
+</ul>
+<p><strong>5) LLM 노드 — <code>LLM (Ollama)</code></strong></p>
+<ul>
+<li><strong>제공자 (DSL)</strong>: <code>langgenius/ollama/ollama</code> 플러그인.  </li>
+<li><strong>모델명 (DSL 예시)</strong>: <code>alibayram/Qwen3-30B-A3B-Instruct-2507:latest</code> — <strong>강의 PC Ollama에 실제로 pull·등록된 이름</strong>과 맞춰야 한다. (다른 모델을 쓰면 Dify에서 <strong>모델 선택만</strong> 바꾸면 됨.)  </li>
+<li><strong>옵션 (DSL)</strong>: <code>temperature: 0.3</code>, 모드 <code>chat</code>.  </li>
+<li><strong>시스템 프롬프트 (DSL 요지)</strong>: “당신은 <strong>의료 검사 영업 분석</strong> 전문가입니다. 주어진 JSON을 바탕으로 <strong>한국어</strong>로 실무적 인사이트를 제시하세요. <strong>수치를 지어내지 말고</strong>, 과장한 해석은 피하세요.”  </li>
+<li><strong>유저 프롬프트 구조 (DSL 요지)</strong>  </li>
+<li><code>데이터 (연결된 compact JSON):</code> + <strong><code>{{변수 집계자.output}}</code></strong>  </li>
+<li><code>사용자 질문:</code> + <strong><code>{{시작.user_query}}</code></strong>  </li>
+<li>“위 데이터와 질문에 대해 <strong>한국어로</strong> 답변하세요.”  </li>
+</ul>
+<p><strong>시연 멘트 예</strong>: “<strong>숫자는 JSON에만 있고</strong>, 모델은 <strong>그 JSON과 질문</strong>만 받습니다. 시스템 역할은 <strong>도메인 톤</strong>(여기서는 의료 검사 영업)을 잡아 준 것이고, <strong>강의 목적이면</strong> 나중에 일반 SCM/CRM 문구로 바꿀 수 있습니다.”</p>
+<p><strong>6) 끝 노드 (<code>end</code>)</strong></p>
+<ul>
+<li><strong>출력 변수</strong>: LLM 노드의 <strong><code>text</code></strong> → 앱 실행 화면에 <strong>최종 답변</strong>으로 표시.</li>
+</ul>
+<hr />
+<p><strong>리허설 체크리스트 (Studio 진입 시)</strong></p>
+<ol>
+<li>FastAPI·공인/로컬 URL이 Dify HTTP 노드와 <strong>동일 베이스</strong>인지 확인.  </li>
+<li><strong>JWT</strong> 갱신 후 두 HTTP 노드 헤더에 반영 (<code>DEMO_SCRIPT.md</code>·<code>make dify-fastapi-jwt-bearer</code>).  </li>
+<li>데모에서 <strong><code>dataset_id</code></strong> 복사 → Dify 실행 입력에 붙여넣기.  </li>
+<li><strong><code>period</code></strong> = 해당 데이터셋 CSV의 기간 값과 <strong>완전 일치</strong>.  </li>
+<li><strong>한 <code>dataset_id</code>로 CRM·BI API가 둘 다 유의미한 JSON을 주는지</strong> 미리 확인 — <code>crm</code> 전용·<code>bi</code> 전용 CSV만 올렸다면 <strong>한쪽 HTTP는 에러·빈 응답</strong>이 될 수 있음. 강의용으로는 <strong>두 엔드포인트가 모두 성공하는 업로드 조합</strong>을 리허설에서 고정하는 것이 안전하다.  </li>
+<li>Ollama 기동·모델 태그가 LLM 노드 설정과 <strong>일치</strong>.  </li>
+<li><strong>Publish</strong> 된 워크플로/앱인지 확인 후 시연.</li>
+</ol>
+<p><strong>슬라이드·말하기 연결</strong></p>
+<ul>
+<li><strong>슬라이드 7</strong>에서 말한 <strong>“Dify = 오케스트레이션, Ollama = 추론”</strong> 을 이 캔버스에 대응시키면: <strong>HTTP·집계 = Dify가 짠 파이프</strong>, <strong>LLM 블록 = Ollama에 붙은 모델</strong>.  </li>
+<li><strong>데모 HTML <code>agent/query</code></strong> 와 <strong>같은 Tier1 계약</strong>을 쓰되, Studio 버전은 <strong>노드가 보이므로</strong> “교육용 투명성”이 좋다고 한 줄 말하면 된다.</li>
+</ul>
+<h3 id="5">5) 슬라이드에 넣기 좋은 캡처·리허설 체크</h3>
+<ul>
+<li><strong>한 장 요약용 스크린샷</strong>: 가능하면 <strong>첫 패널 + 탭 네 칸이 한 화면에 들어가는 폭</strong>으로 찍거나, 상단 패널과 탭 바만 크롭.  </li>
+<li><strong>리허설</strong> (<code>demo/DEMO_SCRIPT.md</code>와 동일 계열): health·로그인(또는 자동 로그인)·<strong>샘플 업로드 한 번</strong>·SCM 또는 BI <strong>한 경로 성공</strong>·가능하면 <strong>에이전트 탭 1회</strong>.  </li>
+<li><strong>시간이 촉박할 때</strong>: 샘플 즉시 업로드 → <strong>CRM 이탈</strong>(동기) 또는 <strong>BI 히트맵</strong> → (시간 되면) 에이전트 한 줄.</li>
+</ul>
+<h3 id="6-demo-flow-overview-dify-ai">6) 흐름 다이어그램(<code>#demo-flow-overview</code>) 시연 활용법 · <strong>「Dify AI 요약」탭 질의 리스트</strong></h3>
+<p>데모 HTML 상단 <strong>2-Tier·complexity</strong> 그림은 <strong>슬라이드 없이</strong> 구조를 고정할 때 쓴다(<strong>6-1</strong>).<br />
+여기서 말하는 <strong>질의</strong>는 교육생이 강사에게 하는 질문이 <strong>아니라</strong>, 강사가 데모 화면 <strong>「Dify AI 요약」</strong> 탭의 <strong>질의 입력란</strong>(<code>#agentQuery</code>)에 붙여 넣어 <strong><code>에이전트 실행</code></strong> 할 <strong>자연어 프롬프트</strong> 목록이다. 발표자 노트·리허설에 복사해 쓴다.</p>
+<h4 id="6-1">6-1) 권장 시연 시퀀스(다이어그램을 “축”으로 쓰기)</h4>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>하는 일</th>
+<th>효과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>페이지 열자마자 <strong><code>#demo-flow-overview</code></strong> 가 보이게 스크롤 위치 유지(또는 맨 위)</td>
+<td>“한 페이지 안에 <strong>아키텍처 + 조작 UI</strong>가 같이 있다”는 인상</td>
+</tr>
+<tr>
+<td>1</td>
+<td>박스 <strong>왼쪽→가운데</strong>만 손가락/포인터로 짚음: 브라우저 → HTTPS <code>/api/v1</code> → Tier1</td>
+<td>업로드·탭을 누르기 <strong>전에</strong> 기대치 고정</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>아래쪽</strong> <code>complexity 기준 라우팅</code> 박스 읽기(또는 요약)</td>
+<td>“왜 탭이 나뉘는지”를 <strong>슬라이드 없이</strong> 설명</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>오른쪽 Tier2</strong> 짚은 뒤 “지금은 먼저 Tier1만”이라고 하고 <strong>샘플 업로드</strong>로 이동</td>
+<td>시연 팁(가이드 하단 문구)과 <strong>동일 동선</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>SCM/CRM/BI 중 하나 실행 후, 필요할 때만 <strong>「Dify AI 요약」</strong> 탭</td>
+<td>그림의 <strong>화살표 순서</strong>와 실제 클릭이 맞는다고 말할 수 있음</td>
+</tr>
+</tbody>
+</table>
+<h4 id="6-2">6-2) 질의 입력 전에(선행 조건·주의)</h4>
+<ul>
+<li><strong><code>dataset_id</code> 필수</strong>: 업로드·샘플 즉시 업로드 후 <strong>녹색 ID</strong>가 잡힌 뒤 탭으로 이동한다.  </li>
+<li><strong>응답 품질과 <code>dataset_type</code></strong>: 한 CSV만 올렸다면 <strong>해당 도메인 위주</strong>로 질문하는 것이 안전하다. <code>mixed</code> 등 <strong>한 데이터셋에 여러 성격이 섞인 경우</strong>에만 “SCM·CRM·BI를 한꺼번에” 요약하는 식의 질의가 잘 맞는다. <strong>샘플만 빠르게 돌릴 때</strong>는 아래 <strong>A(기본)</strong> 또는 <strong>D~F</strong>처럼 <strong>범위를 좁힌 질의</strong>를 권장한다.  </li>
+<li><strong>시간</strong>: Tier2는 <strong>수십 초~최대 3분</strong> 걸릴 수 있다. 강의에서는 <strong>질의 1개만</strong> 실행하고 결과를 읽는 편이 낫다.  </li>
+<li><strong>실패 시</strong>: 502·타임아웃이면 <strong>Tier1 탭 성공</strong>만으로도 시연은 성립한다 — <code>demo/DEMO_SCRIPT.md</code> 문제 표 참고.</li>
+</ul>
+<h4 id="6-3-dify-ai">6-3) 「Dify AI 요약」탭에 넣을 <strong>질의 문장 리스트</strong>(복사용)</h4>
+<p>아래는 <strong>한국어</strong> 기준 예시다. 필요하면 길이만 줄여 쓴다.</p>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>용도</th>
+<th>질의 문장(입력란에 그대로)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td><strong>기본·복합</strong>(HTML 기본값과 동일 계열)</td>
+<td>이 데이터셋의 SCM·CRM·BI 관점에서 핵심 인사이트를 한국어로 요약해 줘.</td>
+</tr>
+<tr>
+<td><strong>A′</strong></td>
+<td>A의 짧은 버전(시간 절약)</td>
+<td>이 데이터셋 핵심만 한국어로 세 줄로 요약해 줘.</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>경영 브리핑 톤</td>
+<td>이 데이터셋 분석 결과를 경영진 보고용으로, 한 단락(5~7문장) 한국어 브리핑으로 정리해 줘. 가정·한계가 있으면 한 문장으로 명시해 줘.</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td><strong>2-Tier 개념</strong>을 답변에 끌어오기</td>
+<td>이 시스템에서 수치·예측·집계는 어디서 하고, 요약·해석은 어디서 하는지 이 데이터셋 예시에 맞춰 한국어로 짧게 설명해 줘.</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>SCM 성격 강조</td>
+<td>수요·재고 관점에서 이 데이터셋이 시사하는 점과, 의사결정 시 확인해야 할 점을 bullet로 한국어로 정리해 줘.</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td>CRM 성격 강조</td>
+<td>이탈·고객 가치 관점에서 우선 행동을 어떻게 가져가면 좋을지, 한국어로 실무자에게 전달할 만한 형태로 제안해 줘.</td>
+</tr>
+<tr>
+<td><strong>F</strong></td>
+<td>BI 성격 강조</td>
+<td>지역·기간·성장률 같은 트렌드 관점에서 이 데이터셋의 메시지를 한국어로 요약해 줘.</td>
+</tr>
+<tr>
+<td><strong>G</strong></td>
+<td>후속 액션(교육용)</td>
+<td>위 분석을 바탕으로 다음 주 액션 아이템을 우선순위대로 최대 5개, 한국어 bullet로 제안해 줘.</td>
+</tr>
+<tr>
+<td><strong>H</strong></td>
+<td>(선택) 영어</td>
+<td>Summarize the main SCM, CRM, and BI insights for this dataset in English in one short paragraph.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>시연에서 고르는 법</strong></p>
+<ul>
+<li><strong>첫 시연·시간 여유</strong>: <strong>A</strong> 또는 <strong>B</strong>.  </li>
+<li><strong>앞에서 SCM 탭만 돌린 직후</strong>: <strong>D</strong>만 써도 <strong>Tier2가 무엇을 하는지</strong> 보여 주기에 충분하다.  </li>
+<li><strong>2-Tier 슬라이드와 연결</strong>: <strong>C</strong>를 쓰면 <strong>다이어그램·슬라이드</strong>와 멘트가 맞물린다.  </li>
+<li><strong>마무리 한 방</strong>: <strong>A′</strong> 또는 <strong>G</strong>.</li>
+</ul>
+<h4 id="6-4">6-4) 시간이 촉박할 때</h4>
+<ul>
+<li><strong>Tier2 스킵</strong>: 다이어그램에서 Tier2만 짚고, 질의 실행은 생략한다.  </li>
+<li><strong>30초만</strong>: <strong>A′</strong> 한 번만 실행하고 textarea 결과 <strong>2~3줄만</strong> 소리 내어 읽는다.</li>
+</ul>
+<hr />
+<h2 id="7-2-tier">실제 작성 덱 — 슬라이드 7. 2-Tier 아키텍처 재확인 + <strong>기술 스택 (실명)</strong></h2>
+<blockquote>
+<p><strong>덱 · 트랙 (정본 — 통화·계획 반영)</strong><br />
+- <strong>슬라이드 제목 예</strong>: <code>2-Tier 아키텍처 재확인</code><br />
+- <strong>슬라이드 번호</strong>: <strong>7</strong> (직전: <strong>6</strong> 데모 동선·<code>ppt_aux</code>의 <code>A01</code> 덱 트랙)<br />
+- <strong>오후 대본 ID</strong>: <strong><code>A02</code></strong> · 세그먼트 <strong><code>AFTERNOON</code></strong> · 출처 <strong>call + plan</strong><br />
+- <strong>브라우저와 역할 분담</strong>: 데모 <strong><code>#demo-flow-overview</code></strong> 에서 <strong>개념·화살표</strong>를 이미 보여 주었다면, <strong>이 슬라이드는 같은 그림을 다시 판서하지 않는다.</strong> 대신 <strong>한 줄</strong>로 “아까 브라우저 상단과 <strong>같은 축</strong>”이라고만 이어 붙이고, 불릿은 <strong>역할 + 이 프로젝트의 실제 기술 이름</strong>으로 <strong>압축 보강</strong>한다.</p>
+</blockquote>
+<h3 id="3">슬라이드 불릿 권장안(개념 3줄 + 스택 실명)</h3>
+<p><strong>제목 아래 첫 줄(부제·한 줄, 선택)</strong><br />
+<code>데모 화면 상단 다이어그램과 동일 구조 — 여기서는 스택만 실명</code></p>
+<p><strong>본문 불릿 (3개 유지·내용 보강)</strong></p>
+<ol>
+<li><strong>Tier1 — 수치·예측·집계(계산 계층)</strong>  </li>
+<li>문구 예: <strong>FastAPI</strong> · <strong>Pandas</strong> · (저장) <strong>PostgreSQL</strong> · 비동기 잡 <strong>Redis / ARQ</strong> — 브라우저 <strong>Chart.js</strong>는 Tier1이 준 <strong>JSON</strong>을 그리는 표현층.  </li>
+<li>
+<p>한 줄 덧붙임(선택): <strong>Prophet / ARIMA</strong>(SCM)·<strong>RFM·K-Means</strong>(CRM) 등 <strong>알고리즘은 전부 Tier1</strong>.</p>
+</li>
+<li>
+<p><strong>Tier2 — 요약·해석(해석 계층)</strong>  </p>
+</li>
+<li>문구 예: <strong>Dify</strong>(워크플로·HTTP 체인·프롬프트·앱 런타임) + <strong>로컬 LLM <code>Ollama 3.2</code></strong>(실제 추론) — 브라우저는 <strong><code>POST /api/v1/agent/query</code></strong> 만 호출하고, <strong>백엔드 → Dify → (설정된) Ollama</strong> 순으로 연결.  </li>
+<li>
+<p>(발표자 노트 한 줄) <strong>Dify는 모델을 대신 실행하지 않는다</strong> — 수치는 Tier1, <strong>말로 묶는 파이프라인</strong>은 Dify, <strong>토큰 생성</strong>은 Ollama. 정본: <code>docs/rules/dify_integration.md</code> §1.</p>
+</li>
+<li>
+<p><strong>complexity 기준 라우팅</strong>  </p>
+</li>
+<li>문구 예: 단순 분석은 <strong>Tier1 API만</strong>으로 끝 · 복합·자연어는 <strong>Tier2</strong>로 — LLM·워크플로 쪽 계약은 <strong><code>compact=true</code></strong> 등으로 짧은 JSON을 쓰는 팀 규칙과 연결(한 불릿 안에서 <strong>한 문장</strong>만).</li>
+</ol>
+<h3 id="_15">하지 말 것</h3>
+<ul>
+<li>데모 다이어그램을 <strong>슬라이드에 또 그리거나</strong> 박스를 <strong>하나하나 다시 설명</strong>하지 않는다.  </li>
+<li>스택을 <strong>나열만</strong> 15줄 늘리지 않는다 — <strong>Tier1 / Tier2 / 라우팅</strong> 세 덩어리 안에만 넣는다.</li>
+</ul>
+<h3 id="_16">발표 시간</h3>
+<ul>
+<li><strong>30초~1분</strong>: 부제 한 줄 + 불릿 3개 읽기 + “자세한 동선은 방금 브라우저” 한 마디.  </li>
+<li><strong>리허설</strong>: 불릿의 제품명이 <strong>현재 저장소</strong>(<code>demo/README.md</code>, <code>project_context.md</code>)와 어긋나지 않는지만 본다.</li>
+</ul>
+<h3 id="dify-vs-ollama-32">Dify를 따로 둔 이유 vs 로컬 <strong>Ollama 3.2</strong> (교육생이 “왜 둘 다?”라고 할 때)</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Dify</strong> (self-hosted)</th>
+<th><strong>Ollama 3.2</strong> (로컬 LLM)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>한 줄</strong></td>
+<td><strong>AI 오케스트레이션</strong> — 워크플로 캔버스, HTTP Request로 FastAPI 호출, 변수·조건·LLM 노드 체인, 앱/에이전트 실행 UI</td>
+<td><strong>추론 엔진</strong> — 설정된 모델로 채팅/완성 <strong>토큰 생성</strong>만 담당</td>
+</tr>
+<tr>
+<td><strong>이 프로젝트에서</strong></td>
+<td><code>demo/DEMO_SCRIPT</code>의 Studio 시연, 백엔드 <strong><code>/agent/query</code></strong> 가 내부적으로 타는 <strong>앱·워크플로</strong> 런타임, <code>compact=true</code>로 받은 JSON을 LLM에 넘기는 <strong>파이프라인</strong></td>
+<td>강의 PC에 깔아 <strong>비용·데이터 유출 최소화</strong>로 Tier2에 붙인 <strong>실제 LLM 백엔드</strong> (클라우드 API 대체 가능)</td>
+</tr>
+<tr>
+<td><strong>비유</strong> (<code>dify_integration.md</code>)</td>
+<td>Camunda 같은 <strong>BPM + LLM 노드</strong>에 가깝다</td>
+<td>엔진 룸의 <strong>모델 서버</strong>에 가깝다</td>
+</tr>
+</tbody>
+</table>
+<p><strong>강조 멘트 예</strong>: “<strong>Ollama만</strong> 있으면 터미널·간단 API로 채팅은 되지만, <strong>FastAPI → 여러 HTTP → 합쳐서 요약</strong> 같은 <strong>교육용·운영용 파이프라인</strong>을 <strong>화면에서 조립·게시</strong>하려면 <strong>Dify</strong>가 필요하다. 반대로 <strong>Dify만</strong> 있고 로컬 모델이 없으면, 우리가 쓰는 것처럼 <strong>Ollama를 ‘LLM 제공자’로 등록</strong>해 연결한다.”</p>
+<p><strong>하지 말 것</strong>: “Dify가 숫자를 계산한다” — <strong>금지</strong>. 숫자는 <strong>항상 Tier1</strong>.</p>
+<hr />
+<h2 id="11">실제 작성 덱 — 슬라이드 11. 마무리 — <strong>프로젝트 보강 방향</strong> (권장안)</h2>
+<blockquote>
+<p><strong>덱 · 트랙 (정본 — 통화·계획 반영)</strong><br />
+- <strong>슬라이드 번호</strong>: <strong>11</strong> (마지막 장으로 쓰는 경우)<br />
+- <strong>일일 대본 ID</strong>: <strong><code>R01</code></strong> · <strong><code>WRAPUP</code></strong> · <strong>call + plan</strong><br />
+- <strong>(구) 슬라이드 카피</strong>: <code>성과를 KPI와 연결</code> · 신규 기능 3축(SCM/CRM/BI) · AI 백엔드+웹 프로토타입 · RAG/Agent/GraphRAG — <strong>교육 과제·경영 보고</strong>용으로는 유효하나, <strong>본 리포 데모 서사</strong>(도메인 비전문 출발·1차 축)와 맞추려면 <strong>아래 제목·불릿</strong>을 권장한다.</p>
+</blockquote>
+<h3 id="_17">슬라이드 제목·불릿 (권장)</h3>
+<p><strong>제목 예</strong><br />
+<code>다음 보강 — 도메인 계약 · RAG · 에이전트</code></p>
+<p><strong>부제(선택)</strong><br />
+<code>1차 시연 축 → 현장 규칙 반영 → 지식·그래프 확장</code></p>
+<p><strong>본문 불릿 (3개)</strong></p>
+<ol>
+<li>
+<p><strong>핵심 도메인 기준 규칙·스키마 재정립</strong><br />
+   KPI·필수 컬럼·검증 규칙·OpenAPI/Pydantic·<code>compact</code> 필드·Dify 프롬프트를 <strong>한 도메인 계약</strong>으로 맞춤. <code>docs/rules</code>·마이그레이션·테스트 시나리오와 연동.</p>
+</li>
+<li>
+<p><strong>RAG · Agent · (선택) GraphRAG 로의 확장 준비</strong><br />
+<strong>RAG</strong>: 매뉴얼·SOP·이력을 벡터/하이브리드 검색으로 Tier2 컨텍스트에 공급. <strong>Agent</strong>: 자연어 → <strong>허용된 Tier1 도구 호출</strong>만 (계약 유지). <strong>GraphRAG</strong>: 엔티티·관계(고객·검사·지역 등)가 중요해지면 <strong>온톨로지·그래프 검색</strong> 검토 — <strong>숫자 계산은 Tier1 고정</strong>.</p>
+</li>
+<li>
+<p><strong>프로토타입은 유지, 우선순위는 도메인 먼저</strong><br />
+   데모 UI·Dify 워크플로는 <strong>계약 검증용</strong>으로 유지하고, <strong>기능 3축 나열</strong>보다 <strong>도메인이 바뀌면 스키마가 먼저</strong> 바뀐다는 순서를 고정.</p>
+</li>
+</ol>
+<h3 id="_18">(구) 안건을 슬라이드에 남기고 싶을 때</h3>
+<ul>
+<li><strong>KPI 연결</strong>·<strong>3축 기능 제안</strong>은 <strong>별 슬라이드</strong> 또는 <strong>발표자 노트</strong>로 두고, <strong>11번 본편</strong>은 위 <strong>권장 3불릿</strong>만 두면 메시지가 흐려지지 않는다.</li>
+</ul>
+<h3 id="lecture_talk_track"><code>lecture_talk_track</code> 연동</h3>
+<ul>
+<li><strong><code>R01</code></strong> 멘트는 <strong>아래 §2「슬라이드 11 — 마무리」</strong> 발표 스크립트와 동기화한다.</li>
+</ul>
+<hr />
+<h2 id="2-ppt-14-5-swaggerm05-11-r01">2) PPT 발표 스크립트 (슬라이드 1~4 + 슬라이드 5 Swagger·<code>M05</code> + 슬라이드 11 <code>R01</code>)</h2>
+<p>아래 문구는 발표자 노트에 그대로 붙여넣어도 됩니다. <strong>(구) 커리큘럼 매핑 슬라이드는 생략</strong>이 기본이다. <strong>슬라이드 5 = Swagger·OpenAPI (<code>M05</code>)</strong>. <strong>슬라이드 6 = 데모 동선·브라우저</strong> 는 <strong>「실제 작성 덱 — 슬라이드 6」</strong> + 일일 대본 <strong><code>A01</code> 도입 뒤</strong> 또는 <strong><code>A03</code> 직전</strong>에 배치. <strong>슬라이드 7 = 2-Tier + 스택 (<code>A02</code>)</strong> 는 <strong>「실제 작성 덱 — 슬라이드 7」</strong>. <strong>탭 시연 브리지 = <code>A03</code></strong>. <strong>슬라이드 11 = 마무리·보강 방향 (<code>R01</code>·<code>WRAPUP</code>)</strong> 는 <strong>위「실제 작성 덱 — 슬라이드 11」</strong> 제목·불릿과 본 절 말미 <strong>「슬라이드 11 — 마무리」</strong> 스크립트. <strong>슬라이드 8~10</strong> 등 중간 장은 실제 덱에 맞춰 추가한다.</p>
+<h3 id="1_1">슬라이드 1 스크립트</h3>
+<p>“안녕하세요. 보조강사 파트에서는 3월 28일 강의 흐름에 맞춰, 분석 결과가 화면에서 어떻게 만들어지고 LLM 요약까지 어떻게 연결되는지 실제 데모 중심으로 보여드리겠습니다.”</p>
+<h3 id="2">슬라이드 2 스크립트</h3>
+<p>“오늘 목표는 세 가지입니다. 첫째 SCM 수요예측, 둘째 CRM 이탈 분석, 셋째 BI 지역 트렌드입니다. 핵심은 화면만 보는 것이 아니라, 화면 뒤의 API와 데이터 흐름을 함께 이해하는 것입니다.”</p>
+<h3 id="3-idedocsrules">실제 슬라이드 3 (규칙 가이드 웹 <code>/ide/docs/rules/</code>) 스크립트</h3>
+<blockquote>
+<p>브라우저: <a href="https://lis.qk54r71z.freeddns.org/ide/docs/rules/">규칙 가이드</a>. <strong>아래는 한 덩어리 대본</strong>이다. 0절·1절·5절을 따로 읽지 않는다.</p>
+</blockquote>
+<p>“(슬라이드) 세 가지입니다. <strong><code>.cursorrules</code>와 <code>docs/rules</code>, 세션 문서</strong>로 역할이 갈립니다. <strong>문서는 계약</strong>, <strong>Gate는 지금 단계</strong>, <strong>린트·테스트·훅은 증적</strong>입니다. 목표는 AI를 많이 쓰는 게 아니라 <strong>AI가 만든 변경을 통제</strong>하는 것입니다.</p>
+<p>(브라우저) 이 페이지는 교육생이 <strong>나중에 혹은 오늘 저녁에</strong> 스스로 읽도록 열어 둔 요약본이고, 지금은 <strong>표 두 개만</strong> 보겠습니다. 위에서 아래로 전부 읽지는 않겠습니다.</p>
+<p>(스크롤 — <strong>레이어 표</strong>만) 여기 <strong>다섯 레이어</strong>에서 기억할 것은 세 가지입니다. <strong>L1</strong>이 진입 계약, <strong>L4</strong>가 우리가 말하는 <code>docs/rules</code> 원문, <strong>L5</strong>가 ruff·mypy·pre-commit 같은 <strong>증적용 도구</strong>입니다. 슬라이드의 세션 문서는 <strong>지금 Gate가 어디인지</strong>를 남기는 쪽입니다.</p>
+<p>(스크롤 — <strong>Gate 표</strong>만) 이 표가 중심입니다. <strong>계획 승인 전에는 코드를 바꾸지 않고</strong>, 구현이 끝나면 <strong>사람 확인</strong>을 거친 뒤에야 테스트 계획으로 넘어갑니다. <strong>금지</strong> 열이 있는 이유가 바로 AI 통제입니다. Spring에서 경계를 코드로 고정하듯, 여기서는 <strong>문서와 Gate로 경계</strong>를 고정한다고 보시면 됩니다.</p>
+<p>(선택 — 30초) ‘왜 이렇게 많나?’ 하면, 긴 프롬프트만으로는 <strong>같은 실수가 반복</strong>되기 쉬워서 <strong>저장소에 금지와 절차를 박고</strong>, 틀리면 <code>error_analysis</code>에 쌓는 쪽으로 옮겼다고만 말합니다. 필요하면 <strong>사례 카드 한 장</strong>만 스크롤해서 보여 줍니다.</p>
+<p>(클로징) 나머지 절·체크리스트는 <strong>교육생 참고용</strong>이고, 강의 메시지는 <strong>슬라이드 세 줄</strong>로 끝냅니다.</p>
+<p>(슬라이드로 복귀) 다음 슬라이드에서는 <strong>Gate만</strong> 다시 짚습니다. 아까는 전체 규칙 안에서 표가 <strong>한 부분</strong>이었고, 다음 장에서는 <strong>승인 경계</strong>만 크게 보겠습니다.”</p>
+<h3 id="4-gate-ae_1">슬라이드 4 (Gate A~E) 스크립트</h3>
+<blockquote>
+<p>슬라이드 불릿은 가이드 <strong>「슬라이드 4 — Gate A~E」</strong> 의 검토표·권장 문구를 반영해 덱에 옮긴다.</p>
+</blockquote>
+<p>“<strong>Gate A부터 E</strong>는 같은 팀·같은 AI에게 <strong>지금 무엇을 해도 되는지</strong>를 나누는 <strong>승인 경계</strong>입니다.</p>
+<p><strong>A</strong>는 <strong>코드를 바꾸기 전</strong>입니다. <code>CURRENT</code>에 <strong>구현 상세 계획</strong>을 쓰고, 사용자가 <strong>승인하기 전까지는 구현을 시작하지 않습니다.</strong></p>
+<p><strong>B</strong>는 <strong>구현이 끝난 직후</strong>입니다. 여기서 <strong>한 번 멈춥니다</strong>. 구현 요약을 남기고 사용자가 볼 때까지 <strong>테스트 계획으로 넘어가지 않습니다.</strong> 우리 팀은 여기서 자주 깨져서 <strong>문서에 강제 정지</strong>로 박아 두었습니다.</p>
+<p><strong>C</strong>는 <strong>테스트를 돌리기 전</strong>입니다. 테스트 <strong>상세</strong> 계획을 쓰고 <strong>또 승인</strong>받습니다. <strong>D</strong>에서 실행하고 결과를 기록하고, <strong>E</strong>에서 이력과 <code>plan</code>을 갱신하고 다음 세션 <code>CURRENT</code>로 넘깁니다.</p>
+<p><strong>중요한 한 줄</strong>: <strong>「진행해라」</strong>가 <strong>A</strong>에 대한 말이면 <strong>구현 착수만</strong>이지, <strong>테스트까지 한 번에 허용한 말이 아닙니다.</strong> 애매하면 멈추고 물어보는 게 규칙입니다.</p>
+<p>(커리큘럼 슬라이드 생략 시에만 포함) <strong>규칙·Gate까지가 이 오전의 프로세스 핵심</strong>이고, 일반론은 각자 환경에 옮기시면 됩니다.</p>
+<p>다음 <strong>슬라이드 5</strong>에서는 <strong>API 계약·Swagger(<code>M05</code>)</strong> 를 보겠습니다.”</p>
+<h3 id="5-swaggeropenapi-m05">슬라이드 5 — Swagger·OpenAPI 스크립트 (<code>M05</code>)</h3>
+<blockquote>
+<p><strong>덱 5 · 트랙 M05.</strong> URL: <a href="https://lis.qk54r71z.freeddns.org/docs">Swagger UI</a> · <a href="https://lis.qk54r71z.freeddns.org/openapi.json">OpenAPI JSON</a>. 폴백은 가이드 <strong>「실행 환경 고정」</strong>.</p>
+</blockquote>
+<p>“(슬라이드) <strong>Swagger와 OpenAPI</strong>는 같은 계약의 사람용·기계용 화면만 다릅니다.</p>
+<p>(브라우저 <code>/docs</code>) <strong>뼈대</strong>는 <strong>FastAPI</strong>가 라우트·Pydantic 스키마에서 <strong>자동으로</strong> 뽑아 줍니다. 다만 화면에 보이는 <strong>설명 글</strong>은 공중에서 생기지 않고, <strong>코드 안</strong>의 docstring·<code>summary</code>·<code>Field</code> 설명·태그 같은 <strong>메타데이터</strong>에서 옵니다. 그걸 비우면 여기도 비어 보입니다.</p>
+<p>(한 줄 보강) 이 프로젝트에서는 그 <strong>메타데이터까지 AI가 초안을 같이 쓰고</strong>, 사람이 규칙·Gate·리뷰로 다듬은 게 코드에 남아 있어서, <strong>스웨거에 읽히는 문장도 같은 AI 보조 파이프라인의 결과</strong>라고 보시면 됩니다. 별도 스펙 문서를 매번 따로 쓰지 않아도 <strong>계약 면이 코드와 함께</strong> 유지되는 그림입니다.</p>
+<p>(태그만 짚기) <strong>datasets</strong>, <strong>scm</strong>, <strong>crm</strong>, <strong>bi</strong>, <strong>agent</strong>처럼 태그가 나뉘어 있으면 오후에 보실 <strong>데모 화면·분석 API</strong>가 이 구조와 그대로 연결됩니다.</p>
+<p>(JSON 한 마디) <strong><code>/openapi.json</code></strong>은 같은 내용을 도구가 읽는 형태입니다. Dify HTTP Request 같은 노드가 붙을 때 <strong>이 JSON이 기준</strong>이 됩니다.</p>
+<p>(선택 10초) 분석 API에는 <strong><code>compact=true</code></strong> 같은 쿼리가 많은데, LLM에 넘길 때 짧은 JSON을 쓰라는 <strong>팀 규칙</strong>과 맞춰 둔 것입니다.</p>
+<p>다음 <strong>슬라이드 6</strong>에서는 <strong>데모 동선</strong>과 함께, 이 데모가 <strong>도메인 전문가로 시작한 완성품이 아니라</strong> <strong>AI 보조·단기 구축 1차 축</strong>이라는 <strong>전제</strong>를 짧게 짚고 실제 화면으로 넘어가겠습니다.”</p>
+<p><strong>심화 Q&amp;A용</strong> (질문이 길게 이어질 때만): 아래 <strong>「참고 — 지시→통제 전환」</strong> 절을 발표자가 요약해 읽는다.</p>
+<h3 id="6_1">슬라이드 6 — 데모 동선 + 스토리라인 (브라우저 시연 구간)</h3>
+<blockquote>
+<p><strong>덱 6.</strong> 불릿: 접속 → 업로드·<code>dataset_id</code> → SCM/CRM/BI → Dify 요약/해석. <strong>일일 대본</strong>: <strong><code>A01</code></strong> 도입 뒤 이어 붙이거나, <strong><code>A03</code> 브리지 직전</strong>에 실행. <strong>화면 세부</strong>는 <strong>「1)~5)」</strong>, <strong>스토리라인</strong>은 <strong>「스토리라인·전제」</strong>, <strong>흐름 그림·Dify 탭 질의</strong>는 <strong>「6)」</strong>. <strong>다음 슬라이드 7</strong>은 <strong><code>A02</code></strong>(2-Tier·스택).</p>
+</blockquote>
+<p>“(슬라이드 불릿 짚기) 오후에는 <strong>한 장으로 동선</strong>만 고정합니다. <strong>데모 접속</strong> → <strong>CSV 업로드로 <code>dataset_id</code></strong> → <strong>SCM·CRM·BI 탭</strong>에서 Tier1 분석 → <strong>Dify 쪽</strong>으로 요약·해석을 넘깁니다.</p>
+<p>(스토리라인 — <strong>20~60초</strong>, 시간 있으면) 이 화면과 API는 <strong>제가 해당 도메인을 깊게 알고 시작한 프로젝트는 아니고</strong>, <strong>AI로 코드베이스와 흐름을 분석·구축하는 데 도움을 받아</strong> 대략 <strong>며칠(3~4일) 안에</strong> <strong>끝까지 한 줄기</strong>를 올린 <strong>1차 버전</strong>입니다. 그래서 <strong>납품 완성도</strong>라기보다 <strong>계약·파이프라인 시연</strong>에 가깝고, <strong>맞는 다음 단계</strong>는 <strong>현장 도메인으로 핵심 규칙과 지표를 다시 정의</strong>한 뒤 <strong>그에 맞게 솔루션을 보강</strong>하는 쪽이라고 보시면 됩니다. 오전에 말씀드린 <strong>문서·Gate</strong>는 그 <strong>짧은 기간 안에도</strong> 통제 축을 같이 깔기 위한 것이었습니다.</p>
+<p>(브라우저로 전환) <strong><code>demo/index.html</code></strong> 맨 위 <strong><code>#demo-flow-overview</code></strong> 다이어그램을 <strong>30초~1분</strong> 짚고(위 <strong>「6-1」</strong> 순서), 이어서 업로드·탭 시연. <strong>「Dify AI 요약」</strong> 탭에서는 <strong>「6-3」</strong> 표에서 <strong>질의 문장 하나</strong>를 복사해 <strong>에이전트 실행</strong>한다.” <em>(선행 조건은 </em><em>「6-2」</em><em>·세부는 </em><em>1)~6)</em><em> 참고.)</em></p>
+<p>(슬라이드로 복귀) <strong>다음 슬라이드 7</strong>에서는 아까 그림과 <strong>같은 2-Tier 축</strong>을 <strong>스택 이름</strong>(FastAPI·Pandas·PostgreSQL·Redis/ARQ·Chart.js·Dify·LLM 등)으로만 다시 고정합니다 — 일일 대본 <strong><code>A02</code></strong>.”</p>
+<h3 id="7-2-tier-a02">슬라이드 7 — 2-Tier 재확인 + 기술 스택 (<code>A02</code>)</h3>
+<blockquote>
+<p><strong>덱 7 · 트랙 A02.</strong> 아까 브라우저 <strong>그림과 같은 축</strong> — 여기서는 <strong>제품명·스택</strong>만 실명으로 고정. 상세는 위 <strong>「실제 작성 덱 — 슬라이드 7」</strong>.</p>
+</blockquote>
+<p>“(슬라이드) 방금 데모 <strong>맨 위</strong>에서 <strong>화살표로 구조</strong>는 보셨습니다. 이 슬라이드는 <strong>그림을 다시 그리지 않고</strong>, <strong>같은 2-Tier</strong>를 <strong>실제 스택 이름</strong>으로만 재확인합니다.</p>
+<p><strong>Tier1</strong>은 <strong>FastAPI</strong>와 <strong>Pandas</strong>, 데이터는 <strong>PostgreSQL</strong>, 오래 걸리는 잡은 <strong>Redis</strong>와 <strong>ARQ</strong> 워커 — 방금 보신 <strong>차트</strong>는 브라우저 <strong>Chart.js</strong>가 Tier1이 준 <strong>JSON</strong>을 그린 겁니다. <strong>Prophet</strong>이나 <strong>RFM·K-Means</strong> 같은 <strong>알고리즘은 전부 이 계층</strong>입니다.</p>
+<p><strong>Tier2</strong>는 <strong>Dify</strong>가 <strong>워크플로·HTTP 체인</strong>을 짜고, <strong>말을 실제로 생성하는 LLM</strong>은 로컬 <strong>Ollama 3.2</strong>에 붙였습니다. 브라우저는 <strong><code>/agent/query</code></strong> 로만 치고, <strong>백엔드가 Dify를 거쳐 Ollama</strong>까지 연결합니다. <strong>Dify는 수치를 계산하지 않고</strong>, <strong>Ollama는 파이프라인을 구성하지 않습니다.</strong></p>
+<p><strong>complexity</strong>는 한 줄로만 — <strong>단순 분석</strong>은 Tier1만, <strong>복합·자연어</strong>는 Tier2로 넘기고, LLM 쪽은 <strong><code>compact=true</code></strong> 같은 짧은 JSON 계약을 쓰는 팀 규칙이 붙어 있습니다.</p>
+<p>다시 <strong>브라우저</strong>로 돌아가면, 일일 대본 <strong><code>A03</code></strong> 한 줄 짚고 <strong>SCM·CRM·BI 탭</strong>을 순서대로 보겠습니다.”</p>
+<h3 id="11-r01">슬라이드 11 — 마무리: 보강 방향 (<code>R01</code>)</h3>
+<blockquote>
+<p><strong>덱 11 · 트랙 <code>R01</code></strong> · 세그먼트 <strong><code>WRAPUP</code></strong> · 출처 <strong>call + plan</strong><br />
+오전·오후 <strong>스토리라인</strong>(도메인 비전문·1차 축)과 <strong>맞물리게</strong> 마지막 슬라이드를 잡는다. <strong>(구)</strong> 안건이 “성과를 KPI와 연결 + 신규 기능 3축 + 프로토타입” 중심이었다면, <strong>이 저장소 시연 서사</strong>에는 <strong>위「실제 작성 덱 — 슬라이드 11」</strong> 의 <strong>권장 불릿</strong>이 더 잘 맞는다.</p>
+</blockquote>
+<p>“(슬라이드) 오늘 데모는 <strong>짧은 기간에 올린 1차 축</strong>이었고, <strong>납품 완성도</strong>보다 <strong>계약·파이프라인</strong>을 보여 드리는 데 목적이 있었습니다. 마지막으로 <strong>앞으로 보강할 방향</strong>만 세 줄로 고정하겠습니다.</p>
+<p><strong>첫째</strong>, <strong>핵심 도메인</strong>에서 용어·KPI·데이터 품질을 원천으로 <strong>규칙과 스키마를 다시 잡는 것</strong>입니다. 어떤 열이 필수인지, <code>dataset_type</code>·<code>period</code>·검사·고객 코드가 무엇을 의미하는지, <strong><code>compact</code> 응답</strong>에 무엇을 남길지, Dify 프롬프트와 검증 시나리오까지 <strong>같은 도메인 계약</strong>으로 묶습니다.</p>
+<p><strong>둘째</strong>, 그 계약 위에서 <strong>RAG</strong>로 내부 문서·로그·SOP를 붙이고, <strong>에이전트</strong>로 Tier1 API를 <strong>도구 호출</strong>로 묶는 쪽으로 확장할 <strong>준비</strong>를 합니다. 관계·메타데이터가 중요해지면 <strong>GraphRAG</strong> 같은 <strong>구조화 지식</strong> 쪽도 검토합니다 — 단, <strong>수치는 여전히 Tier1</strong>이라는 전제는 유지합니다.</p>
+<p><strong>셋째</strong>, <strong>AI 백엔드와 웹 프로토타입</strong>은 그대로 두되, 우선순위는 <strong>도메인 규칙 → 스키마·API → 그다음 LLM 확장</strong> 순으로 잡는 것이 안전하다고 보시면 됩니다.</p>
+<p>(질문 받기) KPI 대시보드나 3축 기능 로드맵은 <strong>조직 과제</strong>로 남기고, <strong>기술 스택 관점</strong>에서는 오늘 말씀드린 <strong>도메인 계약 + RAG/에이전트 준비</strong>를 기억해 주시면 됩니다.”</p>
+<hr />
+<h2 id="qa">참고 — 지시→통제 전환 (심화·Q&amp;A용)</h2>
+<p>강의 <strong>본편에 넣지 말고</strong>, “왜 프롬프트만으로 안 되고 문서·금지로 갔나?” 질문이 길게 나올 때만 사용한다. 원문·날짜별 기록은 <code>docs/rules/error_analysis.md</code>.</p>
+<p><strong>프롬프트만으로 한계였던 이유 (요지)</strong></p>
+<ul>
+<li>세션·팀원마다 지시문이 달라져 <strong>재현성</strong>이 떨어짐. 모델은 <strong>한 턴에 끝내기</strong> 쉬워 승인·테스트가 빠지기 쉬움. 채팅은 <strong>계약·감사</strong>로 남기 어렵다. 금지·게이트·필독을 <strong>레이어와 도구</strong>로 쪼개 두어야 같은 문장이 반복 주입된다.</li>
+</ul>
+<p><strong>실제로 반복된 패턴 (<code>error_analysis</code>와 대응)</strong></p>
+<ul>
+<li>구현 직후 확인·테스트 게이트 생략 (2026-03-26) → Gate B 멈춤·승인 전 금지 명시.  </li>
+<li>작업 계획을 <code>CURRENT</code>가 아닌 별도 파일로만 둠 (2026-03-26) → 상세 계획 위치 고정.  </li>
+<li>부분 스테이징 + pre-commit stash로 같은 린트 반복 (2026-03-26) → 커밋 전 순서·전부 스테이징 문서화.  </li>
+<li>MCP·문서 해석을 배포까지 확대 (2026-03-27~28) → 엣지 nginx 범위를 스킬·컨텍스트에 표로 고정.  </li>
+<li>공인 URL 문서에서 비표준 조치를 먼저 제안 (2026-03-28 전후) → <code>lis_public_url_path_map.md</code> 앞부분에 운영 원칙 한 줄 고정.</li>
+</ul>
+<p><strong>멘트 한 줄</strong></p>
+<p>“<strong>잘하라</strong>는 말은 매번 새로 써야 하고, <strong>하면 안 되는 일</strong>은 저장소에 박아 두고, 같은 사고는 <code>error_analysis</code>에 쌓아 문장으로 다시 흡수하는 <strong>루프</strong>로 가져갑니다.”</p>
+<hr />
+<h2 id="3_1">3) 문서 끝 — 보강 작업 재개 방법</h2>
+<p>중단 후 이 문서를 다시 열었을 때: <strong>상단의 「문서 보강 작업 기록 (이어하기용)」</strong> 절에서 <code>다음에 할 일</code>, 백로그 체크, <strong>세션별 변경 이력</strong>을 먼저 읽고 이어간다. 본문을 대량 수정했다면 그 절의 표와 <code>마지막 갱신</code> 날짜를 같은 커밋·같은 편집 세션에서 함께 갱신한다.</p>
+    </article>
+    <aside class="toc-wrap">
+      <nav class="toc-inner toc" aria-label="목차">
+        <div class="label">목차</div>
+<div class="toc">
+<ul>
+<li><a href="#_1">문서 보강 작업 기록 (이어하기용)</a></li>
+<li><a href="#328">강사님 전달사항 반영(3/28 운영 시나리오)</a></li>
+<li><a href="#_2">실행 환경 고정(중요)</a><ul>
+<li><a href="#_3">교육생 전용 · 규칙 요약 웹 페이지(강의 동선)</a></li>
+<li><a href="#_4">교육생용 규칙 웹(참고)</a></li>
+</ul>
+</li>
+<li><a href="#3-ai">실제 작성 덱 — 슬라이드 3. AI 규칙/스킬/문서 체계 (브라우저 데모)</a><ul>
+<li><a href="#_5">데모 태도 (판서 금지)</a></li>
+<li><a href="#_6">핵심만 전달할 것 (말로 꼭 남겨야 하는 것)</a></li>
+<li><a href="#_7">화면에서 짚을 위치 (최소 스크롤)</a></li>
+<li><a href="#_8">시간·리허설</a></li>
+<li><a href="#_9">캡처</a></li>
+<li><a href="#4">슬라이드 4번 이후(다른 슬라이드)</a></li>
+</ul>
+</li>
+<li><a href="#4-gate-ae">실제 작성 덱 — 슬라이드 4. Gate A~E (승인 경계)</a><ul>
+<li><a href="#docsrulesworkflow_gatesmd">슬라이드 초안 검토 (정본: docs/rules/workflow_gates.md)</a></li>
+<li><a href="#3-gate-4">왜 슬라이드 3에서 Gate를 짚은 뒤, 슬라이드 4에서 다시 설명하는가</a></li>
+<li><a href="#4_1">슬라이드 4 — 전달 순서·시간</a></li>
+<li><a href="#_10">캡처·자료</a></li>
+</ul>
+</li>
+<li><a href="#_11">(구) 커리큘럼 매핑 슬라이드 — 생략 권장</a></li>
+<li><a href="#5-swagger-openapi-api-fastapi">실제 작성 덱 — 슬라이드 5. Swagger / OpenAPI — API 계약 (FastAPI 자동 스펙)</a><ul>
+<li><a href="#_12">목적에 대한 판단</a></li>
+<li><a href="#url">슬라이드에 두 URL 외로 첨언하면 좋은 것</a></li>
+<li><a href="#_13">하지 말 것</a></li>
+<li><a href="#_14">데모 시간</a></li>
+</ul>
+</li>
+<li><a href="#6">실제 작성 덱 — 슬라이드 6. 데모 동선 한 장 정리</a><ul>
+<li><a href="#ai">스토리라인·전제: 도메인 비전문 · AI 보조 단기 구축 · 향후 도메인 규칙으로 성숙</a></li>
+<li><a href="#1">1) “데모 접속”이 가리키는 화면</a></li>
+<li><a href="#2-csv-dataset_id">2) CSV 업로드 → dataset_id 확보 (첫 번째 패널)</a></li>
+<li><a href="#3-scm-crm-bi">3) SCM / CRM / BI 탭 — 화면에 실제로 있는 버튼과 산출물</a></li>
+<li><a href="#4-dify">4) “Dify 워크플로로 요약/해석 연결” — 이 프로젝트에서의 두 층</a><ul>
+<li><a href="#b-1-idr-crmbi-tier2-dsl">B-1) 앱 「IDR CRM·BI Tier2」 워크플로 — DSL 기준 시연 가이드</a></li>
+</ul>
+</li>
+<li><a href="#5">5) 슬라이드에 넣기 좋은 캡처·리허설 체크</a></li>
+<li><a href="#6-demo-flow-overview-dify-ai">6) 흐름 다이어그램(#demo-flow-overview) 시연 활용법 · 「Dify AI 요약」탭 질의 리스트</a><ul>
+<li><a href="#6-1">6-1) 권장 시연 시퀀스(다이어그램을 “축”으로 쓰기)</a></li>
+<li><a href="#6-2">6-2) 질의 입력 전에(선행 조건·주의)</a></li>
+<li><a href="#6-3-dify-ai">6-3) 「Dify AI 요약」탭에 넣을 질의 문장 리스트(복사용)</a></li>
+<li><a href="#6-4">6-4) 시간이 촉박할 때</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#7-2-tier">실제 작성 덱 — 슬라이드 7. 2-Tier 아키텍처 재확인 + 기술 스택 (실명)</a><ul>
+<li><a href="#3">슬라이드 불릿 권장안(개념 3줄 + 스택 실명)</a></li>
+<li><a href="#_15">하지 말 것</a></li>
+<li><a href="#_16">발표 시간</a></li>
+<li><a href="#dify-vs-ollama-32">Dify를 따로 둔 이유 vs 로컬 Ollama 3.2 (교육생이 “왜 둘 다?”라고 할 때)</a></li>
+</ul>
+</li>
+<li><a href="#11">실제 작성 덱 — 슬라이드 11. 마무리 — 프로젝트 보강 방향 (권장안)</a><ul>
+<li><a href="#_17">슬라이드 제목·불릿 (권장)</a></li>
+<li><a href="#_18">(구) 안건을 슬라이드에 남기고 싶을 때</a></li>
+<li><a href="#lecture_talk_track">lecture_talk_track 연동</a></li>
+</ul>
+</li>
+<li><a href="#2-ppt-14-5-swaggerm05-11-r01">2) PPT 발표 스크립트 (슬라이드 1~4 + 슬라이드 5 Swagger·M05 + 슬라이드 11 R01)</a><ul>
+<li><a href="#1_1">슬라이드 1 스크립트</a></li>
+<li><a href="#2">슬라이드 2 스크립트</a></li>
+<li><a href="#3-idedocsrules">실제 슬라이드 3 (규칙 가이드 웹 /ide/docs/rules/) 스크립트</a></li>
+<li><a href="#4-gate-ae_1">슬라이드 4 (Gate A~E) 스크립트</a></li>
+<li><a href="#5-swaggeropenapi-m05">슬라이드 5 — Swagger·OpenAPI 스크립트 (M05)</a></li>
+<li><a href="#6_1">슬라이드 6 — 데모 동선 + 스토리라인 (브라우저 시연 구간)</a></li>
+<li><a href="#7-2-tier-a02">슬라이드 7 — 2-Tier 재확인 + 기술 스택 (A02)</a></li>
+<li><a href="#11-r01">슬라이드 11 — 마무리: 보강 방향 (R01)</a></li>
+</ul>
+</li>
+<li><a href="#qa">참고 — 지시→통제 전환 (심화·Q&amp;A용)</a></li>
+<li><a href="#3_1">3) 문서 끝 — 보강 작업 재개 방법</a></li>
+</ul>
+</div>
+
+      </nav>
+    </aside>
+    <footer class="gen">IDR lis_cursor · PPT 보조강사 가이드 HTML 뷰</footer>
+  </div>
+</body>
+</html>

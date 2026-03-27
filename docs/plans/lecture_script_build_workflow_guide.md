@@ -4,7 +4,7 @@
 >
 > 대상 문서:
 > - 슬라이드 자동 생성: `docs/plans/ppt_google_slides_autogen_script.md`
-> - 슬라이드 내용 상세: `docs/plans/ppt_aux_instructor_build_guide.md`
+> - 슬라이드 내용 상세: `docs/plans/ppt_aux_instructor_build_guide.md` (상단 **문서 보강 작업 기록** = PPT 가이드 보강·이어하기 마스터 로그)
 > - 프로젝트 근거: `docs/plans/plan.md`, `docs/CURRENT_WORK_SESSION.md`, `docs/rules/*.md`, `demo/DEMO_SCRIPT.md`, `demo/README.md`
 
 ---

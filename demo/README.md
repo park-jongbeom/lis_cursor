@@ -2,6 +2,8 @@
 
 단일 HTML(`index.html`)로 FastAPI 백엔드(`http://127.0.0.1:8000`)를 호출합니다. Chart.js·Axios는 CDN을 사용합니다.
 
+페이지 **상단**(업로드 패널 위)에 **2-Tier 시스템 흐름** 요약 다이어그램(`#demo-flow-overview`)이 있어, 강의 시 브라우저만으로 업로드→Tier1→Tier2 개념을 한눈에 짚을 수 있습니다.
+
 ## 사전 준비
 
 ### 1. 백엔드 `.env`
