@@ -3,6 +3,7 @@
 
 COMPOSE_TEST = podman-compose -f docker-compose.test.yml
 COMPOSE_DEV  = podman-compose -f docker-compose.dev.yml
+COMPOSE_PROD = podman-compose -f docker-compose.prod.yml
 # Dify 1.13+ : 공식 compose + IDR 오버레이 (항상 vendor/ 에서 실행)
 DIFY_VENDOR_DIR := infra/dify/vendor
 define DIFY_COMPOSE_CMD
@@ -10,6 +11,9 @@ mkdir -p "$$HOME/tmp" && cd $(DIFY_VENDOR_DIR) && TMPDIR="$$HOME/tmp" podman-com
 endef
 ALEMBIC      = PYTHONPATH=idr_analytics poetry run alembic -c idr_analytics/alembic/alembic.ini
 PYTEST       = PYTHONPATH=idr_analytics poetry run pytest
+
+# 공개 데모(역프록시 끝점) — `make open-lis` 로 기본 브라우저 실행
+LIS_DEMO_URL ?= https://lis.qk54r71z.freeddns.org/
 
 # ── 테스트 인프라 ──────────────────────────────────────────────────────────────
 
@@ -78,6 +82,31 @@ dev-up:
 .PHONY: dev-down
 dev-down:
 	$(COMPOSE_DEV) down
+
+# ── 로컬 «운영형» 인프라 (테스트·dev 과 동시 기동 금지 — 컨테이너 이름 충돌) ───────
+
+.PHONY: prod-up
+prod-up:
+	@test -f .env.prod || (echo "오류: .env.prod 없음 — cp env.prod.example .env.prod 후 편집"; exit 1)
+	$(COMPOSE_PROD) --env-file .env.prod up -d
+
+.PHONY: prod-down
+prod-down:
+	$(COMPOSE_PROD) down
+
+.PHONY: migrate-prod
+## `.env.prod` 를 로드한 뒤 운영형 로컬 DB 에 Alembic 적용
+migrate-prod:
+	@test -f .env.prod || (echo "오류: .env.prod 없음"; exit 1)
+	bash -lc 'set -a && source ./.env.prod && set +a && $(ALEMBIC) upgrade head'
+
+.PHONY: open-lis
+## 기본 브라우저에서 `LIS_DEMO_URL` 열기 (Linux: xdg-open)
+open-lis:
+	@echo "Opening $(LIS_DEMO_URL)"
+	@command -v xdg-open >/dev/null 2>&1 && exec xdg-open "$(LIS_DEMO_URL)" || \
+		command -v gio >/dev/null 2>&1 && exec gio open "$(LIS_DEMO_URL)" || \
+		(echo "xdg-open 또는 gio 가 없습니다. 수동으로 열기: $(LIS_DEMO_URL)"; exit 1)
 
 # ── Dify 인프라 ────────────────────────────────────────────────────────────────
 

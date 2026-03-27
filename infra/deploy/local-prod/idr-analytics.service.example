@@ -1,0 +1,20 @@
+[Unit]
+Description=IDR Analytics FastAPI (local prod, uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# ↓↓↓ 본인 계정·프로젝트 경로
+User=YOUR_USER
+Group=YOUR_USER
+WorkingDirectory=/path/to/lis_cursor
+EnvironmentFile=/path/to/lis_cursor/.env.prod
+Environment=PYTHONPATH=idr_analytics
+# poetry 경로는 `which poetry` 로 확인
+ExecStart=/home/YOUR_USER/.local/bin/poetry run uvicorn app.main:app --host 127.0.0.1 --port 8010 --workers 1
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

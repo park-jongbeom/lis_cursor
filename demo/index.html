@@ -109,15 +109,24 @@
 <body>
   <div class="wrap">
     <h1>IDR Analytics 데모</h1>
-    <p class="sub">FastAPI 백엔드 + Chart.js · 강의 시연용(로컬 전용). 아래 Bearer는 <span class="mono">.env</span>의 <span class="mono">INTERNAL_BYPASS_BEARER_TOKEN</span>과 동일해야 합니다.</p>
+    <p class="sub">FastAPI + Chart.js · 일상 개발(<span class="mono">APP_ENV=development</span>)에서는 우회 Bearer(<span class="mono">INTERNAL_BYPASS_BEARER_TOKEN</span>)를, <span class="mono">APP_ENV=production</span>(로컬 운영형 포함)에서는 아래 <strong>로그인</strong>으로 JWT를 발급해 Bearer 칸에 넣으세요.</p>
 
     <div class="panel">
       <div class="row">
-        <label>API 베이스 URL
-          <input type="text" id="apiBase" value="http://127.0.0.1:8000/api/v1" />
+        <label>로그인(운영·JWT)
+          <input type="text" id="loginUser" placeholder="admin" autocomplete="username" />
         </label>
-        <label>우회 Bearer 토큰
-          <input type="text" id="bearerToken" class="mono" placeholder="demo-idr-bypass" autocomplete="off" />
+        <label>비밀번호
+          <input type="password" id="loginPass" placeholder="" autocomplete="current-password" />
+        </label>
+        <button type="button" id="btnLogin" class="secondary">로그인</button>
+      </div>
+      <div class="row">
+        <label>API 베이스 URL
+          <input type="text" id="apiBase" placeholder="자동: 이 사이트 기준 /api/v1" />
+        </label>
+        <label>Bearer (JWT 또는 우회 토큰)
+          <input type="text" id="bearerToken" class="mono" placeholder="로그인 후 자동 입력" autocomplete="off" />
         </label>
       </div>
       <div class="row">
@@ -241,8 +250,14 @@
     let _chartBi = null;
     let datasetId = "";
 
+    function defaultApiBase() {
+      if (window.location.protocol === "file:") return "http://127.0.0.1:8000/api/v1";
+      return window.location.origin + "/api/v1";
+    }
+
     function apiBase() {
-      return document.getElementById("apiBase").value.trim().replace(/\/$/, "");
+      var v = document.getElementById("apiBase").value.trim().replace(/\/$/, "");
+      return v || defaultApiBase();
     }
 
     function bearer() {
@@ -261,10 +276,19 @@
     }
 
     function fmtErr(err) {
+      if (err.response && err.response.status === 502) {
+        return (
+          "게이트웨이 502: 역프록시 뒤 IDR FastAPI(로컬 :8000 등)에 연결되지 않았습니다. " +
+          "로컬에서 DB·Redis·uvicorn 기동 및 Tailscale/LAN 이 ga-server 에서 도달 가능한지 확인하세요."
+        );
+      }
       if (err.response && err.response.data) {
         const d = err.response.data;
         if (typeof d.detail === "string") return d.detail;
         try { return JSON.stringify(d.detail || d, null, 2); } catch (e) { return String(d); }
+      }
+      if (err.message === "Network Error" || (err.request && !err.response)) {
+        return "네트워크 오류: API에 응답이 없습니다. 백엔드 기동·CORS·HTTPS 혼합 차단을 확인하세요.";
       }
       return err.message || String(err);
     }
@@ -290,14 +314,39 @@
       var t = localStorage.getItem(LS_TOKEN);
       if (t) document.getElementById("bearerToken").value = t;
       var a = localStorage.getItem(LS_API);
-      if (a) document.getElementById("apiBase").value = a;
+      var apiEl = document.getElementById("apiBase");
+      if (a) apiEl.value = a;
+      else apiEl.placeholder = defaultApiBase();
     })();
+
+    document.getElementById("btnLogin").addEventListener("click", async function () {
+      var u = document.getElementById("loginUser").value.trim();
+      var p = document.getElementById("loginPass").value;
+      if (!u || !p) {
+        alert("사용자명과 비밀번호를 입력하세요.");
+        return;
+      }
+      var params = new URLSearchParams();
+      params.append("username", u);
+      params.append("password", p);
+      try {
+        var res = await axios.post(apiBase() + "/auth/login", params, {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          timeout: 60000,
+        });
+        document.getElementById("bearerToken").value = res.data.access_token;
+        localStorage.setItem(LS_TOKEN, res.data.access_token);
+        alert("JWT가 Bearer 칸에 설정되었습니다.");
+      } catch (e) {
+        alert(fmtErr(e));
+      }
+    });
 
     document.getElementById("bearerToken").addEventListener("change", function () {
       localStorage.setItem(LS_TOKEN, bearer());
     });
     document.getElementById("apiBase").addEventListener("change", function () {
-      localStorage.setItem(LS_API, apiBase());
+      localStorage.setItem(LS_API, document.getElementById("apiBase").value.trim());
     });
 
     document.getElementById("btnUpload").addEventListener("click", async function () {

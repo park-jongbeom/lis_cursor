@@ -1,3 +1,5 @@
+# 로컬 «운영형» Postgres/Redis — 호스트 uvicorn 이 127.0.0.1:15432·6379 로 붙는다.
+# 컨테이너 이름이 dev 스택과 같으므로 `docker-compose.dev.yml` 기동 중이면 먼저 내린다.
 version: "3.9"
 
 networks:
@@ -18,6 +20,9 @@ services:
       POSTGRES_DB: idr_analytics
       POSTGRES_USER: idr
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # 호스트에서 직접 구동하는 uvicorn·Alembic용(외부 비공개)
+      - "127.0.0.1:15432:5432"
     volumes:
       - pgdata-prod:/var/lib/postgresql/data
     healthcheck:
@@ -27,10 +32,15 @@ services:
       retries: 5
     networks:
       - idr-net
+    security_opt:
+      - seccomp=unconfined
+      - label=disable
 
   idr-redis:
     image: redis:7-bookworm
     container_name: idr-redis
+    ports:
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -38,6 +48,9 @@ services:
       retries: 5
     networks:
       - idr-net
+    security_opt:
+      - seccomp=unconfined
+      - label=disable
 
   # Phase 5 이후: 이미지 빌드·레지스트리 연동 후 주석 해제
   # idr-fastapi:

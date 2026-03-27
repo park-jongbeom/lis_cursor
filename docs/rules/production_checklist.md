@@ -25,6 +25,7 @@
 
 ## 4. 애플리케이션 기동 (`docker-compose.prod.yml`)
 
+- [ ] **로컬에서 `APP_ENV=production`을 검증할 때**도 동일한다. `docker-compose.prod.yml`은 **로컬 «운영형» Postgres/Redis**용이며(`make prod-up`), 원격 전용이 아니다. 절차는 `infra/deploy/local-prod/README.md` 참고.
 - [ ] `idr-postgres`, `idr-redis` 서비스 정의와 `.env.prod` 연동을 확인했다.
 - [ ] `idr-fastapi` 블록은 **컨테이너 이미지 빌드·레지스트리 푸시·태그 확정 후** 주석을 해제한다. 해제 전에는 DB·Redis만 기동하는 구성일 수 있다.
 - [ ] FastAPI를 붙일 때 `depends_on`에 healthy 조건이 맞고, 같은 `idr-net`에 속한다.

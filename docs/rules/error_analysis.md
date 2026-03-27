@@ -197,3 +197,21 @@
 3. 상세 금지·승인 범위 해석은 **`docs/rules/workflow_gates.md`** §승인 범위 해석·§AI 동작 금지를 따른다. 세션 작업 시 **`.cursor/skills/idr-session-workflow/SKILL.md`** 의 「Gate B 직후 필수 멈춤」을 먼저 적용한다.
 
 **관련 파일**: `docs/rules/workflow_gates.md`, `.cursor/skills/idr-session-workflow/SKILL.md`, `.cursorrules`, `docs/rules/project_context.md`
+
+---
+
+### [2026-03-27] VSCode Git 로그(첨부 1-24행) 기준 pre-commit `ruff-format` 롤백 재확인
+
+**오류 유형**: 개발 워크플로 / staged-unstaged 혼재 (pre-commit stash 충돌)
+
+**발생 상황**: 사용자 첨부 로그(`@vscode.git.Git` 1~24행)에서 커밋 시 `Unstaged files detected` → `ruff-format`이 1개 파일을 수정했으나 `Stashed changes conflicted with hook auto-fixes... Rolling back fixes...`로 되돌림. 현재 워킹트리에서도 대상 파일이 `AM` 상태(스테이징됨 + 미스테이징 변경 존재)로 확인됨.
+
+**근본 원인**: 커밋 시점에 동일 파일 또는 연관 파일의 staged/unstaged 변경이 섞여 pre-commit의 임시 stash 복원과 auto-fix 결과가 충돌. 훅이 고친 내용이 유지되지 않아 같은 실패 로그가 반복됨.
+
+**재발 방지 규칙**:
+1. 커밋 직전 **한 번에 정리**: `make format && make lint && make typecheck`.
+2. 그 다음 `git add -A`로 변경 전체를 재스테이징해 `AM`/혼재 상태를 제거한 뒤 커밋한다.
+3. VSCode Git에서 `Rolling back fixes`가 보이면 커밋을 중단하고, 터미널 기준으로 1→2 순서를 다시 수행한다.
+4. 필요하면 `git diff --staged -- <파일>` 와 `git diff -- <파일>` 를 둘 다 확인해 staged/unstaged 차이를 먼저 없앤다.
+
+**관련 파일**: `infra/remote-proxy/patch_lis_nginx_remote.py`, `.pre-commit-config.yaml`, `Makefile`, `docs/rules/error_analysis.md`

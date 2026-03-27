@@ -1,0 +1,79 @@
+# ga-server 등: ga-nginx 가 붙은 Docker 네트워크에 IDIR API·DB·Redis 를 붙인다.
+# 프로젝트 루트(lis_cursor)에서:
+#   cp infra/deploy/public-edge/env.idr.example .env.idr   # 편집
+#   docker compose -p idr-edge -f infra/deploy/public-edge/docker-compose.idr-stack.yml up -d --build
+#   docker exec idr-fastapi alembic -c alembic/alembic.ini upgrade head
+# (admin 시드는 README)
+#
+# ga-nginx 의 lis 블록에서 FastAPI 업스트림은 http://idr-fastapi:8000 으로 둔다.
+
+services:
+  idr-postgres:
+    image: postgres:15-bookworm
+    container_name: idr-edge-postgres
+    env_file:
+      - ../../../.env.idr
+    environment:
+      POSTGRES_DB: idr_analytics
+      POSTGRES_USER: idr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - idr_edge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U idr -d idr_analytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ga-network
+
+  idr-redis:
+    image: redis:7-bookworm
+    container_name: idr-edge-redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ga-network
+
+  idr-fastapi:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    container_name: idr-fastapi
+    env_file:
+      - ../../../.env.idr
+    environment:
+      DATABASE_URL: postgresql+asyncpg://idr:${POSTGRES_PASSWORD}@idr-postgres:5432/idr_analytics
+      REDIS_URL: redis://idr-redis:6379/0
+    volumes:
+      - idr_edge_uploads:/app/data/uploads
+    depends_on:
+      idr-postgres:
+        condition: service_healthy
+      idr-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8000/health\")"',
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - ga-network
+    restart: unless-stopped
+
+networks:
+  ga-network:
+    external: true
+    name: ga-api-platform_ga-network
+
+volumes:
+  idr_edge_pgdata:
+  idr_edge_uploads:
